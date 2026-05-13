@@ -24,6 +24,10 @@
 *.webp
 capturas/
 
+# PWA icons (tracked)
+!icon-192.png
+!icon-512.png
+
 # Logs
 *.log
 npm-debug.log*
