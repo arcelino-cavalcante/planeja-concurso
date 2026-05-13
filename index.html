@@ -163,7 +163,7 @@
                 <div class="user-avatar">
                     <i class="bi bi-person-fill"></i>
                 </div>
-                <span class="user-name" id="sidebarUserName">Bruno</span>
+                <span class="user-name" id="sidebarUserName">Aluno</span>
                 <i class="bi bi-box-arrow-right user-logout"></i>
             </div>
         </div>
@@ -264,7 +264,7 @@
                             <i class="bi bi-shield-fill-check"></i>
                         </div>
                         <div class="ciclo-text">
-                            <span>Ciclo - Policial Rodoviário Federal</span>
+                            <span id="dashboardCicloNome">Nenhum ciclo ativo</span>
                         </div>
                     </div>
                     <div class="progress-ring-container">
@@ -284,12 +284,12 @@
                         <div class="hora-item">
                             <span class="hora-dot gray"></span>
                             <span class="hora-label">Horas Propostas</span>
-                            <span class="hora-value">30h 00m</span>
+                            <span class="hora-value" id="dashboardHorasPropostas">00h 00m</span>
                         </div>
                         <div class="hora-item">
                             <span class="hora-dot yellow"></span>
                             <span class="hora-label">Horas estudadas</span>
-                            <span class="hora-value">00h 00m</span>
+                            <span class="hora-value" id="dashboardHorasEstudadas">00h 00m</span>
                         </div>
                     </div>
                     <button class="btn-executar">
@@ -312,7 +312,7 @@
                                 </div>
                                 <div class="welcome-text">
                                     <span class="welcome-label">Bem-vindo</span>
-                                    <span class="welcome-name" id="dashboardUserName">Bruno</span>
+                                    <span class="welcome-name" id="dashboardUserName">Aluno</span>
                                 </div>
                             </div>
                         </div>
@@ -334,11 +334,11 @@
 
                     <!-- Média de Horas Card -->
                     <div class="card-mentor media-card">
-                        <p class="media-title">Média de horas diárias de estudo (março)</p>
+                        <p class="media-title">Média de horas diárias de estudo</p>
                         <div class="media-content">
                             <i class="bi bi-display"></i>
-                            <span class="media-hours">0h29m</span>
-                            <span class="media-badge">83.5%</span>
+                            <span class="media-hours" id="dashboardMediaHoras">00h00m</span>
+                            <span class="media-badge" id="dashboardMediaPercent">0%</span>
                         </div>
                     </div>
                 </div>
@@ -599,7 +599,7 @@
 
                     <!-- Right Info -->
                     <div class="exec-info-area">
-                        <p class="exec-ciclo-label" id="execCicloLabel">Ciclo – Policial Rodoviário Federal</p>
+                        <p class="exec-ciclo-label" id="execCicloLabel">Nenhum ciclo em execução</p>
                         <h1 class="exec-subject-name" id="execSubjectName">Legislação de Trânsito</h1>
 
                         <div class="mentor-suggestion">
@@ -700,7 +700,7 @@
                     </div>
                     <div class="form-group" style="margin-bottom:16px;">
                         <label class="meta-label">Nome do simulado</label>
-                        <input type="text" class="input-mentor" id="simuladoNomeInput" placeholder="Ex: Simulado PRF #1" style="width:100%;">
+                        <input type="text" class="input-mentor" id="simuladoNomeInput" placeholder="Ex: Simulado #1" style="width:100%;">
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div class="form-group">
@@ -737,7 +737,7 @@
                     <div class="ciclo-config-header" style="margin-bottom:20px;">
                         <div class="ciclo-badge-lg"><i class="bi bi-clipboard-check"></i></div>
                         <div class="ciclo-config-details">
-                            <h2 id="resultSimuladoNome" style="color:var(--accent);margin:0;">Simulado PRF #1</h2>
+                            <h2 id="resultSimuladoNome" style="color:var(--accent);margin:0;">—</h2>
                             <div class="ciclo-meta">
                                 <div><span class="meta-label">Data:</span><br><strong id="resultSimuladoData">-</strong></div>
                                 <div><span class="meta-label">Concurso:</span><br><strong id="resultSimuladoConcurso">-</strong></div>
@@ -885,7 +885,7 @@
                 <h3 class="section-title" style="margin-bottom:16px;">Perfil do Usuário</h3>
                 <div class="form-group" style="margin-bottom:24px;">
                     <label class="meta-label">Seu Nome</label>
-                    <input type="text" class="input-mentor" id="configNomeInput" placeholder="Ex: Bruno" style="width:100%; max-width:300px;">
+                    <input type="text" class="input-mentor" id="configNomeInput" placeholder="Seu nome" style="width:100%; max-width:300px;">
                 </div>
                 <button class="btn-executar" id="btnSalvarNome" style="max-width:200px;"><i class="bi bi-check-lg"></i> Salvar nome</button>
 
