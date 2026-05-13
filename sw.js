@@ -52,6 +52,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
+    // Skip non-http/https requests (chrome-extension, etc.)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return;
+    }
+
     // Skip Firebase/Firestore API calls (don't cache)
     if (url.hostname.includes('firestore') ||
         url.hostname.includes('googleapis') ||
