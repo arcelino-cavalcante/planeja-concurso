@@ -1,6 +1,14 @@
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ===== STRUCTURAL VARIABLES (shared) ===== */
+:root {
+    --sidebar-width: 260px;
+    --transition: all 0.3s ease;
+    --radius: 12px;
+    --radius-sm: 8px;
+}
+
 /* ===== DARK THEME (default) ===== */
 :root, [data-theme="dark"] {
     --bg-primary: #0a0a0a;
@@ -22,8 +30,6 @@
     --work-gray: #3a3a3a;
     --border-color: #2a2a2a;
     --border-accent: #8b9a3a;
-    --radius: 12px;
-    --radius-sm: 8px;
     --shadow: 0 4px 6px rgba(0,0,0,0.2);
     --shadow-lg: 0 12px 32px rgba(0,0,0,0.3);
 }
