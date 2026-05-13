@@ -1355,51 +1355,95 @@
     <!-- Service Worker Registration (PWA) -->
     <script>
         if ('serviceWorker' in navigator) {
+            const APP_VERSION = '1.0.1';
             let refreshing = false;
+            let newWorkerWaiting = null;
+
+            // Show update banner instead of confirm()
+            function showUpdateBanner() {
+                const banner = document.createElement('div');
+                banner.id = 'updateBanner';
+                banner.innerHTML = `
+                    <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--accent-green);color:#0a0a0a;padding:12px 24px;border-radius:30px;font-weight:700;font-size:0.9rem;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:16px;cursor:pointer;animation:slideUp 0.4s ease;">
+                        <span>🆕 Nova versão disponível!</span>
+                        <span style="background:rgba(0,0,0,0.15);padding:6px 14px;border-radius:20px;font-size:0.8rem;">Atualizar agora</span>
+                    </div>
+                `;
+                banner.addEventListener('click', () => {
+                    if (newWorkerWaiting) {
+                        newWorkerWaiting.postMessage('SKIP_WAITING');
+                    }
+                    banner.remove();
+                });
+                document.body.appendChild(banner);
+
+                // Auto-remove after 30s
+                setTimeout(() => banner.remove(), 30000);
+            }
+
+            // Auto-reload when new SW takes over
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshing) return;
                 refreshing = true;
-                console.log('🔄 SW: Controller changed, reloading page...');
                 window.location.reload();
             });
 
-            navigator.serviceWorker.register('sw.js')
-                .then((registration) => {
-                    console.log('✅ SW registered:', registration.scope);
+            function registerSW() {
+                navigator.serviceWorker.register('sw.js?v=' + APP_VERSION)
+                    .then((registration) => {
+                        console.log('✅ SW registered v' + APP_VERSION);
 
-                    // Check for updates
-                    registration.addEventListener('updatefound', () => {
-                        const newWorker = registration.installing;
-                        console.log('🔍 SW: New version found, installing...');
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('🆕 SW: Update available! Prompting user...');
-                                if (confirm('Nova versão disponível! Deseja atualizar agora?')) {
-                                    newWorker.postMessage('SKIP_WAITING');
+                        // Check if there's already a waiting worker
+                        if (registration.waiting) {
+                            newWorkerWaiting = registration.waiting;
+                            showUpdateBanner();
+                        }
+
+                        // Listen for new updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (!newWorker) return;
+                            console.log('🔍 SW: Nova versão detectada...');
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('🆕 SW: Pronto para atualizar!');
+                                    newWorkerWaiting = newWorker;
+                                    showUpdateBanner();
                                 }
-                            }
+                            });
                         });
-                    });
-                })
-                .catch((err) => {
-                    console.log('⚠️ SW registration failed:', err);
-                });
+                    })
+                    .catch((err) => console.log('⚠️ SW:', err));
+            }
 
-            // Check for updates periodically (every 30 min)
+            // Force update check immediately
+            registerSW();
+            navigator.serviceWorker.getRegistration().then((reg) => {
+                if (reg) reg.update();
+            });
+
+            // Check every 5 minutes
             setInterval(() => {
-                console.log('🔍 SW: Checking for updates...');
                 navigator.serviceWorker.getRegistration().then((reg) => {
                     if (reg) reg.update();
                 });
-            }, 30 * 60 * 1000);
+            }, 5 * 60 * 1000);
 
-            // Also check on page focus
-            window.addEventListener('focus', () => {
-                navigator.serviceWorker.getRegistration().then((reg) => {
-                    if (reg) reg.update();
-                });
+            // Check on visibility change (tab focus)
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    navigator.serviceWorker.getRegistration().then((reg) => {
+                        if (reg) reg.update();
+                    });
+                }
             });
         }
     </script>
+    <style>
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+    </style>
 </body>
 </html>
