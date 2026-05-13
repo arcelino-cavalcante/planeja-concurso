@@ -268,5 +268,42 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loadingOverlay) loadingOverlay.style.display = 'none';
         }
     });
+
+    // ===== THEME TOGGLE (Light/Dark) =====
+    const themeToggleStudent = document.getElementById('themeToggleStudent');
+    const themeToggleAdmin = document.getElementById('themeToggleAdmin');
+
+    function getCurrentTheme() {
+        return localStorage.getItem('planeja-concurso-theme') || 'dark';
+    }
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('planeja-concurso-theme', theme);
+        // Update manifest theme-color
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+            metaTheme.content = theme === 'light' ? '#f0f2f5' : '#0a0a0a';
+        }
+    }
+
+    function toggleTheme() {
+        const current = getCurrentTheme();
+        const next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+    }
+
+    // Apply saved theme on load
+    applyTheme(getCurrentTheme());
+
+    // Bind toggle buttons
+    themeToggleStudent?.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleTheme();
+    });
+    themeToggleAdmin?.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleTheme();
+    });
 });
 

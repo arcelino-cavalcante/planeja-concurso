@@ -1,5 +1,5 @@
-// ===== O MENTOR - Service Worker (PWA) =====
-const CACHE_NAME = 'omentor-v1';
+// ===== PLANEJA CONCURSO - Service Worker (PWA) =====
+const CACHE_NAME = 'planeja-concurso-v2';
 const ASSETS = [
     './',
     './index.html',

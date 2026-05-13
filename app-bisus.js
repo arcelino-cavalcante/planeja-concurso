@@ -1,4 +1,4 @@
-// ===== O MENTOR APP - BISUS (BLOG) =====
+// ===== PLANEJA CONCURSO APP - BISUS (BLOG) =====
 let bisusList = [];
 
 function showBisusView(viewId) {

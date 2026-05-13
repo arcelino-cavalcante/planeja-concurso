@@ -1,6 +1,6 @@
-# O Mentor
+# Planeja Concurso
 
-Plataforma de estudos e gerenciamento de rotinas para concurseiros.
+Plataforma de estudos, gestão de rotinas e otimização do foco para concurseiros.
 
 ## Funcionalidades
 
@@ -10,13 +10,17 @@ Plataforma de estudos e gerenciamento de rotinas para concurseiros.
 - **Meus Concursos** — Cadastro de concursos com disciplinas e pesos
 - **Meus Ciclos** — Geração de ciclos de estudo baseados nos concursos
 - **Meus Simulados** — Registro de simulados com resultados por matéria
-- **Bisus & Dicas** — Blog com dicas e ferramentas para estudo
-- **Configurações** — Perfil e reset de dados
+- **Bisus & Dicas** — Blog com artigos formatados e dicas de estudo
+- **Feedback** — Reporte de bugs e sugestões de melhoria
+- **Tema Claro/Escuro** — Alternância com 1 clique
 
 ### Admin
 - **Dashboard** — Estatísticas de usuários e publicações
 - **Usuários** — Gerenciamento com ativação/desativação de acesso
-- **Publicar Bisus** — Criação de conteúdo para os alunos
+- **Publicar Bisus** — Editor rico de artigos com toolbar
+- **Mensagens & Avisos** — Comunicação direta com alunos
+- **Concursos Oficiais** — Templates que alunos importam com 1 clique
+- **Feedback** — Gestão de bugs e sugestões dos alunos
 
 ## Tecnologias
 
@@ -24,19 +28,24 @@ Plataforma de estudos e gerenciamento de rotinas para concurseiros.
 - Bootstrap 5.3 + Bootstrap Icons
 - Firebase Auth (Google + Email/Senha)
 - Firestore (banco de dados com persistência offline híbrida)
+- PWA (instalável, offline, auto-update)
 
 ## Estrutura
 
 ```
-O mentor/
+planeja-concurso/
 ├── index.html            # SPA principal
-├── styles.css            # Estilos completos
-├── firebase-config.js    # Config Firebase, Auth, DB híbrido
-├── app-core.js           # Navegação, rotinas, toast
+├── styles.css            # Temas claro/escuro
+├── firebase-config.js    # Firebase Auth + DB híbrido
+├── app-core.js           # Navegação, rotinas, dashboard
 ├── app-ciclos.js         # Concursos e ciclos de estudo
 ├── app-simulados.js      # Simulados e resultados
-├── app-bisus.js          # Blog Bisus & Dicas
+├── app-bisus.js          # Blog com editor rico
 ├── app-admin.js          # Painel administrativo
+├── sw.js                 # Service Worker (PWA)
+├── manifest.json         # Manifest PWA
+├── icon-192.png          # Ícone PWA
+├── icon-512.png          # Ícone PWA
 ├── .gitignore
 └── README.md
 ```
@@ -48,17 +57,9 @@ O mentor/
 | Google Sign-In | Aluno | `google.com` |
 | Email/Senha | Admin (`#admin`) | `password` |
 
-- **Aluno**: Acessa `index.html` e faz login com Google
-- **Admin**: Acessa `index.html#admin` e faz login com email/senha
+## Instalação (PWA)
 
-## Executar Localmente
-
-```bash
-cd "O mentor"
-python3 -m http.server 5500
-```
-
-Acessar: `http://localhost:5500`
+Acesse pelo Chrome/Edge e clique em "Instalar" na barra de endereço.
 
 ## Configuração Firebase
 

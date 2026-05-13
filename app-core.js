@@ -1,4 +1,4 @@
-// ===== O MENTOR APP - CORE (Navigation, Rotinas, Toast) =====
+// ===== PLANEJA CONCURSO APP - CORE (Navigation, Rotinas, Toast) =====
 // DB object is now defined in firebase-config.js (Firebase + localStorage hybrid)
 
 let rotinas = [];

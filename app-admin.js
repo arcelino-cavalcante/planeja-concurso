@@ -1,4 +1,4 @@
-// ===== O MENTOR APP - ADMIN MODULE =====
+// ===== PLANEJA CONCURSO APP - ADMIN MODULE =====
 // Handles: Dashboard stats, User management, Bisus publishing (admin side)
 
 let allUsers = [];
