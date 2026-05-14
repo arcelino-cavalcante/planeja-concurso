@@ -323,7 +323,7 @@ function openFeedbackForm(tipo) {
     } else {
         document.getElementById('feedbackFormTitle').textContent = 'Sugerir Melhoria';
         document.getElementById('feedbackFormSubtitle').textContent = 'Compartilhe sua ideia para tornar a plataforma melhor.';
-        feedbackSugestaoCard.style.borderColor = '#4a7cf7';
+        feedbackSugestaoCard.style.borderColor = 'var(--accent-blue)';
         feedbackBugCard.style.borderColor = 'transparent';
     }
     document.getElementById('feedbackTitulo').value = '';
@@ -378,7 +378,7 @@ async function loadMeusFeedbacks() {
         }
         container.innerHTML = snap.docs.map(doc => {
             const f = doc.data();
-            const tipoIcon = f.tipo === 'bug' ? '<i class="bi bi-bug-fill" style="color:var(--accent-red);"></i>' : '<i class="bi bi-lightbulb-fill" style="color:#4a7cf7;"></i>';
+            const tipoIcon = f.tipo === 'bug' ? '<i class="bi bi-bug-fill" style="color:var(--accent-red);"></i>' : '<i class="bi bi-lightbulb-fill" style="color:var(--accent-blue);"></i>';
             const statusBadge = f.status === 'resolvido'
                 ? '<span style="background:rgba(139,154,58,0.15);color:var(--accent-green-light);padding:2px 10px;border-radius:12px;font-size:0.75rem;">Resolvido</span>'
                 : '<span style="background:rgba(201,184,78,0.15);color:var(--accent-yellow);padding:2px 10px;border-radius:12px;font-size:0.75rem;">Pendente</span>';
