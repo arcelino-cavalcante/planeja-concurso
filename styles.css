@@ -1149,11 +1149,134 @@ body {
 }
 
 /* ===== FEEDBACK ===== */
-.feedback-card:hover {
-    border-color: var(--accent) !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+/* Selection cards */
+.feedback-select-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 800px;
+    margin-top: 12px;
+}
+.feedback-select-card {
+    background: var(--bg-card);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow);
+}
+.feedback-select-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+.feedback-select-card.active.bug,
+.feedback-select-card:hover.bug {
+    border-color: var(--accent-red);
+}
+.feedback-select-card.active.sugestao,
+.feedback-select-card:hover.sugestao {
+    border-color: var(--accent-blue);
+}
+.feedback-select-icon {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+}
+.feedback-select-icon.bug {
+    background: rgba(201,64,64,0.12);
+    color: var(--accent-red);
+}
+.feedback-select-icon.sugestao {
+    background: rgba(74,124,247,0.12);
+    color: var(--accent-blue);
+}
+.feedback-select-info { flex: 1; }
+.feedback-select-info h3 { margin: 0; font-size: 1.05rem; color: var(--text-primary); }
+.feedback-select-info p { margin: 4px 0 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
+.feedback-select-arrow { color: var(--text-muted); font-size: 1.2rem; transition: transform 0.2s; }
+.feedback-select-card:hover .feedback-select-arrow { transform: translateX(4px); color: var(--text-primary); }
+
+/* Form */
+.feedback-form-card {
+    max-width: 800px;
+    margin-top: 24px;
 }
 
+/* My Feedbacks list items */
+.feedback-item {
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    background: var(--bg-secondary);
+    transition: border-color 0.2s;
+}
+.feedback-item:hover { border-color: var(--accent); }
+.feedback-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 12px;
+}
+.feedback-item-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    min-width: 0;
+    flex: 1;
+}
+.feedback-item-title strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.feedback-tipo-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.feedback-tipo-icon.bug { color: var(--accent-red); }
+.feedback-tipo-icon.sugestao { color: var(--accent-blue); }
+.feedback-item-desc {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin: 0 0 6px;
+    line-height: 1.5;
+}
+.feedback-item-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.feedback-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.feedback-status.pendente {
+    background: rgba(201,184,78,0.12);
+    color: var(--accent-yellow);
+}
+.feedback-status.resolvido {
+    background: rgba(139,154,58,0.12);
+    color: var(--accent-green-light);
+}
+
+/* ===== FEEDBACK ADMIN (badges) ===== */
 .feedback-tipo-badge {
     display: inline-flex;
     align-items: center;
@@ -1168,10 +1291,9 @@ body {
     color: var(--accent-red);
 }
 .feedback-tipo-badge.sugestao {
-    background: rgba(58,108,215,0.12);
+    background: rgba(74,124,247,0.12);
     color: var(--accent-blue);
 }
-
 .feedback-status-badge {
     display: inline-flex;
     align-items: center;
@@ -1189,7 +1311,6 @@ body {
     background: rgba(139,154,58,0.12);
     color: var(--accent-green-light);
 }
-
 .feedback-admin-card {
     transition: all 0.25s ease;
     border: 1px solid var(--border-color);
@@ -1199,6 +1320,7 @@ body {
     box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
 
+/* Filter buttons */
 .btn-filter-feedback.active {
     background: var(--accent) !important;
     color: #0a0a0a !important;
@@ -1206,6 +1328,14 @@ body {
 }
 .btn-filter-feedback:not(.active):hover {
     border-color: var(--accent) !important;
+}
+
+/* Light theme fixes for feedback */
+[data-theme="light"] .feedback-select-card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+[data-theme="light"] .feedback-item {
+    background: var(--bg-primary);
 }
 
 /* ===== RICH TEXT EDITOR ===== */

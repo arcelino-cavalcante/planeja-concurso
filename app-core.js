@@ -318,13 +318,13 @@ function openFeedbackForm(tipo) {
     if (tipo === 'bug') {
         document.getElementById('feedbackFormTitle').textContent = 'Reportar Erro / Bug';
         document.getElementById('feedbackFormSubtitle').textContent = 'Descreva o problema encontrado para que possamos corrigir.';
-        feedbackBugCard.style.borderColor = 'var(--accent-red)';
-        feedbackSugestaoCard.style.borderColor = 'transparent';
+        feedbackBugCard.classList.add('active');
+        feedbackSugestaoCard.classList.remove('active');
     } else {
         document.getElementById('feedbackFormTitle').textContent = 'Sugerir Melhoria';
         document.getElementById('feedbackFormSubtitle').textContent = 'Compartilhe sua ideia para tornar a plataforma melhor.';
-        feedbackSugestaoCard.style.borderColor = 'var(--accent-blue)';
-        feedbackBugCard.style.borderColor = 'transparent';
+        feedbackSugestaoCard.classList.add('active');
+        feedbackBugCard.classList.remove('active');
     }
     document.getElementById('feedbackTitulo').value = '';
     document.getElementById('feedbackDescricao').value = '';
@@ -332,8 +332,8 @@ function openFeedbackForm(tipo) {
 
 document.getElementById('btnCancelarFeedback')?.addEventListener('click', () => {
     feedbackForm.style.display = 'none';
-    feedbackBugCard.style.borderColor = 'transparent';
-    feedbackSugestaoCard.style.borderColor = 'transparent';
+    feedbackBugCard.classList.remove('active');
+    feedbackSugestaoCard.classList.remove('active');
 });
 
 document.getElementById('btnEnviarFeedback')?.addEventListener('click', async () => {
@@ -354,8 +354,8 @@ document.getElementById('btnEnviarFeedback')?.addEventListener('click', async ()
         });
         showToast('Feedback enviado! Obrigado por contribuir.');
         feedbackForm.style.display = 'none';
-        feedbackBugCard.style.borderColor = 'transparent';
-        feedbackSugestaoCard.style.borderColor = 'transparent';
+        feedbackBugCard.classList.remove('active');
+        feedbackSugestaoCard.classList.remove('active');
         loadMeusFeedbacks();
     } catch (e) {
         showToast('Erro ao enviar feedback.');
@@ -378,21 +378,22 @@ async function loadMeusFeedbacks() {
         }
         container.innerHTML = snap.docs.map(doc => {
             const f = doc.data();
-            const tipoIcon = f.tipo === 'bug' ? '<i class="bi bi-bug-fill" style="color:var(--accent-red);"></i>' : '<i class="bi bi-lightbulb-fill" style="color:var(--accent-blue);"></i>';
-            const statusBadge = f.status === 'resolvido'
-                ? '<span style="background:rgba(139,154,58,0.15);color:var(--accent-green-light);padding:2px 10px;border-radius:12px;font-size:0.75rem;">Resolvido</span>'
-                : '<span style="background:rgba(201,184,78,0.15);color:var(--accent-yellow);padding:2px 10px;border-radius:12px;font-size:0.75rem;">Pendente</span>';
+            const tipoClass = f.tipo === 'bug' ? 'bug' : 'sugestao';
+            const statusClass = f.status === 'resolvido' ? 'resolvido' : 'pendente';
+            const statusText = f.status === 'resolvido' ? 'Resolvido' : 'Pendente';
             return `
-                <div style="padding:12px;border:1px solid var(--border-color);border-radius:var(--radius);margin-bottom:10px;background:var(--bg-secondary);">
-                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            ${tipoIcon}
-                            <strong style="font-size:0.95rem;">${f.titulo}</strong>
+                <div class="feedback-item">
+                    <div class="feedback-item-header">
+                        <div class="feedback-item-title">
+                            <span class="feedback-tipo-icon ${tipoClass}">
+                                <i class="bi ${f.tipo === 'bug' ? 'bi-bug-fill' : 'bi-lightbulb-fill'}"></i>
+                            </span>
+                            <strong>${f.titulo}</strong>
                         </div>
-                        ${statusBadge}
+                        <span class="feedback-status ${statusClass}">${statusText}</span>
                     </div>
-                    <p style="color:var(--text-secondary);font-size:0.85rem;margin:0 0 4px;">${f.descricao}</p>
-                    <span style="font-size:0.75rem;color:var(--text-muted);">${new Date(f.createdAt).toLocaleDateString('pt-BR')}</span>
+                    <p class="feedback-item-desc">${f.descricao}</p>
+                    <span class="feedback-item-date">${new Date(f.createdAt).toLocaleDateString('pt-BR')}</span>
                 </div>
             `;
         }).join('');
