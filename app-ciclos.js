@@ -133,32 +133,85 @@ function calcHorasPorMateria(disciplinas, totalHoras, niveis) {
 
 // Generate cycle sequence (round-robin weighted, max 2h sessions)
 function generateCycleSequence(materias) {
-    // Only include active subjects
+    // Only include active subjects with time > 0
     const activeMaterias = materias.filter(m => m.ativo !== false && m.totalMin > 0);
-    let sessions = [];
+    if (activeMaterias.length === 0) return [];
+
+    const totalMin = activeMaterias.reduce((s, m) => s + m.totalMin, 0);
+    const totalPeso = activeMaterias.reduce((s, m) => s + m.peso, 0);
+    
+    // Target ~1.5h (90min) per session on average. More subjects = more total sessions.
+    const targetSessions = Math.max(activeMaterias.length * 3, Math.round(totalMin / 90));
+    
+    // Distribute sessions proportionally by weight
+    let sessionCounts = activeMaterias.map(m => 
+        Math.max(1, Math.round((m.peso / totalPeso) * targetSessions))
+    );
+    
+    // Adjust session counts to not exceed the available time
+    sessionCounts = sessionCounts.map((count, i) => {
+        const maxSessions = Math.ceil(activeMaterias[i].totalMin / 30);
+        return Math.min(count, maxSessions);
+    });
+    
+    // Generate sessions with proportional duration
+    let allSessions = [];
     activeMaterias.forEach((m, i) => {
+        const count = sessionCounts[i];
+        let baseDuration = round30(m.totalMin / count);
+        // Ensure min 30, max 180 (3h)
+        baseDuration = Math.max(30, Math.min(180, baseDuration));
+        
         let remaining = m.totalMin;
-        while (remaining > 0) {
-            const dur = Math.min(remaining, 120);
-            const rounded = round30(dur);
-            sessions.push({ nome: m.nome, duracao: rounded, idx: i, peso: m.peso });
-            remaining -= rounded;
+        for (let s = 0; s < count; s++) {
+            if (remaining <= 0) break;
+            let dur = s === count - 1 ? round30(remaining) : baseDuration;
+            dur = Math.max(30, Math.min(remaining, dur));
+            allSessions.push({ nome: m.nome, duracao: dur, idx: i, peso: m.peso });
+            remaining -= dur;
         }
     });
-    // Sort by peso descending for priority
-    sessions.sort((a, b) => b.peso - a.peso);
-    // Interleave: pick from each subject in round-robin
+    
+    // Sort by peso descending, then by duration descending (heavier/longer first)
+    allSessions.sort((a, b) => b.peso - a.peso || b.duracao - a.duracao);
+    
+    // Group by subject for interleaving
     const bySubject = {};
-    sessions.forEach(s => { if (!bySubject[s.idx]) bySubject[s.idx] = []; bySubject[s.idx].push(s); });
-    const keys = Object.keys(bySubject).sort((a, b) => (bySubject[b][0]?.peso || 0) - (bySubject[a][0]?.peso || 0));
+    allSessions.forEach(s => { 
+        if (!bySubject[s.idx]) bySubject[s.idx] = []; 
+        bySubject[s.idx].push(s); 
+    });
+    
+    // Sort subject keys by weight descending (heavier = more frequent)
+    const keys = Object.keys(bySubject).sort((a, b) => 
+        (bySubject[b][0]?.peso || 0) - (bySubject[a][0]?.peso || 0)
+    );
+    
+    // Interleave: round-robin, but heavier subjects may get priority pass
     const result = [];
     let hasMore = true;
     while (hasMore) {
         hasMore = false;
         keys.forEach(k => {
-            if (bySubject[k].length > 0) { result.push(bySubject[k].shift()); hasMore = true; }
+            if (bySubject[k].length > 0) {
+                result.push(bySubject[k].shift());
+                hasMore = true;
+            }
         });
+        // Avoid same subject twice in a row by checking last result
+        if (result.length >= 2 && result[result.length - 1].idx === result[result.length - 2].idx) {
+            // Try to swap with next upcoming different subject
+            for (const k of keys) {
+                if (bySubject[k].length > 0 && k !== result[result.length - 1].idx) {
+                    const temp = result.pop();
+                    result.push(bySubject[k].shift());
+                    bySubject[temp.idx].unshift(temp);
+                    break;
+                }
+            }
+        }
     }
+    
     return result;
 }
 
