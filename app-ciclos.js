@@ -102,8 +102,8 @@ function showCiclosView(viewId) {
     document.getElementById(viewId).classList.remove('d-none');
 }
 
-// Round to nearest 30 min, minimum 30
-function round30(minutes) { return Math.max(30, Math.round(minutes / 30) * 30); }
+// Round to nearest 60 min, minimum 60
+function round30(minutes) { return Math.max(60, Math.round(minutes / 60) * 60); }
 
 // Calculate hours per subject based on weight proportion
 // Only active subjects get time allocated; inactive get 0
@@ -156,7 +156,7 @@ function generateCycleSequence(materias) {
             if (remaining <= 0) break;
             const sessionsLeft = count - s;
             let dur = round30(remaining / sessionsLeft);
-            dur = Math.max(30, Math.min(remaining, dur));
+            dur = Math.max(60, Math.min(remaining, dur));
             allSessions.push({ nome: m.nome, duracao: dur, idx: i, peso: m.peso });
             remaining -= dur;
         }
