@@ -53,6 +53,7 @@ navItems.forEach(item => {
         if (page === 'concursos') { showConcursosView('concursos-list-view'); renderConcursosList(); }
         if (page === 'ciclos') { showCiclosView('ciclos-list-view'); renderCiclosList(); }
         if (page === 'simulados') { showSimuladosView('simulados-list-view'); renderSimuladosList(); }
+        if (page === 'edital') { showEditalView('edital-list-view'); }
         if (page === 'bisus') { showBisusView('bisus-list-view'); }
         if (page === 'configuracoes') { refreshConfigPage(); }
         closeSidebar();

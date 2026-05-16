@@ -1740,5 +1740,93 @@ body {
 }
 @media (max-width: 768px) {
     .config-grid { grid-template-columns: 1fr; }
+    .edital-view-topicos { grid-template-columns: 1fr; }
+}
+
+/* ===== EDITAL VERTICALIZADO ===== */
+.edital-materia {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    background: var(--bg-secondary);
+}
+.edital-materia-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.edital-topicos { padding-left: 16px; }
+.edital-topico {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 4px 0;
+}
+.edital-topico-drag {
+    color: var(--text-muted);
+    cursor: grab;
+    font-size: 0.8rem;
+}
+
+/* View mode */
+.edital-view-materia {
+    margin-bottom: 20px;
+}
+.edital-view-materia-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+.edital-view-materia-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--accent-green-light);
+}
+.edital-view-topicos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+.edital-view-topico {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+.edital-view-topico:hover {
+    border-color: var(--accent-green);
+    background: rgba(139,154,58,0.05);
+}
+.edital-view-topico.checked {
+    border-color: var(--accent-green);
+    background: rgba(139,154,58,0.08);
+}
+.edital-view-topico.checked span {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+.edital-view-topico input[type="checkbox"] {
+    accent-color: var(--accent-green);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.edital-progress-mini {
+    background: var(--bg-primary);
+    border-radius: 3px;
+    height: 6px;
+    overflow: hidden;
 }
 [data-theme="light"] .block-time { color: var(--text-secondary); }

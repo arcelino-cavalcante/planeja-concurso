@@ -127,6 +127,12 @@
                         <span>Meus simulados</span>
                     </a>
                 </li>
+                <li class="nav-item" data-page="edital">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>Edital Verticalizado</span>
+                    </a>
+                </li>
                 <li class="nav-item" data-page="bisus">
                     <a href="#" class="nav-link-custom">
                         <i class="bi bi-lightbulb"></i>
@@ -800,6 +806,65 @@
             </div>
         </section>
 
+        <!-- ========== PAGE: EDITAL VERTICALIZADO ========== -->
+        <section class="page-content" id="page-edital">
+            <div class="page-header-custom">
+                <div>
+                    <a href="#" class="back-link" id="backToHomeFromEdital">
+                        <i class="bi bi-arrow-left"></i> Voltar para home
+                    </a>
+                    <h1 class="page-title">Edital Verticalizado</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Cole o texto do edital e o sistema organiza matérias e tópicos automaticamente.</p>
+                </div>
+            </div>
+
+            <!-- VIEW 1: Lista de Editais -->
+            <div id="edital-list-view">
+                <div style="display:flex;gap:12px;margin-bottom:20px;">
+                    <button class="btn-executar" id="btnNovoEdital"><i class="bi bi-plus-lg"></i> Novo Edital</button>
+                </div>
+                <div id="editaisListCards"></div>
+            </div>
+
+            <!-- VIEW 2: Criar/Editar Edital -->
+            <div id="edital-edit-view" class="d-none">
+                <a href="#" class="back-link" id="backToEditaisList"><i class="bi bi-arrow-left"></i> Voltar para editais</a>
+                
+                <div class="card-mentor" style="margin:20px 0;max-width:900px;">
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label class="meta-label">Nome do Concurso</label>
+                        <input type="text" class="input-mentor" id="editalNome" placeholder="Ex: Polícia Rodoviária Federal" style="width:100%;font-size:1.1rem;">
+                    </div>
+                    
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+                        <label class="meta-label" style="margin:0;">Cole o texto do edital abaixo</label>
+                        <button class="btn-executar" id="btnParseEdital" style="max-width:200px;padding:8px 16px;font-size:0.85rem;"><i class="bi bi-magic"></i> Analisar Texto</button>
+                    </div>
+                    <textarea class="input-mentor" id="editalRawText" placeholder="Cole aqui o conteúdo programático do edital...&#10;&#10;Ex:&#10;LÍNGUA PORTUGUESA&#10;1. Compreensão e interpretação de textos.&#10;2. Tipologia textual.&#10;3. Ortografia oficial.&#10;&#10;DIREITO ADMINISTRATIVO&#10;1. Princípios da administração pública.&#10;2. Poderes administrativos." style="width:100%;height:200px;resize:vertical;padding:14px;font-family:monospace;font-size:0.85rem;"></textarea>
+                    
+                    <!-- Árvore de matérias/tópicos -->
+                    <div id="editalTreeContainer" style="margin-top:20px;display:none;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <h3 class="section-title" style="margin:0;">Matérias e Tópicos</h3>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn-actions" id="btnAddMateriaEdital" style="font-size:0.8rem;padding:6px 12px;"><i class="bi bi-plus-lg"></i> Matéria</button>
+                                <button class="btn-executar" id="btnSalvarEdital" style="max-width:180px;padding:8px 16px;font-size:0.85rem;"><i class="bi bi-check-lg"></i> Salvar Edital</button>
+                            </div>
+                        </div>
+                        <div id="editalTree"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: Visualizar Edital (progresso) -->
+            <div id="edital-view-view" class="d-none">
+                <a href="#" class="back-link" id="backToEditaisFromView"><i class="bi bi-arrow-left"></i> Voltar para editais</a>
+                <h1 class="page-title" id="editalViewNome" style="margin:16px 0 4px;">—</h1>
+                <p style="color:var(--text-secondary);margin-bottom:20px;" id="editalViewProgresso">0% concluído</p>
+                <div class="card-mentor" id="editalViewTree" style="max-width:900px;"></div>
+            </div>
+        </section>
+
         <!-- ========== PAGE: BISUS ========== -->
         <section class="page-content" id="page-bisus">
             <!-- View Lista de Bisus -->
@@ -1408,6 +1473,7 @@
     <script src="app-ciclos.js"></script>
     <script src="app-simulados.js"></script>
     <script src="app-bisus.js"></script>
+    <script src="app-edital.js"></script>
     <script src="app-admin.js"></script>
     <!-- Service Worker Registration (PWA) -->
     <script>
