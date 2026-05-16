@@ -95,6 +95,7 @@ let timerInterval = null;
 let timerRunning = false;
 let timerSeconds = 0;
 let selectedConcursoForCiclo = null;
+let editingCicloId = null;
 
 function showCiclosView(viewId) {
     ['ciclos-list-view','ciclos-wizard-view','ciclos-config-view','ciclos-exec-view'].forEach(id => document.getElementById(id).classList.add('d-none'));
@@ -105,32 +106,37 @@ function showCiclosView(viewId) {
 function round30(minutes) { return Math.max(30, Math.round(minutes / 30) * 30); }
 
 // Calculate hours per subject based on weight proportion
+// Only active subjects get time allocated; inactive get 0
 function calcHorasPorMateria(disciplinas, totalHoras, niveis) {
-    const totalPeso = disciplinas.reduce((s, d) => s + d.peso, 0);
-    if (totalPeso === 0) return disciplinas.map(() => 60);
+    const activeDisciplinas = disciplinas.filter(d => d.ativo !== false);
+    const totalPeso = activeDisciplinas.reduce((s, d) => s + d.peso, 0);
+    if (totalPeso === 0) return disciplinas.map(() => 0);
+    
     let result = disciplinas.map((d, i) => {
+        if (d.ativo === false) return 0;
         let minutos = (d.peso / totalPeso) * totalHoras * 60;
         const nivel = (niveis && niveis[i]) || 0;
         minutos *= (1 - nivel * 0.1); // 10% per star
         return minutos;
     });
-    // redistribute saved time
+    // redistribute saved time among active subjects
     const totalOriginal = totalHoras * 60;
     const totalAfter = result.reduce((s, m) => s + m, 0);
     const saved = totalOriginal - totalAfter;
     if (saved > 0) {
-        const zeroNivel = result.map((m, i) => (niveis && niveis[i]) ? 0 : 1);
+        const zeroNivel = result.map((m, i) => ((niveis && niveis[i]) || disciplinas[i].ativo === false) ? 0 : 1);
         const sumZero = zeroNivel.reduce((s, v) => s + v, 0);
         if (sumZero > 0) result = result.map((m, i) => m + (zeroNivel[i] ? saved / sumZero : 0));
     }
-    return result.map(m => round30(m));
+    return result.map((m, i) => disciplinas[i].ativo === false ? 0 : round30(m));
 }
 
 // Generate cycle sequence (round-robin weighted, max 2h sessions)
 function generateCycleSequence(materias) {
-    // Split each subject into sessions of max 120 min
+    // Only include active subjects
+    const activeMaterias = materias.filter(m => m.ativo !== false && m.totalMin > 0);
     let sessions = [];
-    materias.forEach((m, i) => {
+    activeMaterias.forEach((m, i) => {
         let remaining = m.totalMin;
         while (remaining > 0) {
             const dur = Math.min(remaining, 120);
@@ -183,12 +189,34 @@ function openCicloWizard() {
 }
 
 function openCicloConfigFromConcurso(conc) {
+    editingCicloId = null;
     const horas = getStudyHours() || 20;
     document.getElementById('configCicloNome').value = 'Ciclo - ' + conc.nome;
     document.getElementById('configConcursoNome').textContent = conc.nome;
     document.getElementById('configHorasInput').value = horas;
-    currentCicloMaterias = conc.disciplinas.map(d => ({ nome: d.nome, peso: d.peso, nivel: 0 }));
+    currentCicloMaterias = conc.disciplinas.map(d => ({ nome: d.nome, peso: d.peso, nivel: 0, ativo: true }));
     renderMateriasConfig(horas);
+    showCiclosView('ciclos-config-view');
+}
+
+// Open config for editing an existing ciclo
+function openCicloConfigForEdit(ciclo) {
+    editingCicloId = ciclo.id;
+    const horas = getStudyHours() || 20;
+    document.getElementById('configCicloNome').value = ciclo.nome;
+    document.getElementById('configConcursoNome').textContent = ciclo.concurso || '';
+    document.getElementById('configHorasInput').value = parseInt(ciclo.duracao) || horas;
+    // Load subjects with their saved ativo state
+    currentCicloMaterias = (ciclo.subjects || []).map(s => ({
+        nome: s.nome,
+        peso: s.peso || 1,
+        nivel: s.nivel || 0,
+        ativo: s.ativo !== false,
+        totalMin: s.totalMin || 0
+    }));
+    // Recalculate hours
+    const totalH = parseInt(document.getElementById('configHorasInput').value) || horas;
+    renderMateriasConfig(totalH);
     showCiclosView('ciclos-config-view');
 }
 
@@ -203,13 +231,25 @@ function renderMateriasConfig(totalHoras) {
     const niveis = currentCicloMaterias.map(m => m.nivel);
     const horasArr = calcHorasPorMateria(currentCicloMaterias, totalHoras, niveis);
     const tbody = document.getElementById('materiasBody'); tbody.innerHTML = '';
+    const activeCount = currentCicloMaterias.filter(m => m.ativo !== false).length;
     currentCicloMaterias.forEach((m, idx) => {
         const tr = document.createElement('tr');
+        if (m.ativo === false) tr.classList.add('materia-inativa');
         const starsHtml = [1,2,3,4,5].map(s =>
             `<i class="bi bi-star${s <= m.nivel ? '-fill' : ''} ${s <= m.nivel ? 'active' : ''}" data-idx="${idx}" data-star="${s}"></i>`
         ).join('');
         m.totalMin = horasArr[idx];
-        tr.innerHTML = `<td><span>${m.nome}</span></td><td><strong>${m.peso}</strong></td><td><div class="materia-stars">${starsHtml}</div></td><td><span class="materia-hours">${formatMin(horasArr[idx])}</span></td>`;
+        const horasDisplay = m.ativo === false ? '—' : formatMin(horasArr[idx]);
+        tr.innerHTML = `<td><span>${m.nome}</span></td>
+            <td><strong>${m.peso}</strong></td>
+            <td><div class="materia-stars">${starsHtml}</div></td>
+            <td><span class="materia-hours">${horasDisplay}</span></td>
+            <td>
+                <label class="materia-toggle" title="${m.ativo !== false ? 'Desativar matéria' : 'Ativar matéria'}">
+                    <input type="checkbox" ${m.ativo !== false ? 'checked' : ''} data-idx="${idx}" class="materia-toggle-input">
+                    <span class="materia-toggle-slider"></span>
+                </label>
+            </td>`;
         tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.materia-stars i').forEach(star => {
@@ -218,6 +258,20 @@ function renderMateriasConfig(totalHoras) {
             renderMateriasConfig(totalHoras);
         });
     });
+    tbody.querySelectorAll('.materia-toggle-input').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const idx = parseInt(this.dataset.idx);
+            currentCicloMaterias[idx].ativo = this.checked;
+            renderMateriasConfig(totalHoras);
+        });
+    });
+    // Update active count warning
+    if (activeCount === 0) {
+        document.getElementById('btnGerarCiclo').disabled = true;
+        showToast('Ative pelo menos uma matéria para gerar o ciclo.');
+    } else {
+        document.getElementById('btnGerarCiclo').disabled = false;
+    }
 }
 
 document.getElementById('btnStartWizard').addEventListener('click', openCicloWizard);
@@ -226,15 +280,46 @@ document.getElementById('backToCiclosList').addEventListener('click', (e) => { e
 document.getElementById('backToCiclosFromConfig').addEventListener('click', (e) => { e.preventDefault(); showCiclosView('ciclos-list-view'); });
 document.getElementById('backToCiclosFromExec').addEventListener('click', (e) => { e.preventDefault(); if (timerInterval) { clearInterval(timerInterval); timerInterval = null; timerRunning = false; } showCiclosView('ciclos-list-view'); });
 
-// Generate ciclo
+// Generate ciclo (or update existing)
 document.getElementById('btnGerarCiclo').addEventListener('click', () => {
+    const activeMaterias = currentCicloMaterias.filter(m => m.ativo !== false);
+    if (activeMaterias.length === 0) return showToast('Ative pelo menos uma matéria!');
+    
     const nome = document.getElementById('configCicloNome').value || 'Novo Ciclo';
     const totalH = parseInt(document.getElementById('configHorasInput').value) || 20;
     const sequence = generateCycleSequence(currentCicloMaterias);
     const totalSeqMin = sequence.reduce((s, x) => s + x.duracao, 0);
-    const subjects = currentCicloMaterias.map(m => ({ nome: m.nome, sessao: formatMin(m.totalMin), tempoRestante: formatMin(m.totalMin), peso: m.peso, totalMin: m.totalMin }));
-    const newCiclo = { id: Date.now(), nome, concurso: selectedConcursoForCiclo?.nome || '', duracao: formatMin(totalSeqMin), avanco: '0:00h', ciclosRealizados: 0, subjects, sequence };
-    ciclos.push(newCiclo); saveAll(); renderCiclosList(); showCiclosView('ciclos-list-view'); showToast('Ciclo gerado com sucesso!');
+    const subjects = currentCicloMaterias.map(m => ({ 
+        nome: m.nome, sessao: formatMin(m.totalMin), 
+        tempoRestante: formatMin(m.totalMin), peso: m.peso, 
+        totalMin: m.totalMin, ativo: m.ativo !== false, nivel: m.nivel || 0
+    }));
+    
+    if (editingCicloId) {
+        // Update existing ciclo
+        const idx = ciclos.findIndex(c => c.id === editingCicloId);
+        if (idx !== -1) {
+            ciclos[idx] = { 
+                ...ciclos[idx],
+                nome, subjects, sequence, 
+                duracao: formatMin(totalSeqMin)
+            };
+        }
+        editingCicloId = null;
+        showToast('Ciclo atualizado!');
+    } else {
+        // Create new ciclo
+        const newCiclo = { 
+            id: Date.now(), nome, 
+            concurso: selectedConcursoForCiclo?.nome || '', 
+            duracao: formatMin(totalSeqMin), avanco: '0:00h', 
+            ciclosRealizados: 0, subjects, sequence 
+        };
+        ciclos.push(newCiclo);
+        showToast('Ciclo gerado com sucesso!');
+    }
+    saveAll(); renderCiclosList(); 
+    showCiclosView('ciclos-list-view');
 });
 
 function renderCiclosList() {
@@ -531,7 +616,11 @@ function renderExecSubjects(sequence) {
 }
 
 document.getElementById('btnEditarCiclo').addEventListener('click', () => {
-    if (currentExecCiclo) { showToast('Use Meus Concursos para editar disciplinas'); }
+    if (currentExecCiclo) { 
+        // Pause timer if running
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; timerRunning = false; }
+        openCicloConfigForEdit(currentExecCiclo); 
+    }
 });
 
 // ===== IMPORTAR CONCURSOS OFICIAIS (Aluno) =====

@@ -529,6 +529,47 @@ body {
 .materia-stars i:hover { color: var(--accent-yellow); }
 .materia-hours { color: var(--accent-green-light); font-weight: 700; font-size: 1rem; }
 
+/* Matéria toggle (ativo/inativo) */
+.materia-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+}
+.materia-toggle input { opacity: 0; width: 0; height: 0; }
+.materia-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #555;
+    border-radius: 24px;
+    transition: 0.3s;
+}
+.materia-toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+.materia-toggle input:checked + .materia-toggle-slider {
+    background: var(--accent-green);
+}
+.materia-toggle input:checked + .materia-toggle-slider::before {
+    transform: translateX(20px);
+}
+.materia-inativa {
+    opacity: 0.45;
+}
+.materia-inativa .materia-stars i { cursor: default; pointer-events: none; }
+.materia-inativa:hover { opacity: 0.6; }
+[data-theme="light"] .materia-toggle-slider { background: #ccc; }
+[data-theme="light"] .materia-toggle-slider::before { background: #fff; }
+
 /* Ciclo List Card */
 .ciclo-list-card {
     display: flex; align-items: center; gap: 20px; padding: 20px;
