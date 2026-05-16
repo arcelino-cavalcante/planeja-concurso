@@ -133,79 +133,73 @@ function calcHorasPorMateria(disciplinas, totalHoras, niveis) {
 
 // Generate cycle sequence (round-robin weighted, max 2h sessions)
 function generateCycleSequence(materias) {
-    // Only include active subjects with time > 0
     const activeMaterias = materias.filter(m => m.ativo !== false && m.totalMin > 0);
     if (activeMaterias.length === 0) return [];
 
-    const totalMin = activeMaterias.reduce((s, m) => s + m.totalMin, 0);
     const totalPeso = activeMaterias.reduce((s, m) => s + m.peso, 0);
     
-    // Target ~1.5h (90min) per session on average. More subjects = more total sessions.
-    const targetSessions = Math.max(activeMaterias.length * 3, Math.round(totalMin / 90));
+    // Each subject gets a number of sessions proportional to its weight.
+    // Target: fewer, longer sessions. Base = ~2 sessions for the lightest, scale up.
+    const minPeso = Math.min(...activeMaterias.map(m => m.peso));
     
-    // Distribute sessions proportionally by weight
-    let sessionCounts = activeMaterias.map(m => 
-        Math.max(1, Math.round((m.peso / totalPeso) * targetSessions))
-    );
-    
-    // Adjust session counts to not exceed the available time
-    sessionCounts = sessionCounts.map((count, i) => {
-        const maxSessions = Math.ceil(activeMaterias[i].totalMin / 30);
-        return Math.min(count, maxSessions);
-    });
-    
-    // Generate sessions with proportional duration
     let allSessions = [];
     activeMaterias.forEach((m, i) => {
-        const count = sessionCounts[i];
-        let baseDuration = round30(m.totalMin / count);
-        // Ensure min 30, max 180 (3h)
-        baseDuration = Math.max(30, Math.min(180, baseDuration));
+        // Number of sessions: proportional to how much heavier this subject is vs the lightest
+        // Lightest subject = 1 session, others scale proportionally
+        const ratio = m.peso / minPeso;
+        let count = Math.max(1, Math.round(ratio));
+        // Cap at a reasonable max: don't split into more than ~5 sessions
+        count = Math.min(count, Math.ceil(m.totalMin / 60)); // at least 1h per session
         
         let remaining = m.totalMin;
         for (let s = 0; s < count; s++) {
             if (remaining <= 0) break;
-            let dur = s === count - 1 ? round30(remaining) : baseDuration;
+            const sessionsLeft = count - s;
+            let dur = round30(remaining / sessionsLeft);
             dur = Math.max(30, Math.min(remaining, dur));
             allSessions.push({ nome: m.nome, duracao: dur, idx: i, peso: m.peso });
             remaining -= dur;
         }
     });
     
-    // Sort by peso descending, then by duration descending (heavier/longer first)
+    // Sort by peso descending, then duration descending
     allSessions.sort((a, b) => b.peso - a.peso || b.duracao - a.duracao);
     
-    // Group by subject for interleaving
+    // Group by subject
     const bySubject = {};
     allSessions.forEach(s => { 
         if (!bySubject[s.idx]) bySubject[s.idx] = []; 
         bySubject[s.idx].push(s); 
     });
     
-    // Sort subject keys by weight descending (heavier = more frequent)
+    // Sort keys by weight descending
     const keys = Object.keys(bySubject).sort((a, b) => 
         (bySubject[b][0]?.peso || 0) - (bySubject[a][0]?.peso || 0)
     );
     
-    // Interleave: round-robin, but heavier subjects may get priority pass
+    // Interleave round-robin, ensuring no same subject twice in a row
     const result = [];
     let hasMore = true;
+    let lastIdx = -1;
+    
     while (hasMore) {
         hasMore = false;
-        keys.forEach(k => {
-            if (bySubject[k].length > 0) {
+        // First pass: prefer subjects different from last
+        for (const k of keys) {
+            if (bySubject[k].length > 0 && k !== lastIdx) {
                 result.push(bySubject[k].shift());
+                lastIdx = k;
                 hasMore = true;
+                break;
             }
-        });
-        // Avoid same subject twice in a row by checking last result
-        if (result.length >= 2 && result[result.length - 1].idx === result[result.length - 2].idx) {
-            // Try to swap with next upcoming different subject
+        }
+        // If no different subject available, pick any remaining
+        if (!hasMore) {
             for (const k of keys) {
-                if (bySubject[k].length > 0 && k !== result[result.length - 1].idx) {
-                    const temp = result.pop();
+                if (bySubject[k].length > 0) {
                     result.push(bySubject[k].shift());
-                    bySubject[temp.idx].unshift(temp);
+                    lastIdx = k;
+                    hasMore = true;
                     break;
                 }
             }
