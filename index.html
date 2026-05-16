@@ -814,7 +814,7 @@
                         <i class="bi bi-arrow-left"></i> Voltar para home
                     </a>
                     <h1 class="page-title">Edital Verticalizado</h1>
-                    <p style="color:var(--text-secondary);margin-top:4px;">Cole o texto do edital e o sistema organiza matérias e tópicos automaticamente.</p>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Monte seu edital verticalizado manualmente, organizando matérias e tópicos.</p>
                 </div>
             </div>
 
@@ -831,27 +831,26 @@
                 <a href="#" class="back-link" id="backToEditaisList"><i class="bi bi-arrow-left"></i> Voltar para editais</a>
                 
                 <div class="card-mentor" style="margin:20px 0;max-width:900px;">
-                    <div class="form-group" style="margin-bottom:16px;">
+                    <div class="form-group" style="margin-bottom:20px;">
                         <label class="meta-label">Nome do Concurso</label>
                         <input type="text" class="input-mentor" id="editalNome" placeholder="Ex: Polícia Rodoviária Federal" style="width:100%;font-size:1.1rem;">
                     </div>
                     
-                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
-                        <label class="meta-label" style="margin:0;">Cole o texto do edital abaixo</label>
-                        <button class="btn-executar" id="btnParseEdital" style="max-width:200px;padding:8px 16px;font-size:0.85rem;"><i class="bi bi-magic"></i> Analisar Texto</button>
-                    </div>
-                    <textarea class="input-mentor" id="editalRawText" placeholder="Cole aqui o conteúdo programático do edital...&#10;&#10;Ex:&#10;LÍNGUA PORTUGUESA&#10;1. Compreensão e interpretação de textos.&#10;2. Tipologia textual.&#10;3. Ortografia oficial.&#10;&#10;DIREITO ADMINISTRATIVO&#10;1. Princípios da administração pública.&#10;2. Poderes administrativos." style="width:100%;height:200px;resize:vertical;padding:14px;font-family:monospace;font-size:0.85rem;"></textarea>
-                    
-                    <!-- Árvore de matérias/tópicos -->
-                    <div id="editalTreeContainer" style="margin-top:20px;display:none;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <!-- Árvore de matérias/tópicos manual -->
+                    <div id="editalTreeContainer">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                             <h3 class="section-title" style="margin:0;">Matérias e Tópicos</h3>
                             <div style="display:flex;gap:8px;">
-                                <button class="btn-actions" id="btnAddMateriaEdital" style="font-size:0.8rem;padding:6px 12px;"><i class="bi bi-plus-lg"></i> Matéria</button>
+                                <button class="btn-actions" id="btnAddMateriaEdital" style="font-size:0.85rem;padding:8px 14px;"><i class="bi bi-plus-lg"></i> Matéria</button>
                                 <button class="btn-executar" id="btnSalvarEdital" style="max-width:180px;padding:8px 16px;font-size:0.85rem;"><i class="bi bi-check-lg"></i> Salvar Edital</button>
                             </div>
                         </div>
-                        <div id="editalTree"></div>
+                        <div id="editalTree">
+                            <div style="text-align:center;padding:30px;color:var(--text-muted);">
+                                <i class="bi bi-file-earmark-plus" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+                                Clique em <strong>"Matéria"</strong> para adicionar a primeira matéria.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

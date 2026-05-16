@@ -41,8 +41,8 @@ function renderEditaisList() {
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:16px;">
-                    <div class="edital-progress-mini" style="width:80px;">
-                        <div class="edital-progress-bar-mini" style="width:${pct}%;background:${pct === 100 ? 'var(--accent-green)' : 'var(--accent-yellow)'};height:6px;border-radius:3px;"></div>
+                    <div style="width:80px;background:var(--bg-primary);border-radius:3px;height:6px;overflow:hidden;">
+                        <div style="width:${pct}%;background:${pct === 100 ? 'var(--accent-green)' : 'var(--accent-yellow)'};height:6px;border-radius:3px;"></div>
                     </div>
                     <span style="font-size:0.8rem;font-weight:700;color:${pct === 100 ? 'var(--accent-green-light)' : 'var(--text-secondary)'};">${pct}%</span>
                 </div>
@@ -51,7 +51,6 @@ function renderEditaisList() {
         `;
     }).join('');
 
-    // Click to open view
     container.querySelectorAll('.ciclo-list-card').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.btn-del-edital')) return;
@@ -61,7 +60,6 @@ function renderEditaisList() {
         });
     });
 
-    // Delete
     container.querySelectorAll('.btn-del-edital').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -75,77 +73,12 @@ function renderEditaisList() {
     });
 }
 
-// ===== PARSER: texto bruto → matérias e tópicos =====
-function parseEditalText(text) {
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const materias = [];
-    let currentMateria = null;
-
-    // Patterns for detecting subject headers
-    const materiaPatterns = [
-        /^([A-ZÀ-Ú\s]{4,})$/,                    // ALL CAPS line (LÍNGUA PORTUGUESA)
-        /^(\d+\.?\s*[A-ZÀ-Ú][A-ZÀ-Úa-zà-ú\s]{3,})$/,  // "1. NOME DA MATÉRIA"
-        /^([A-ZÀ-Ú][A-ZÀ-Úa-zà-ú\s]{3,}):?\s*$/,       // "Nome da matéria:"
-    ];
-
-    // Patterns for topic lines
-    const topicoPatterns = [
-        /^(\d+\.?\d*\.?\s+.+)$/,     // "1. Tópico" or "1.1 Tópico"
-        /^([•\-\*]\s+.+)$/,          // "• Tópico" or "- Tópico"
-        /^([a-z]\)\s+.+)$/,          // "a) Tópico"
-    ];
-
-    for (const line of lines) {
-        let isMateria = false;
-        for (const pattern of materiaPatterns) {
-            const match = line.match(pattern);
-            if (match) {
-                // Skip if it looks more like a topic than a subject
-                if (line.length < 80 && !line.match(/^\d+\.\d/)) {
-                    currentMateria = { nome: match[1].replace(/:$/, '').trim(), topicos: [] };
-                    materias.push(currentMateria);
-                    isMateria = true;
-                    break;
-                }
-            }
-        }
-        if (isMateria) continue;
-
-        // Try to match as topic
-        if (currentMateria) {
-            for (const pattern of topicoPatterns) {
-                const match = line.match(pattern);
-                if (match) {
-                    const topicoNome = match[1].replace(/^[•\-\*\d\.\)\s]+/, '').trim();
-                    if (topicoNome.length > 5) {
-                        currentMateria.topicos.push({ nome: topicoNome, checked: false });
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    // If nothing was parsed, create a single subject with all lines as topics
-    if (materias.length === 0) {
-        const fallback = { nome: 'Conteúdo Programático', topicos: [] };
-        lines.forEach(line => {
-            if (line.length > 5) fallback.topicos.push({ nome: line, checked: false });
-        });
-        materias.push(fallback);
-    }
-
-    return materias;
-}
-
-// ===== EDIT VIEW =====
+// ===== EDIT VIEW (manual) =====
 document.getElementById('btnNovoEdital')?.addEventListener('click', () => {
     currentEditalId = null;
     document.getElementById('editalNome').value = '';
-    document.getElementById('editalRawText').value = '';
     currentEditalMaterias = [];
-    document.getElementById('editalTreeContainer').style.display = 'none';
-    document.getElementById('editalTree').innerHTML = '';
+    renderEditalTree();
     showEditalView('edital-edit-view');
 });
 
@@ -159,23 +92,18 @@ document.getElementById('backToEditaisFromView')?.addEventListener('click', (e) 
     showEditalView('edital-list-view');
 });
 
-// Parse button
-document.getElementById('btnParseEdital')?.addEventListener('click', () => {
-    const text = document.getElementById('editalRawText').value.trim();
-    if (!text) return showToast('Cole o texto do edital primeiro.');
-    
-    currentEditalMaterias = parseEditalText(text);
-    if (currentEditalMaterias.length === 0) return showToast('Não foi possível identificar matérias. Tente ajustar o texto.');
-    
-    document.getElementById('editalTreeContainer').style.display = 'block';
-    renderEditalTree();
-    showToast(`${currentEditalMaterias.length} matérias e ${currentEditalMaterias.reduce((s,m) => s + m.topicos.length, 0)} tópicos identificados!`);
-});
-
 function renderEditalTree() {
     const container = document.getElementById('editalTree');
     if (!container) return;
     
+    if (currentEditalMaterias.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);">
+            <i class="bi bi-file-earmark-plus" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+            Clique em <strong>"Matéria"</strong> para adicionar a primeira matéria.
+        </div>`;
+        return;
+    }
+
     container.innerHTML = currentEditalMaterias.map((m, mi) => `
         <div class="edital-materia" data-idx="${mi}">
             <div class="edital-materia-header">
@@ -195,7 +123,6 @@ function renderEditalTree() {
         </div>
     `).join('');
 
-    // Bind events
     container.querySelectorAll('.btn-rm-materia-edital').forEach(btn => {
         btn.addEventListener('click', () => {
             currentEditalMaterias.splice(parseInt(btn.dataset.idx), 1);
@@ -204,8 +131,7 @@ function renderEditalTree() {
     });
     container.querySelectorAll('.btn-add-topico-edital').forEach(btn => {
         btn.addEventListener('click', () => {
-            const mi = parseInt(btn.dataset.materia);
-            currentEditalMaterias[mi].topicos.push({ nome: 'Novo tópico', checked: false });
+            currentEditalMaterias[parseInt(btn.dataset.materia)].topicos.push({ nome: 'Novo tópico', checked: false });
             renderEditalTree();
         });
     });
@@ -219,30 +145,27 @@ function renderEditalTree() {
     });
     container.querySelectorAll('.edital-materia-nome').forEach(input => {
         input.addEventListener('input', function() {
-            const mi = parseInt(this.closest('.edital-materia').dataset.idx);
-            currentEditalMaterias[mi].nome = this.value;
+            currentEditalMaterias[parseInt(this.closest('.edital-materia').dataset.idx)].nome = this.value;
         });
     });
     container.querySelectorAll('.edital-topico-nome').forEach(input => {
         input.addEventListener('input', function() {
-            const mi = parseInt(this.closest('.edital-topico').dataset.materia);
-            const ti = parseInt(this.closest('.edital-topico').dataset.topico);
+            const el = this.closest('.edital-topico');
+            const mi = parseInt(el.dataset.materia);
+            const ti = parseInt(el.dataset.topico);
             currentEditalMaterias[mi].topicos[ti].nome = this.value;
         });
     });
 }
 
-// Add materia button
 document.getElementById('btnAddMateriaEdital')?.addEventListener('click', () => {
     currentEditalMaterias.push({ nome: 'Nova Matéria', topicos: [] });
-    document.getElementById('editalTreeContainer').style.display = 'block';
     renderEditalTree();
 });
 
-// ===== SAVE EDITAL =====
+// ===== SAVE =====
 document.getElementById('btnSalvarEdital')?.addEventListener('click', () => {
     const nome = document.getElementById('editalNome').value.trim() || 'Edital sem nome';
-    // Gather current state from DOM
     document.querySelectorAll('.edital-materia').forEach(el => {
         const mi = parseInt(el.dataset.idx);
         currentEditalMaterias[mi].nome = el.querySelector('.edital-materia-nome').value;
@@ -256,12 +179,7 @@ document.getElementById('btnSalvarEdital')?.addEventListener('click', () => {
     const materias = currentEditalMaterias.filter(m => m.nome.trim());
     if (materias.length === 0) return showToast('Adicione pelo menos uma matéria.');
 
-    const edital = {
-        id: currentEditalId || Date.now(),
-        nome,
-        materias,
-        createdAt: new Date().toISOString()
-    };
+    const edital = { id: currentEditalId || Date.now(), nome, materias, createdAt: new Date().toISOString() };
 
     if (currentEditalId) {
         const idx = editais.findIndex(e => e.id === currentEditalId);
@@ -276,7 +194,7 @@ document.getElementById('btnSalvarEdital')?.addEventListener('click', () => {
     showToast('Edital salvo!');
 });
 
-// ===== VIEW EDITAL (with progress checkboxes) =====
+// ===== VIEW (progress checkboxes) =====
 function openEditalView(edital) {
     currentEditalId = edital.id;
     document.getElementById('editalViewNome').textContent = edital.nome;
@@ -289,12 +207,11 @@ function openEditalView(edital) {
     const tree = document.getElementById('editalViewTree');
     tree.innerHTML = edital.materias.map((m, mi) => {
         const matChecked = m.topicos.filter(t => t.checked).length;
-        const matTotal = m.topicos.length;
         return `
             <div class="edital-view-materia">
                 <div class="edital-view-materia-header">
                     <h3>${m.nome}</h3>
-                    <span style="font-size:0.8rem;color:var(--text-muted);">${matChecked}/${matTotal}</span>
+                    <span style="font-size:0.8rem;color:var(--text-muted);">${matChecked}/${m.topicos.length}</span>
                 </div>
                 <div class="edital-view-topicos">
                     ${m.topicos.map((t, ti) => `
@@ -308,17 +225,14 @@ function openEditalView(edital) {
         `;
     }).join('');
 
-    // Checkbox events
     tree.querySelectorAll('input[type="checkbox"]').forEach(cb => {
         cb.addEventListener('change', () => {
             const mi = parseInt(cb.dataset.materia);
             const ti = parseInt(cb.dataset.topico);
             edital.materias[mi].topicos[ti].checked = cb.checked;
-            // Update local state
             const idx = editais.findIndex(e => e.id === edital.id);
             if (idx !== -1) editais[idx] = edital;
             DB.save('editais', editais);
-            // Re-render progress
             openEditalView(edital);
         });
     });
