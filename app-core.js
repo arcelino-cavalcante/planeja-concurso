@@ -54,7 +54,7 @@ navItems.forEach(item => {
         if (page === 'ciclos') { showCiclosView('ciclos-list-view'); renderCiclosList(); }
         if (page === 'simulados') { showSimuladosView('simulados-list-view'); renderSimuladosList(); }
         if (page === 'bisus') { showBisusView('bisus-list-view'); }
-        if (page === 'configuracoes') { document.getElementById('configNomeInput').value = userProfile.nome; }
+        if (page === 'configuracoes') { refreshConfigPage(); }
         closeSidebar();
     });
 });
@@ -66,14 +66,30 @@ function updateUserProfileDisplay() {
 }
 updateUserProfileDisplay();
 
-// ===== CONFIGURAÇÕES LOGIC =====
+// ===== CONFIGURAÇÕES =====
+function refreshConfigPage() {
+    // Nome
+    document.getElementById('configNomeInput').value = userProfile.nome;
+    // Email
+    const emailEl = document.getElementById('configEmailDisplay');
+    if (emailEl) emailEl.textContent = auth.currentUser?.email || '—';
+    // Tipo de conta
+    const tipoEl = document.getElementById('configTipoConta');
+    if (tipoEl) tipoEl.textContent = isAdmin ? 'Administrador' : 'Aluno (Google)';
+    // Stats
+    document.getElementById('configCountRotinas').textContent = rotinas.length;
+    document.getElementById('configCountConcursos').textContent = concursos.length;
+    document.getElementById('configCountCiclos').textContent = ciclos.length;
+    document.getElementById('configCountSimulados').textContent = simulados.length;
+}
+
 document.getElementById('btnSalvarNome').addEventListener('click', () => {
     const novoNome = document.getElementById('configNomeInput').value.trim();
     if (novoNome) {
         userProfile.nome = novoNome;
         DB.save('userProfile', userProfile);
         updateUserProfileDisplay();
-        showToast('Nome atualizado com sucesso!');
+        showToast('Nome atualizado!');
     }
 });
 

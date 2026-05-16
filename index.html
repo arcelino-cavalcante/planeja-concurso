@@ -881,29 +881,75 @@
                 </div>
             </div>
 
-            <div class="card-mentor" style="padding:24px; max-width: 600px; margin: 20px 0;">
-                <h3 class="section-title" style="margin-bottom:16px;">Perfil do Usuário</h3>
-                <div class="form-group" style="margin-bottom:24px;">
-                    <label class="meta-label">Seu Nome</label>
-                    <input type="text" class="input-mentor" id="configNomeInput" placeholder="Seu nome" style="width:100%; max-width:300px;">
+            <div class="config-grid">
+                <!-- Perfil -->
+                <div class="card-mentor config-card">
+                    <div class="config-card-icon profile"><i class="bi bi-person-circle"></i></div>
+                    <h3 class="section-title">Perfil</h3>
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label class="meta-label">Nome de exibição</label>
+                        <input type="text" class="input-mentor" id="configNomeInput" placeholder="Seu nome" style="width:100%;">
+                    </div>
+                    <div class="config-info-row">
+                        <span class="meta-label">Email</span>
+                        <span id="configEmailDisplay" style="color:var(--text-secondary);font-size:0.9rem;">—</span>
+                    </div>
+                    <div class="config-info-row">
+                        <span class="meta-label">Conta</span>
+                        <span id="configTipoConta" style="color:var(--text-secondary);font-size:0.9rem;">—</span>
+                    </div>
+                    <button class="btn-executar" id="btnSalvarNome" style="margin-top:20px;"><i class="bi bi-check-lg"></i> Salvar</button>
                 </div>
-                <button class="btn-executar" id="btnSalvarNome" style="max-width:200px;"><i class="bi bi-check-lg"></i> Salvar nome</button>
 
-                <hr style="border-color:var(--border-color); margin:32px 0;">
+                <!-- Estatísticas -->
+                <div class="card-mentor config-card">
+                    <div class="config-card-icon stats"><i class="bi bi-bar-chart"></i></div>
+                    <h3 class="section-title">Seus Dados</h3>
+                    <div class="config-stats">
+                        <div class="config-stat">
+                            <span class="config-stat-value" id="configCountRotinas">0</span>
+                            <span class="config-stat-label">Rotinas</span>
+                        </div>
+                        <div class="config-stat">
+                            <span class="config-stat-value" id="configCountConcursos">0</span>
+                            <span class="config-stat-label">Concursos</span>
+                        </div>
+                        <div class="config-stat">
+                            <span class="config-stat-value" id="configCountCiclos">0</span>
+                            <span class="config-stat-label">Ciclos</span>
+                        </div>
+                        <div class="config-stat">
+                            <span class="config-stat-value" id="configCountSimulados">0</span>
+                            <span class="config-stat-label">Simulados</span>
+                        </div>
+                    </div>
+                    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:16px;">Dados salvos em nuvem via Firestore.</p>
+                </div>
 
-                <h3 class="section-title" style="margin-bottom:16px;"><i class="bi bi-arrow-repeat" style="margin-right:8px;color:var(--accent-green-light);"></i>Atualizações</h3>
-                <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:8px;">Versão atual: <strong id="appVersionDisplay">—</strong></p>
-                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">Verifique e instale a versão mais recente da plataforma.</p>
-                <button class="btn-executar" id="btnVerificarAtualizacao" style="max-width:240px;">
-                    <i class="bi bi-cloud-download"></i> Verificar Atualização
-                </button>
-                <span id="updateStatus" style="display:block;margin-top:10px;font-size:0.85rem;"></span>
+                <!-- Atualizações -->
+                <div class="card-mentor config-card">
+                    <div class="config-card-icon update"><i class="bi bi-cloud-arrow-down"></i></div>
+                    <h3 class="section-title">Atualizações</h3>
+                    <div class="config-info-row">
+                        <span class="meta-label">Versão instalada</span>
+                        <strong id="appVersionDisplay" style="color:var(--accent-green-light);">—</strong>
+                    </div>
+                    <p style="color:var(--text-muted);font-size:0.85rem;margin:12px 0;">Baixe a versão mais recente com correções e novidades.</p>
+                    <button class="btn-executar" id="btnVerificarAtualizacao" style="width:100%;">
+                        <i class="bi bi-cloud-download"></i> Verificar Atualização
+                    </button>
+                    <span id="updateStatus" style="display:block;margin-top:10px;font-size:0.85rem;"></span>
+                </div>
 
-                <hr style="border-color:var(--border-color); margin:32px 0;">
-
-                <h3 class="section-title" style="margin-bottom:16px; color:var(--accent-red);">Zona de Perigo</h3>
-                <p style="color:var(--text-secondary); margin-bottom:16px;">Ao resetar o sistema, você perderá <strong>todos</strong> os seus concursos, ciclos, simulados e rotinas cadastradas. Esta ação não pode ser desfeita.</p>
-                <button class="btn-actions" id="btnResetarSistema" style="background:rgba(201,64,64,0.1); color:var(--accent-red); border:1px solid var(--accent-red); padding:10px 20px; border-radius:var(--radius); font-weight:600;"><i class="bi bi-exclamation-triangle"></i> Resetar todo o sistema</button>
+                <!-- Zona de Perigo -->
+                <div class="card-mentor config-card config-card-danger">
+                    <div class="config-card-icon danger"><i class="bi bi-exclamation-triangle"></i></div>
+                    <h3 class="section-title" style="color:var(--accent-red);">Zona de Perigo</h3>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.5;margin-bottom:16px;">Esta ação apagará <strong>todos</strong> os seus dados: concursos, ciclos, simulados e rotinas. Irreversível.</p>
+                    <button class="btn-actions" id="btnResetarSistema" style="width:100%;background:rgba(201,64,64,0.08);color:var(--accent-red);border:1px solid rgba(201,64,64,0.3);padding:10px 20px;border-radius:var(--radius);font-weight:600;transition:all 0.2s;">
+                        <i class="bi bi-exclamation-triangle"></i> Resetar todo o sistema
+                    </button>
+                </div>
             </div>
         </section>
 
