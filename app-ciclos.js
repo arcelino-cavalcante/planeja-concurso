@@ -254,7 +254,14 @@ function renderMateriasConfig(totalHoras) {
     });
     tbody.querySelectorAll('.materia-stars i').forEach(star => {
         star.addEventListener('click', () => {
-            currentCicloMaterias[parseInt(star.dataset.idx)].nivel = parseInt(star.dataset.star);
+            const idx = parseInt(star.dataset.idx);
+            const starVal = parseInt(star.dataset.star);
+            // Toggle: if clicking the same star, unset (nivel = 0)
+            if (currentCicloMaterias[idx].nivel === starVal) {
+                currentCicloMaterias[idx].nivel = 0;
+            } else {
+                currentCicloMaterias[idx].nivel = starVal;
+            }
             renderMateriasConfig(totalHoras);
         });
     });
