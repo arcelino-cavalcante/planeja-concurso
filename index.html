@@ -1412,7 +1412,7 @@
     <!-- Service Worker Registration (PWA) -->
     <script>
         if ('serviceWorker' in navigator) {
-            const APP_VERSION = '1.0.1';
+            const APP_VERSION = '1.0.2';
             let refreshing = false;
             let newWorkerWaiting = null;
 
@@ -1514,38 +1514,85 @@
                 const originalHTML = btn.innerHTML;
                 btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Verificando...';
                 btn.disabled = true;
-                if (statusEl) statusEl.textContent = '';
+                if (statusEl) statusEl.innerHTML = '<span style="color:var(--text-muted);">Buscando atualizações...</span>';
 
                 try {
                     const reg = await navigator.serviceWorker.getRegistration();
                     if (!reg) {
-                        if (statusEl) statusEl.innerHTML = '<span style="color:var(--text-muted);">Service Worker não registrado.</span>';
+                        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-red);">Service Worker não encontrado.</span>';
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
                         return;
                     }
 
-                    // Force update check
-                    await reg.update();
+                    // Track if we got a response
+                    let resolved = false;
+                    const timeout = 15000; // 15 seconds max wait
 
-                    // Wait briefly for potential update
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-
-                    if (reg.waiting) {
-                        newWorkerWaiting = reg.waiting;
-                        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Atualização encontrada! Aplicando...</span>';
-                        reg.waiting.postMessage('SKIP_WAITING');
-                    } else if (reg.installing) {
+                    // Listen for new worker
+                    const onUpdateFound = () => {
+                        if (resolved) return;
+                        const newWorker = reg.installing;
+                        if (!newWorker) return;
                         if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-yellow);"><i class="bi bi-hourglass-split"></i> Instalando atualização...</span>';
-                        reg.installing.addEventListener('statechange', () => {
-                            if (reg.installing.state === 'installed') {
-                                newWorkerWaiting = reg.installing;
-                                applyUpdate();
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed') {
+                                resolved = true;
+                                if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Atualização pronta! Aplicando...</span>';
+                                newWorkerWaiting = newWorker;
+                                newWorker.postMessage('SKIP_WAITING');
                             }
                         });
-                    } else {
-                        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Você já está na versão mais recente! (v' + APP_VERSION + ')</span>';
+                    };
+
+                    reg.addEventListener('updatefound', onUpdateFound, { once: true });
+
+                    // Also check if already waiting
+                    if (reg.waiting) {
+                        resolved = true;
+                        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Atualização já disponível! Aplicando...</span>';
+                        newWorkerWaiting = reg.waiting;
+                        reg.waiting.postMessage('SKIP_WAITING');
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                        return;
                     }
+
+                    // Force update check with cache buster
+                    await reg.update();
+                    
+                    // Also try direct fetch to bypass any cache
+                    fetch('/sw.js?v=' + Date.now()).catch(() => {});
+
+                    // Wait for update or timeout
+                    await new Promise((resolve) => {
+                        const checkInterval = setInterval(() => {
+                            if (resolved) {
+                                clearInterval(checkInterval);
+                                resolve();
+                            }
+                            // Re-check waiting
+                            if (reg.waiting && !resolved) {
+                                resolved = true;
+                                clearInterval(checkInterval);
+                                if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Atualização encontrada! Aplicando...</span>';
+                                newWorkerWaiting = reg.waiting;
+                                reg.waiting.postMessage('SKIP_WAITING');
+                                resolve();
+                            }
+                        }, 500);
+                        setTimeout(() => {
+                            clearInterval(checkInterval);
+                            if (!resolved) {
+                                resolved = true;
+                                if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Você já está na versão mais recente! (v' + APP_VERSION + ')</span>';
+                            }
+                            resolve();
+                        }, timeout);
+                    });
+
                 } catch (e) {
-                    if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-red);">Erro ao verificar: ' + e.message + '</span>';
+                    if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-red);">Erro: ' + e.message + '</span>';
                 } finally {
                     btn.innerHTML = originalHTML;
                     btn.disabled = false;

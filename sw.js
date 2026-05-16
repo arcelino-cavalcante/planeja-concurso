@@ -1,7 +1,7 @@
 // ===== PLANEJA CONCURSO - Service Worker (PWA) =====
-// Bump this version on every deploy to force cache refresh
-const SW_VERSION = '1.0.1';
-const CACHE_NAME = 'planeja-concurso-v2-' + SW_VERSION;
+// ALWAYS bump this version on deploy to trigger updates
+const SW_VERSION = '1.0.2';
+const CACHE_NAME = 'planeja-concurso-v3-' + SW_VERSION;
 const ASSETS = [
     './',
     './index.html',
