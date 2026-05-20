@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Planeja Concurso - Plataforma de estudos e gerenciamento de rotinas para concurseiros">
+    <title>Planeja Concurso - Plataforma de Estudos</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Planeja Concurso">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ===================== LOGIN OVERLAY ===================== -->
+    <div id="loginOverlay" style="position:fixed;inset:0;z-index:10000;background:url('https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;display:none;align-items:center;justify-content:center;">
+        <div style="position:absolute;inset:0;background:rgba(10, 10, 10, 0.85);backdrop-filter:blur(10px);"></div>
+        <div class="card-mentor" style="position:relative;padding:48px 40px;width:100%;max-width:420px;text-align:center;border:1px solid rgba(255,255,255,0.08);background:rgba(26, 26, 26, 0.65);box-shadow:0 24px 48px rgba(0,0,0,0.6);border-radius:24px;">
+            <div class="logo-icon" style="width:80px;height:80px;font-size:2.5rem;margin:0 auto 20px;background:var(--bg-tertiary);box-shadow:0 8px 16px rgba(0,0,0,0.3);"><i class="bi bi-mortarboard-fill" style="background:linear-gradient(135deg, var(--accent-green-light), var(--accent-green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;"></i></div>
+            <h2 style="margin-bottom:8px;font-weight:900;letter-spacing:-0.5px;font-size:2rem;">PLANEJA CONCURSO</h2>
+            <p style="color:var(--text-secondary);margin-bottom:40px;font-size:1.1rem;">Sua plataforma de aprovação</p>
+            
+            <div id="loginAlunoView">
+                <button class="btn-executar" id="btnGoogleLogin" style="width:100%;display:flex;align-items:center;justify-content:center;gap:16px;background:rgba(255,255,255,0.05);color:var(--text-primary);border:1px solid rgba(255,255,255,0.1);padding:16px;border-radius:12px;font-size:1.1rem;font-weight:600;transition:all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);box-shadow:0 4px 6px rgba(0,0,0,0.2);">
+                    <svg width="24" height="24" viewBox="0 0 48 48" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    </svg>
+                    <span>Entrar com o Google</span>
+                </button>
+                <div style="margin-top:24px;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
+                    Ao entrar, você concorda com nossos <a href="#" style="color:var(--accent-green-light);text-decoration:none;">Termos de Uso</a> e <a href="#" style="color:var(--accent-green-light);text-decoration:none;">Privacidade</a>.
+                </div>
+            </div>
+
+            <div id="loginAdminView" style="display:none;text-align:left;">
+                <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:24px;">
+                    <i class="bi bi-shield-lock" style="color:var(--accent-red);font-size:1.2rem;"></i>
+                    <h4 style="margin:0;color:var(--accent-red);font-weight:700;">Acesso Administrativo</h4>
+                </div>
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label class="meta-label">Email Corporativo</label>
+                    <input type="email" class="input-mentor" id="adminEmail" style="width:100%;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;">
+                </div>
+                <div class="form-group" style="margin-bottom:32px;">
+                    <label class="meta-label">Senha de Acesso</label>
+                    <input type="password" class="input-mentor" id="adminSenha" style="width:100%;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;">
+                </div>
+                <button class="btn-executar" id="btnAdminLogin" style="width:100%;padding:14px;border-radius:10px;font-weight:700;letter-spacing:0.5px;">Entrar no Painel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== BLOCKED USER OVERLAY ===================== -->
+    <div id="blockedOverlay" style="position:fixed;inset:0;z-index:10001;background:rgba(10,10,10,0.95);backdrop-filter:blur(20px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+        <div style="text-align:center;max-width:440px;padding:48px 40px;background:rgba(26,26,26,0.7);border:1px solid rgba(201,64,64,0.3);border-radius:24px;box-shadow:0 24px 48px rgba(0,0,0,0.6);">
+            <div style="width:80px;height:80px;margin:0 auto 20px;border-radius:50%;background:rgba(201,64,64,0.15);display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-shield-lock-fill" style="font-size:2.5rem;color:#c94040;"></i>
+            </div>
+            <h2 style="font-weight:900;font-size:1.8rem;margin-bottom:12px;color:#e8e8e8;">Acesso Suspenso</h2>
+            <p style="color:#999;font-size:1.05rem;line-height:1.6;margin-bottom:32px;">Seu acesso à plataforma foi temporariamente desativado pelo administrador. Entre em contato para mais informações.</p>
+            <button id="btnLogoutBlocked" style="padding:14px 32px;background:rgba(201,64,64,0.15);border:1px solid #c94040;color:#e8e8e8;border-radius:12px;font-weight:600;font-size:1rem;cursor:pointer;transition:all 0.3s;">Sair da conta</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" style="position:fixed;inset:0;z-index:9999;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.5s;">
+        <div class="logo-icon" style="width:60px;height:60px;font-size:1.8rem;"><i class="bi bi-mortarboard-fill"></i></div>
+        <div style="color:#8b9a3a;font-weight:700;font-size:1.2rem;">PLANEJA CONCURSO</div>
+        <div style="color:#666;font-size:0.85rem;">Sincronizando dados...</div>
+        <div style="width:40px;height:40px;border:3px solid #2a2a2a;border-top:3px solid #8b9a3a;border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <style>@keyframes spin{to{transform:rotate(360deg)}}.fade-out{opacity:0!important;pointer-events:none;}</style>
+    </div>
+    <!-- ===================== SIDEBAR (Aluno) ===================== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-container" style="justify-content:center;">
+                <span class="logo-text" style="font-size:1.2rem;">PLANEJA CONCURSO</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                <li class="nav-item active" data-page="inicio">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-house-door"></i>
+                        <span>Início</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="rotinas">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-book"></i>
+                        <span>Minhas rotinas</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="concursos">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-trophy"></i>
+                        <span>Meus concursos</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="ciclos">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>Meus ciclos</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="simulados">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-clipboard-data"></i>
+                        <span>Meus simulados</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="edital">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>Edital Verticalizado</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="bisus">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-lightbulb"></i>
+                        <span>Bisus & Dicas</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="tutorial">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-play-circle"></i>
+                        <span>Tutorial</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="feedback">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-chat-left-text"></i>
+                        <span>Feedback</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="nav-link-custom config-link nav-item" data-page="configuracoes">
+                <i class="bi bi-gear"></i>
+                <span>Configurações</span>
+            </a>
+            <div class="theme-toggle-wrap">
+                <button class="theme-toggle" id="themeToggleStudent" title="Alternar tema claro/escuro">
+                    <i class="bi bi-sun-fill theme-icon-light"></i>
+                    <i class="bi bi-moon-fill theme-icon-dark"></i>
+                </button>
+            </div>
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <span class="user-name" id="sidebarUserName">Aluno</span>
+                <i class="bi bi-box-arrow-right user-logout"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===================== SIDEBAR (Admin) ===================== -->
+    <aside class="sidebar sidebar-admin" id="sidebarAdmin" style="display:none;">
+        <div class="sidebar-header">
+            <div class="logo-container" style="justify-content:center;">
+                <span class="logo-text" style="font-size:1.2rem;">PLANEJA CONCURSO</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                <li class="nav-item-admin active" data-admin-page="admin-dashboard">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item-admin" data-admin-page="admin-usuarios">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-people-fill"></i>
+                        <span>Usuários</span>
+                    </a>
+                </li>
+                <li class="nav-item-admin" data-admin-page="admin-bisus">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Publicar Bisus</span>
+                    </a>
+                </li>
+                <li class="nav-item-admin" data-admin-page="admin-mensagens">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-chat-dots"></i>
+                        <span>Mensagens & Avisos</span>
+                    </a>
+                </li>
+                <li class="nav-item-admin" data-admin-page="admin-concursos">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-trophy"></i>
+                        <span>Concursos Oficiais</span>
+                    </a>
+                </li>
+                <li class="nav-item-admin" data-admin-page="admin-feedback">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-chat-left-text"></i>
+                        <span>Feedback</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="theme-toggle-wrap">
+                <button class="theme-toggle" id="themeToggleAdmin" title="Alternar tema claro/escuro">
+                    <i class="bi bi-sun-fill theme-icon-light"></i>
+                    <i class="bi bi-moon-fill theme-icon-dark"></i>
+                </button>
+            </div>
+            <div class="user-profile">
+                <div class="user-avatar admin-avatar">
+                    <i class="bi bi-person-gear"></i>
+                </div>
+                <span class="user-name">Administrador</span>
+                <i class="bi bi-box-arrow-right user-logout admin-logout"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===================== MOBILE HEADER ===================== -->
+    <header class="mobile-header d-lg-none">
+        <button class="btn btn-link text-white" id="menuToggle">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+        <div class="logo-container" style="justify-content:center;">
+            <span class="logo-text">PLANEJA CONCURSO</span>
+        </div>
+        <button class="btn btn-link text-white">
+            <i class="bi bi-gear fs-5"></i>
+        </button>
+    </header>
+
+    <!-- ===================== MAIN CONTENT ===================== -->
+    <main class="main-content" id="mainContent">
+
+        <!-- ========== PAGE: INÍCIO ========== -->
+        <section class="page-content active" id="page-inicio">
+            <div class="dashboard-grid">
+                <!-- Ciclo de Estudos Card -->
+                <div class="card-mentor ciclo-card">
+                    <div class="card-header-custom">
+                        <h2 class="card-title-custom">Ciclo de estudos</h2>
+                    </div>
+                    <div class="ciclo-info">
+                        <div class="ciclo-badge">
+                            <i class="bi bi-shield-fill-check"></i>
+                        </div>
+                        <div class="ciclo-text">
+                            <span id="dashboardCicloNome">Nenhum ciclo ativo</span>
+                        </div>
+                    </div>
+                    <div class="progress-ring-container">
+                        <div class="progress-ring">
+                            <svg viewBox="0 0 200 200">
+                                <circle class="ring-bg" cx="100" cy="100" r="85" />
+                                <circle class="ring-progress" cx="100" cy="100" r="85" stroke-dasharray="534" stroke-dashoffset="534" />
+                                <circle class="ring-dot" cx="100" cy="15" r="5" />
+                            </svg>
+                            <div class="ring-text">
+                                <span class="ring-percentage">0%</span>
+                                <span class="ring-label">Concluído</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="horas-info">
+                        <div class="hora-item">
+                            <span class="hora-dot gray"></span>
+                            <span class="hora-label">Horas Propostas</span>
+                            <span class="hora-value" id="dashboardHorasPropostas">00h 00m</span>
+                        </div>
+                        <div class="hora-item">
+                            <span class="hora-dot yellow"></span>
+                            <span class="hora-label">Horas estudadas</span>
+                            <span class="hora-value" id="dashboardHorasEstudadas">00h 00m</span>
+                        </div>
+                    </div>
+                    <button class="btn-executar">
+                        <i class="bi bi-play-fill"></i>
+                        Executar ciclo atual
+                    </button>
+                </div>
+
+                <!-- Right Column -->
+                <div class="right-column">
+                    <!-- Welcome Card -->
+                    <div class="card-mentor welcome-card">
+                        <div class="welcome-content">
+                            <div class="welcome-message" id="mentorMessage">
+                                <p>Nenhuma mensagem do mentor para hoje.</p>
+                            </div>
+                            <div class="welcome-user">
+                                <div class="welcome-avatar">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                                <div class="welcome-text">
+                                    <span class="welcome-label">Bem-vindo</span>
+                                    <span class="welcome-name" id="dashboardUserName">Aluno</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Avisos Card -->
+                    <div class="card-mentor avisos-card" id="avisosCard" style="display:none;">
+                        <h3 class="section-title" style="display:flex;align-items:center;gap:8px;">
+                            <i class="bi bi-bell-fill" style="color:var(--accent-yellow);"></i> Comunicados
+                        </h3>
+                        <div id="avisosList" style="margin-top:12px;"></div>
+                    </div>
+
+                    <!-- Pendências Card -->
+                    <div class="card-mentor pendencias-card">
+                        <h3 class="section-title">Pendências</h3>
+                        <p class="section-text">Você não possui pendências.</p>
+                    </div>
+
+                    <!-- Média de Horas Card -->
+                    <div class="card-mentor media-card">
+                        <p class="media-title">Média de horas diárias de estudo</p>
+                        <div class="media-content">
+                            <i class="bi bi-display"></i>
+                            <span class="media-hours" id="dashboardMediaHoras">00h00m</span>
+                            <span class="media-badge" id="dashboardMediaPercent">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: MINHAS ROTINAS ========== -->
+        <section class="page-content" id="page-rotinas">
+            <!-- List View -->
+            <div id="rotinas-list-view">
+                <div class="page-header-custom">
+                    <div>
+                        <a href="#" class="back-link" id="backToHomeFromRotinas">
+                            <i class="bi bi-arrow-left"></i> Voltar para home
+                        </a>
+                        <h1 class="page-title">Minhas rotinas</h1>
+                    </div>
+                    <button class="btn-nova-rotina" id="btnNovaRotina">
+                        + Nova rotina
+                    </button>
+                </div>
+
+                <div class="rotinas-table">
+                    <div class="table-header">
+                        <span class="col-nome">Nome</span>
+                        <span class="col-status">Status</span>
+                        <span class="col-acoes">Ações</span>
+                    </div>
+                    <div class="rotinas-body" id="rotinasList">
+                        <!-- Rotinas will be rendered by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar/Schedule View -->
+            <div id="rotinas-calendar-view" class="d-none">
+                <div class="calendar-header-area">
+                    <a href="#" class="back-link" id="backToRotinas">
+                        <i class="bi bi-arrow-left"></i> Voltar para minhas rotinas
+                    </a>
+                    <h1 class="page-title">Nova rotina de estudos</h1>
+                    <div class="routine-name-field">
+                        <label class="field-label">Nome da rotina</label>
+                        <input type="text" class="input-mentor" id="routineNameInput" placeholder="Informe um nome para sua rotina">
+                    </div>
+                </div>
+
+                <!-- Schedule Grid -->
+                <div class="schedule-wrapper">
+                    <div class="schedule-grid" id="scheduleGrid">
+                        <!-- Header row -->
+                        <div class="schedule-header">
+                            <div class="time-col-header"></div>
+                            <div class="day-header" data-day="0">
+                                <span>SEG</span>
+                                <div class="day-indicator active"></div>
+                            </div>
+                            <div class="day-header" data-day="1"><span>TER</span></div>
+                            <div class="day-header" data-day="2"><span>QUA</span></div>
+                            <div class="day-header" data-day="3"><span>QUI</span></div>
+                            <div class="day-header" data-day="4"><span>SEX</span></div>
+                            <div class="day-header" data-day="5"><span>SAB</span></div>
+                            <div class="day-header" data-day="6"><span>DOM</span></div>
+                        </div>
+                        <!-- Time slots will be generated by JS -->
+                        <div class="schedule-body" id="scheduleBody">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer bar -->
+                <div class="schedule-footer">
+                    <div class="footer-info">
+                        <i class="bi bi-clock"></i>
+                        <span class="total-hours" id="totalHours">0:00h</span>
+                        <span class="footer-label">Total de horas para estudo</span>
+                    </div>
+                    <button class="btn-salvar-rotina" id="btnSalvarRotina">Salvar rotina</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: MEUS CONCURSOS ========== -->
+        <section class="page-content" id="page-concursos">
+            <!-- VIEW 1: Concursos List -->
+            <div id="concursos-list-view">
+                <div class="page-header-custom">
+                    <div>
+                        <a href="#" class="back-link" id="backToHomeFromConcursos"><i class="bi bi-arrow-left"></i> Voltar para home</a>
+                        <h1 class="page-title">Meus concursos</h1>
+                    </div>
+                    <button class="btn-nova-rotina" id="btnNovoConcurso" style="display:none;">+ Novo concurso</button>
+                </div>
+                <div class="card-mentor ciclo-create-card" id="concursoCreateCard">
+                    <h3 class="section-title">Cadastrar concurso</h3>
+                    <p class="section-text" style="margin:12px 0;">Cadastre seu concurso com as disciplinas e pesos (quantidade de questões por matéria). O sistema calculará automaticamente o tempo de estudo para cada disciplina.</p>
+                    <p class="section-text" style="margin-bottom:20px;">Primeiro crie e ative uma <strong>rotina de estudos</strong> para definir suas horas semanais disponíveis.</p>
+                    <button class="btn-executar" id="btnStartConcurso" style="max-width:240px;"><i class="bi bi-plus-lg"></i> Novo concurso</button>
+                </div>
+                <div id="concursosListCards"></div>
+
+                <!-- Concursos Oficiais para Importar -->
+                <div class="card-mentor" id="concursosOficiaisSection" style="padding:24px;margin-top:24px;">
+                    <h3 class="section-title" style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                        <i class="bi bi-trophy-fill" style="color:var(--accent-yellow);"></i> Concursos Oficiais Disponíveis
+                    </h3>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:16px;">Importe um concurso com disciplinas e pesos já configurados em 1 clique.</p>
+                    <div id="concursosOficiaisGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;">
+                        <div style="text-align:center;padding:20px;color:var(--text-muted);grid-column:1/-1;">Carregando concursos disponíveis...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: Create/Edit Concurso -->
+            <div id="concursos-edit-view" class="d-none">
+                <a href="#" class="back-link" id="backToConcursosList"><i class="bi bi-arrow-left"></i> Voltar para meus concursos</a>
+                <h1 class="page-title" id="concursoEditTitle">Novo concurso</h1>
+                <div class="card-mentor" style="margin:20px 0;max-width:900px;">
+                    <div class="modal-field" style="margin-bottom:20px;">
+                        <label class="field-label">Nome do concurso</label>
+                        <input type="text" class="input-mentor" id="concursoNomeInput" placeholder="Ex: Polícia Rodoviária Federal">
+                    </div>
+                    <h3 class="section-title" style="margin-bottom:12px;">Disciplinas e Pesos</h3>
+                    <p class="section-text" style="margin-bottom:16px;">O peso representa a quantidade de questões que a matéria costuma ter na prova.</p>
+                    <div class="materias-table-wrapper">
+                        <table class="materias-table" id="concursoDisciplinasTable">
+                            <thead><tr><th>Disciplina</th><th style="width:120px;">Peso (Qtd questões)</th><th style="width:60px;"></th></tr></thead>
+                            <tbody id="concursoDisciplinasBody"></tbody>
+                        </table>
+                    </div>
+                    <button class="btn-nova-rotina" id="btnAddDisciplina" style="margin-top:12px;"><i class="bi bi-plus-lg"></i> Adicionar disciplina</button>
+                    <div class="concurso-footer" style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border-color);">
+                        <span style="color:var(--text-secondary);">Total de questões: <strong id="concursoTotalQuestoes">0</strong></span>
+                        <button class="btn-executar" id="btnSalvarConcurso" style="max-width:220px;">Salvar concurso</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: MEUS CICLOS ========== -->
+        <section class="page-content" id="page-ciclos">
+
+            <!-- VIEW 1: Ciclos List -->
+            <div id="ciclos-list-view">
+                <div class="page-header-custom">
+                    <div>
+                        <a href="#" class="back-link" id="backToHomeFromCiclos">
+                            <i class="bi bi-arrow-left"></i> Voltar para home
+                        </a>
+                        <h1 class="page-title">Meus ciclos</h1>
+                    </div>
+                    <button class="btn-nova-rotina" id="btnNovoCiclo" style="display:none;">+ Novo ciclo</button>
+                </div>
+
+                <!-- Create Ciclo Card (shown when no ciclos) -->
+                <div class="card-mentor ciclo-create-card" id="cicloCreateCard">
+                    <h3 class="section-title">Criar ciclo de estudos</h3>
+                    <p class="section-text" style="margin:12px 0;">Crie o seu ciclo de estudo aqui. Ele será o seu guia principal para seu estudo diário. O ciclo lhe dirá qual matéria e por quanto tempo estudar.</p>
+                    <p class="section-text" style="margin-bottom:20px;">Antes de criar, recomenda-se assistir ao TUTORIAL - "Criando seu ciclo de estudo"</p>
+                    <button class="btn-executar" id="btnStartWizard" style="max-width:220px;">
+                        <i class="bi bi-plus-lg"></i> Novo ciclo
+                    </button>
+                </div>
+
+                <!-- Ciclos List Cards -->
+                <div id="ciclosListCards"></div>
+            </div>
+
+            <!-- VIEW 2: Select Concurso for Ciclo -->
+            <div id="ciclos-wizard-view" class="d-none">
+                <a href="#" class="back-link" id="backToCiclosList"><i class="bi bi-arrow-left"></i> Voltar para meus ciclos</a>
+                <div class="wizard-card" style="margin:20px 0;">
+                    <h2 class="wizard-question">Selecione o concurso para seu ciclo</h2>
+                    <p class="wizard-desc">As matérias e pesos serão carregados do concurso selecionado. As horas serão calculadas com base na sua rotina ativa.</p>
+                    <div class="concurso-grid" id="ciclosConcursoGrid"></div>
+                    <div id="noConcursoMsg" class="empty-state" style="padding:30px;display:none;">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <p>Nenhum concurso cadastrado. Vá em <strong>Meus Concursos</strong> para cadastrar um.</p>
+                    </div>
+                    <div id="noRotinaMsg" class="empty-state" style="padding:30px;display:none;">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <p>Nenhuma rotina ativa. Vá em <strong>Minhas Rotinas</strong> para criar e ativar uma.</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- VIEW 3: Ciclo Config (Matérias) -->
+            <div id="ciclos-config-view" class="d-none">
+                <a href="#" class="back-link" id="backToCiclosFromConfig"><i class="bi bi-arrow-left"></i> Voltar para meus ciclos</a>
+                <h1 class="page-title">Configurar ciclo</h1>
+
+                <!-- Ciclo Info Card -->
+                <div class="card-mentor ciclo-info-card" style="margin:20px 0;">
+                    <div class="ciclo-config-header">
+                        <div class="ciclo-badge-lg"><i class="bi bi-trophy"></i></div>
+                        <div class="ciclo-config-details">
+                            <input type="text" class="input-mentor" id="configCicloNome" value="">
+                            <div class="ciclo-meta">
+                                <div><span class="meta-label">Concurso:</span><br><strong id="configConcursoNome">-</strong></div>
+                                <div><span class="meta-label">Horas semanais de estudo</span><br><input type="number" class="input-mentor" id="configHorasInput" value="20" min="1" max="100" style="width:80px;display:inline;padding:4px 8px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matérias Table -->
+                <h2 class="section-title" style="margin-bottom:16px;">Matérias e distribuição de horas</h2>
+                <p class="section-text" style="margin-bottom:12px;">O tempo é calculado proporcionalmente ao peso. Ajuste seu nível com as estrelas para redistribuir as horas.</p>
+                <div class="materias-table-wrapper">
+                    <table class="materias-table" id="materiasTable">
+                        <thead>
+                            <tr>
+                                <th>Matéria</th>
+                                <th>Peso (questões)</th>
+                                <th>Seu nível <i class="bi bi-question-circle" title="Estrelas reduzem de 10% a 50% do tempo"></i></th>
+                                <th>Horas no ciclo</th>
+                                <th style="width:60px;">Ativo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="materiasBody"></tbody>
+                    </table>
+                </div>
+
+                <div style="text-align:center;margin:30px 0;">
+                    <button class="btn-executar" id="btnGerarCiclo" style="max-width:280px;margin:0 auto;">
+                        Gerar novo ciclo
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 4: Ciclo Execution -->
+            <div id="ciclos-exec-view" class="d-none">
+                <div class="exec-top-bar">
+                    <a href="#" class="back-link" id="backToCiclosFromExec">
+                        <i class="bi bi-arrow-left"></i> Voltar para meus ciclos
+                    </a>
+                    <button class="btn-nova-rotina" id="btnEditarCiclo">
+                        <i class="bi bi-pencil"></i> Editar ciclo
+                    </button>
+                </div>
+
+                <div class="exec-layout">
+                    <!-- Wheel Timer -->
+                    <div class="exec-wheel-area">
+                        <div class="cycle-wheel" id="cycleWheel">
+                            <svg viewBox="0 0 400 400" id="wheelSvg"></svg>
+                            <div class="wheel-center">
+                                <span class="wheel-badge" id="wheelBadge" style="display:none;">Revisão</span>
+                                <span class="wheel-subject" id="wheelSubject">Legislação de Tr...</span>
+                                <span class="wheel-timer" id="wheelTimer">02:00:00</span>
+                                <button class="btn-iniciar" id="btnIniciarTimer">
+                                    <i class="bi bi-play-fill"></i> Iniciar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Info -->
+                    <div class="exec-info-area">
+                        <p class="exec-ciclo-label" id="execCicloLabel">Nenhum ciclo em execução</p>
+                        <h1 class="exec-subject-name" id="execSubjectName">Legislação de Trânsito</h1>
+
+                        <div class="mentor-suggestion">
+                            <h3>Sugestão do mentor</h3>
+                            <p>Divida sua sessão de estudos em duas: Reserve uma parte para revisar conteúdos já estudados e outra parte para aprender conteúdos novos</p>
+                        </div>
+
+                        <div class="time-division-card">
+                            <div class="division-header">
+                                <span>Divisão do tempo de estudo</span>
+                                <label class="division-check">
+                                    <input type="checkbox" id="divisionToggle"> Habilitar
+                                </label>
+                            </div>
+                            <div class="division-content" id="divisionContent" style="display:none;">
+                                <div class="division-times">
+                                    <span id="divRevisaoTime">00:40:00</span>
+                                    <span id="divConteudoTime">01:20:00</span>
+                                </div>
+                                <input type="range" class="division-slider" id="divisionSlider" min="0" max="100" value="33">
+                                <div class="division-labels">
+                                    <span><span class="dot-blue"></span> Revisão</span>
+                                    <span>Conteúdo novo <span class="dot-blue"></span></span>
+                                </div>
+                                <button class="btn-executar" id="btnConfirmDivision" style="max-width:300px;margin:12px auto 0;">
+                                    Confirmar divisão do tempo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subjects List Table -->
+                <div class="exec-subjects-table" style="margin-top:30px;">
+                    <div class="exec-table-header">
+                        <span class="col-materia">Matéria</span>
+                        <span class="col-sessao">Sessão</span>
+                        <span class="col-tempo">Tempo restante</span>
+                        <span class="col-exec-actions"></span>
+                    </div>
+                    <div id="execSubjectsList"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========== PAGE: MEUS SIMULADOS ========== -->
+        <section class="page-content" id="page-simulados">
+
+            <!-- VIEW 1: Lista de Simulados -->
+            <div id="simulados-list-view">
+                <div class="page-header-custom">
+                    <div>
+                        <a href="#" class="back-link" id="backToHomeFromSimulados"><i class="bi bi-arrow-left"></i> Voltar para home</a>
+                        <h1 class="page-title">Meus simulados</h1>
+                    </div>
+                    <button class="btn-nova-rotina" id="btnNovoSimulado" style="display:none;"><i class="bi bi-plus-lg"></i> Novo simulado</button>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="simuladoCreateCard">
+                    <i class="bi bi-clipboard-data"></i>
+                    <p>Você ainda não cadastrou nenhum simulado</p>
+                    <button class="btn-executar" id="btnStartSimulado"><i class="bi bi-plus-lg"></i> Cadastrar simulado</button>
+                </div>
+
+                <!-- Cards list -->
+                <div id="simuladosListCards"></div>
+
+                <!-- Stats Overview -->
+                <div id="simuladosStatsOverview" style="display:none;margin-top:30px;">
+                    <h2 class="section-title" style="margin-bottom:16px;">Panorama geral</h2>
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-card"><div class="stat-value" id="statTotalSimulados">0</div><div class="stat-label">Simulados</div></div>
+                        <div class="stat-card"><div class="stat-value" id="statMediaGeral">0%</div><div class="stat-label">Média geral</div></div>
+                        <div class="stat-card"><div class="stat-value" id="statTotalQuestoes">0</div><div class="stat-label">Questões feitas</div></div>
+                        <div class="stat-card"><div class="stat-value" id="statTotalAcertos">0</div><div class="stat-label">Acertos totais</div></div>
+                    </div>
+                    <h2 class="section-title" style="margin:24px 0 16px;">Desempenho por matéria</h2>
+                    <div class="materias-table-wrapper">
+                        <table class="materias-table" id="statsMateriasTable">
+                            <thead><tr><th>Matéria</th><th>Questões</th><th>Acertos</th><th>Média</th><th>Evolução</th></tr></thead>
+                            <tbody id="statsMateriasBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: Criar/Editar Simulado (Cronograma) -->
+            <div id="simulados-edit-view" class="d-none">
+                <a href="#" class="back-link" id="backToSimuladosList"><i class="bi bi-arrow-left"></i> Voltar para meus simulados</a>
+                <h1 class="page-title" id="simuladoEditTitle">Novo simulado</h1>
+
+                <div class="card-mentor" style="padding:24px;margin:20px 0;">
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label class="meta-label">Concurso</label>
+                        <select class="input-mentor" id="simuladoConcursoSelect" style="width:100%;padding:12px;"><option value="">Selecione o concurso</option></select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label class="meta-label">Nome do simulado</label>
+                        <input type="text" class="input-mentor" id="simuladoNomeInput" placeholder="Ex: Simulado #1" style="width:100%;">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div class="form-group">
+                            <label class="meta-label">Data</label>
+                            <input type="date" class="input-mentor" id="simuladoDataInput" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label">Horário</label>
+                            <input type="time" class="input-mentor" id="simuladoHoraInput" value="14:00" style="width:100%;">
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div class="form-group">
+                            <label class="meta-label">Duração (horas)</label>
+                            <input type="number" class="input-mentor" id="simuladoDuracaoInput" value="5" min="1" max="12" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label">Total de questões</label>
+                            <input type="number" class="input-mentor" id="simuladoQuestoesInput" value="120" min="1" style="width:100%;">
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <button class="btn-executar" id="btnSalvarSimulado" style="max-width:250px;"><i class="bi bi-check-lg"></i> Salvar simulado</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: Registrar Resultado -->
+            <div id="simulados-result-view" class="d-none">
+                <a href="#" class="back-link" id="backToSimuladosFromResult"><i class="bi bi-arrow-left"></i> Voltar para meus simulados</a>
+                <h1 class="page-title">Registrar resultado</h1>
+
+                <div class="card-mentor" style="padding:24px;margin:20px 0;">
+                    <div class="ciclo-config-header" style="margin-bottom:20px;">
+                        <div class="ciclo-badge-lg"><i class="bi bi-clipboard-check"></i></div>
+                        <div class="ciclo-config-details">
+                            <h2 id="resultSimuladoNome" style="color:var(--accent);margin:0;">—</h2>
+                            <div class="ciclo-meta">
+                                <div><span class="meta-label">Data:</span><br><strong id="resultSimuladoData">-</strong></div>
+                                <div><span class="meta-label">Concurso:</span><br><strong id="resultSimuladoConcurso">-</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resultado Geral -->
+                    <h3 class="section-title" style="margin-bottom:12px;">Resultado geral</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
+                        <div class="form-group">
+                            <label class="meta-label">Total questões</label>
+                            <input type="number" class="input-mentor" id="resultTotalQ" min="0" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label">Acertos</label>
+                            <input type="number" class="input-mentor" id="resultAcertos" min="0" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label">Nota / Média</label>
+                            <div class="stat-value" id="resultMedia" style="font-size:1.5rem;color:var(--accent);padding-top:10px;">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Por Matéria -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                        <h3 class="section-title" style="margin:0;">Resultado por matéria</h3>
+                        <label class="division-check"><input type="checkbox" id="resultPorMateriaToggle"> Habilitar</label>
+                    </div>
+                    <div id="resultPorMateriaContent" style="display:none;">
+                        <div class="materias-table-wrapper">
+                            <table class="materias-table" id="resultMateriasTable">
+                                <thead><tr><th>Matéria</th><th>Questões</th><th>Acertos</th><th>Média</th></tr></thead>
+                                <tbody id="resultMateriasBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div style="text-align:center;margin-top:24px;">
+                        <button class="btn-executar" id="btnSalvarResultado" style="max-width:300px;"><i class="bi bi-check-lg"></i> Salvar resultado</button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========== PAGE: TUTORIAL ========== -->
+        <section class="page-content" id="page-tutorial">
+            <div class="page-header-custom">
+                <div>
+                    <a href="#" class="back-link" id="backToHomeFromTutorial">
+                        <i class="bi bi-arrow-left"></i> Voltar para home
+                    </a>
+                    <h1 class="page-title">Tutorial</h1>
+                </div>
+            </div>
+            <div class="empty-state">
+                <i class="bi bi-play-circle"></i>
+                <p>Os tutoriais aparecerão aqui.</p>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: EDITAL VERTICALIZADO ========== -->
+        <section class="page-content" id="page-edital">
+            <div class="page-header-custom">
+                <div>
+                    <a href="#" class="back-link" id="backToHomeFromEdital">
+                        <i class="bi bi-arrow-left"></i> Voltar para home
+                    </a>
+                    <h1 class="page-title">Edital Verticalizado</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Escolha um concurso já cadastrado ou crie seu edital manualmente, organizando matérias e tópicos.</p>
+                </div>
+            </div>
+
+            <!-- VIEW 1: Lista de Editais -->
+            <div id="edital-list-view">
+                <div style="display:flex;gap:12px;margin-bottom:20px;">
+                    <button class="btn-executar" id="btnNovoEdital"><i class="bi bi-plus-lg"></i> Novo Edital</button>
+                </div>
+                <div id="editaisListCards"></div>
+            </div>
+
+            <!-- VIEW 2: Criar/Editar Edital -->
+            <div id="edital-edit-view" class="d-none">
+                <a href="#" class="back-link" id="backToEditaisList"><i class="bi bi-arrow-left"></i> Voltar para editais</a>
+                
+                <div class="card-mentor" style="margin:20px 0;max-width:900px;">
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label class="meta-label">Selecionar Concurso</label>
+                        <select class="input-mentor" id="editalSelectConcurso" style="width:100%;">
+                            <option value="">Criar manualmente...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label class="meta-label">Nome do Concurso</label>
+                        <input type="text" class="input-mentor" id="editalNome" placeholder="Ex: Polícia Rodoviária Federal" style="width:100%;font-size:1.1rem;">
+                    </div>
+                    
+                    <!-- Árvore de matérias/tópicos manual -->
+                    <div id="editalTreeContainer">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                            <h3 class="section-title" style="margin:0;">Matérias e Tópicos</h3>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn-actions" id="btnAddMateriaEdital" style="font-size:0.85rem;padding:8px 14px;"><i class="bi bi-plus-lg"></i> Matéria</button>
+                                <button class="btn-executar" id="btnSalvarEdital" style="max-width:180px;padding:8px 16px;font-size:0.85rem;"><i class="bi bi-check-lg"></i> Salvar Edital</button>
+                            </div>
+                        </div>
+                        <div id="editalTree">
+                            <div style="text-align:center;padding:30px;color:var(--text-muted);">
+                                <i class="bi bi-file-earmark-plus" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+                                Clique em <strong>"Matéria"</strong> para adicionar a primeira matéria.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: Visualizar Edital (progresso) -->
+            <div id="edital-view-view" class="d-none">
+                <a href="#" class="back-link" id="backToEditaisFromView"><i class="bi bi-arrow-left"></i> Voltar para editais</a>
+                <h1 class="page-title" id="editalViewNome" style="margin:16px 0 4px;">—</h1>
+                <p style="color:var(--text-secondary);margin-bottom:20px;" id="editalViewProgresso">0% concluído</p>
+                <div class="card-mentor" id="editalViewTree" style="max-width:900px;"></div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: BISUS ========== -->
+        <section class="page-content" id="page-bisus">
+            <!-- View Lista de Bisus -->
+            <div id="bisus-list-view">
+                <div class="page-header-custom">
+                    <div>
+                        <a href="#" class="back-link" id="backToHomeFromBisus"><i class="bi bi-arrow-left"></i> Voltar para home</a>
+                        <h1 class="page-title">Bisus & Dicas</h1>
+                        <p style="color:var(--text-secondary);margin-top:4px;">As melhores ferramentas e estratégias para a sua aprovação.</p>
+                    </div>
+                    <button class="btn-nova-rotina" id="btnNovoBisu" style="display:none;"><i class="bi bi-plus-lg"></i> Nova Publicação</button>
+                </div>
+                
+                <div class="bisus-grid" id="bisusCardsContainer" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;margin-top:20px;">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- View Ler Bisu -->
+            <div id="bisus-read-view" class="d-none">
+                <a href="#" class="back-link" id="backToBisusList"><i class="bi bi-arrow-left"></i> Voltar para os Bisus</a>
+                <article class="bisu-reader" style="max-width:800px;margin:24px auto;">
+                    <div class="bisu-hero" style="position:relative;border-radius:var(--radius);overflow:hidden;margin-bottom:32px;">
+                        <img id="readBisuImg" src="" alt="Capa" style="width:100%;height:360px;object-fit:cover;display:none;">
+                        <div id="readBisuImgOverlay" style="display:none;position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.8) 0%,transparent 60%);"></div>
+                        <div id="readBisuImgLabel" class="bisu-hero-label" style="display:none;position:absolute;bottom:24px;left:24px;">
+                            <span id="readBisuCategoriaHero" class="bisu-categoria-badge" style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:0.8rem;font-weight:700;margin-bottom:8px;"></span>
+                            <h1 class="page-title" id="readBisuTituloHero" style="font-size:2.2rem;margin:0;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.5);"></h1>
+                        </div>
+                    </div>
+                    <span id="readBisuCategoria" class="bisu-categoria-badge" style="display:inline-block;padding:4px 14px;background:rgba(139,154,58,0.12);color:var(--accent-green-light);border-radius:20px;font-size:0.8rem;font-weight:700;margin-bottom:12px;">-</span>
+                    <h1 class="page-title" id="readBisuTitulo" style="font-size:2.2rem;margin-bottom:8px;line-height:1.3;">-</h1>
+                    <p id="readBisuResumo" style="color:var(--text-secondary);font-size:1.1rem;margin-bottom:16px;line-height:1.6;display:none;"></p>
+                    <div style="display:flex;align-items:center;gap:16px;color:var(--text-muted);font-size:0.85rem;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border-color);">
+                        <span><i class="bi bi-calendar3" style="margin-right:4px;"></i><span id="readBisuData">-</span></span>
+                        <span><i class="bi bi-clock" style="margin-right:4px;"></i><span id="readBisuTempoLeitura">-</span> min de leitura</span>
+                    </div>
+                    <div id="readBisuConteudo" class="bisu-conteudo" style="font-size:1.1rem;line-height:1.9;color:var(--text-primary);"></div>
+                </article>
+            </div>
+
+            <!-- View Admin Form -->
+            <div id="bisus-admin-view" class="d-none">
+                <a href="#" class="back-link" id="backToBisusAdmin"><i class="bi bi-arrow-left"></i> Voltar</a>
+                <h1 class="page-title">Nova Publicação</h1>
+                <div class="card-mentor" style="padding:24px;margin:20px 0;max-width:800px;">
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label class="meta-label">Título</label>
+                        <input type="text" class="input-mentor" id="bisuTitulo" style="width:100%;">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div class="form-group">
+                            <label class="meta-label">Categoria</label>
+                            <input type="text" class="input-mentor" id="bisuCategoria" placeholder="Ex: Ferramenta, Revisão, Mentalidade" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label">URL da Imagem de Capa</label>
+                            <input type="url" class="input-mentor" id="bisuImagem" placeholder="https://..." style="width:100%;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:24px;">
+                        <label class="meta-label">Conteúdo (Suporta parágrafos)</label>
+                        <textarea class="input-mentor" id="bisuConteudo" style="width:100%;height:300px;resize:vertical;padding:16px;font-family:inherit;"></textarea>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:12px;">
+                        <button class="btn-actions" id="btnCancelarBisu">Cancelar</button>
+                        <button class="btn-executar" id="btnSalvarBisu" style="max-width:200px;"><i class="bi bi-check-lg"></i> Publicar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: CONFIGURAÇÕES ========== -->
+        <section class="page-content" id="page-configuracoes">
+            <div class="page-header-custom">
+                <div>
+                    <a href="#" class="back-link" id="backToHomeFromConfig"><i class="bi bi-arrow-left"></i> Voltar para home</a>
+                    <h1 class="page-title">Configurações</h1>
+                </div>
+            </div>
+
+            <div class="config-grid">
+                <!-- Perfil -->
+                <div class="card-mentor config-card">
+                    <div class="config-card-icon profile"><i class="bi bi-person-circle"></i></div>
+                    <h3 class="section-title">Perfil</h3>
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label class="meta-label">Nome de exibição</label>
+                        <input type="text" class="input-mentor" id="configNomeInput" placeholder="Seu nome" style="width:100%;">
+                    </div>
+                    <div class="config-info-row">
+                        <span class="meta-label">Email</span>
+                        <span id="configEmailDisplay" style="color:var(--text-secondary);font-size:0.9rem;">—</span>
+                    </div>
+                    <div class="config-info-row">
+                        <span class="meta-label">Conta</span>
+                        <span id="configTipoConta" style="color:var(--text-secondary);font-size:0.9rem;">—</span>
+                    </div>
+                    <button class="btn-executar" id="btnSalvarNome" style="margin-top:20px;"><i class="bi bi-check-lg"></i> Salvar</button>
+                </div>
+
+                <!-- Estatísticas -->
+                <div class="card-mentor config-card">
+                    <div class="config-card-icon stats"><i class="bi bi-bar-chart"></i></div>
+                    <h3 class="section-title">Seus Dados</h3>
+                    <div class="config-stats">
+                        <div class="config-stat">
+                            <span class="config-stat-value" id="configCountRotinas">0</span>
+                            <span class="config-stat-label">Rotinas</span>
+                        </div>
+                        <div class="config-stat">
+                            <span class="config-stat-value" id="configCountConcursos">0</span>
+                            <span class="config-stat-label">Concursos</span>
+                        </div>
+                        <div class="config-stat">
+                            <span class="config-stat-value" id="configCountCiclos">0</span>
+                            <span class="config-stat-label">Ciclos</span>
+                        </div>
+                        <div class="config-stat">
+                            <span class="config-stat-value" id="configCountSimulados">0</span>
+                            <span class="config-stat-label">Simulados</span>
+                        </div>
+                    </div>
+                    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:16px;">Dados salvos em nuvem via Firestore.</p>
+                </div>
+
+                <!-- Atualizações -->
+                <div class="card-mentor config-card">
+                    <div class="config-card-icon update"><i class="bi bi-cloud-arrow-down"></i></div>
+                    <h3 class="section-title">Atualizações</h3>
+                    <div class="config-info-row">
+                        <span class="meta-label">Versão instalada</span>
+                        <strong id="appVersionDisplay" style="color:var(--accent-green-light);">—</strong>
+                    </div>
+                    <p style="color:var(--text-muted);font-size:0.85rem;margin:12px 0;">Baixe a versão mais recente com correções e novidades.</p>
+                    <button class="btn-executar" id="btnVerificarAtualizacao" style="width:100%;">
+                        <i class="bi bi-cloud-download"></i> Verificar Atualização
+                    </button>
+                    <span id="updateStatus" style="display:block;margin-top:10px;font-size:0.85rem;"></span>
+                </div>
+
+                <!-- Zona de Perigo -->
+                <div class="card-mentor config-card config-card-danger">
+                    <div class="config-card-icon danger"><i class="bi bi-exclamation-triangle"></i></div>
+                    <h3 class="section-title" style="color:var(--accent-red);">Zona de Perigo</h3>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.5;margin-bottom:16px;">Esta ação apagará <strong>todos</strong> os seus dados: concursos, ciclos, simulados e rotinas. Irreversível.</p>
+                    <button class="btn-actions" id="btnResetarSistema" style="width:100%;background:rgba(201,64,64,0.08);color:var(--accent-red);border:1px solid rgba(201,64,64,0.3);padding:10px 20px;border-radius:var(--radius);font-weight:600;transition:all 0.2s;">
+                        <i class="bi bi-exclamation-triangle"></i> Resetar todo o sistema
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: FEEDBACK ========== -->
+        <section class="page-content" id="page-feedback">
+            <div class="page-header-custom">
+                <div>
+                    <a href="#" class="back-link" id="backToHomeFromFeedback">
+                        <i class="bi bi-arrow-left"></i> Voltar para home
+                    </a>
+                    <h1 class="page-title">Feedback</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Nos ajude a melhorar! Reporte bugs ou envie sugestões.</p>
+                </div>
+            </div>
+
+            <!-- Cards de seleção -->
+            <div class="feedback-select-grid">
+                <div class="feedback-select-card bug" id="feedbackBugCard">
+                    <div class="feedback-select-icon bug">
+                        <i class="bi bi-bug-fill"></i>
+                    </div>
+                    <div class="feedback-select-info">
+                        <h3>Reportar Erro / Bug</h3>
+                        <p>Encontrou algo quebrado ou que não funciona como deveria?</p>
+                    </div>
+                    <i class="bi bi-chevron-right feedback-select-arrow"></i>
+                </div>
+
+                <div class="feedback-select-card sugestao" id="feedbackSugestaoCard">
+                    <div class="feedback-select-icon sugestao">
+                        <i class="bi bi-lightbulb-fill"></i>
+                    </div>
+                    <div class="feedback-select-info">
+                        <h3>Sugerir Melhoria</h3>
+                        <p>Tem uma ideia para tornar a plataforma ainda melhor?</p>
+                    </div>
+                    <i class="bi bi-chevron-right feedback-select-arrow"></i>
+                </div>
+            </div>
+
+            <!-- Formulário -->
+            <div id="feedbackForm" class="card-mentor feedback-form-card" style="display:none;">
+                <h3 class="section-title" style="margin-bottom:4px;" id="feedbackFormTitle">Novo Feedback</h3>
+                <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:20px;" id="feedbackFormSubtitle"></p>
+                <input type="hidden" id="feedbackTipo" value="">
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="meta-label">Título</label>
+                    <input type="text" class="input-mentor" id="feedbackTitulo" placeholder="Descreva em poucas palavras..." style="width:100%;">
+                </div>
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label class="meta-label">Descrição</label>
+                    <textarea class="input-mentor" id="feedbackDescricao" placeholder="Descreva detalhadamente o que aconteceu ou sua sugestão..." style="width:100%;height:140px;resize:vertical;padding:12px;"></textarea>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:12px;">
+                    <button class="btn-actions" id="btnCancelarFeedback">Cancelar</button>
+                    <button class="btn-executar" id="btnEnviarFeedback"><i class="bi bi-send"></i> Enviar</button>
+                </div>
+            </div>
+
+            <!-- Meus Feedbacks -->
+            <div class="card-mentor" id="meusFeedbacksCard" style="margin-top:24px;">
+                <h3 class="section-title" style="margin-bottom:16px;"><i class="bi bi-clock-history" style="margin-right:8px;"></i>Meus Feedbacks Enviados</h3>
+                <div id="meusFeedbacksList">
+                    <div style="text-align:center;padding:20px;color:var(--text-muted);">Carregando...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: ADMIN DASHBOARD ========== -->
+        <section class="page-content" id="page-admin-dashboard">
+            <div class="admin-page-header">
+                <div>
+                    <h1 class="page-title">Painel Administrativo</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Visão geral do sistema Planeja Concurso</p>
+                </div>
+            </div>
+
+            <!-- Admin Stats Grid -->
+            <div class="admin-stats-grid" id="adminStatsGrid">
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background:rgba(139,154,58,0.15);color:var(--accent-green-light);">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="statTotalUsers">0</span>
+                        <span class="admin-stat-label">Usuários Totais</span>
+                    </div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background:rgba(58,108,215,0.15);color:var(--accent-blue);">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="statActiveUsers">0</span>
+                        <span class="admin-stat-label">Usuários Ativos</span>
+                    </div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background:rgba(201,64,64,0.15);color:var(--accent-red);">
+                        <i class="bi bi-person-x-fill"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="statInactiveUsers">0</span>
+                        <span class="admin-stat-label">Desativados</span>
+                    </div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon" style="background:rgba(201,184,78,0.15);color:var(--accent-yellow);">
+                        <i class="bi bi-journal-richtext"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="statTotalBisus">0</span>
+                        <span class="admin-stat-label">Bisus Publicados</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card-mentor" style="padding:24px;margin-top:24px;max-width:900px;">
+                <h3 class="section-title" style="margin-bottom:16px;"><i class="bi bi-clock-history" style="margin-right:8px;color:var(--accent-green-light);"></i>Últimos Usuários Cadastrados</h3>
+                <div id="recentUsersContainer">
+                    <div style="text-align:center;padding:30px;color:var(--text-muted);">Carregando...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: ADMIN USUÁRIOS ========== -->
+        <section class="page-content" id="page-admin-usuarios">
+            <div class="admin-page-header">
+                <div>
+                    <h1 class="page-title">Gerenciar Usuários</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Ative ou desative o acesso dos alunos à plataforma.</p>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="admin-search-bar" style="display:flex;align-items:center;gap:12px;">
+                <i class="bi bi-search"></i>
+                <input type="text" id="adminSearchUsers" class="input-mentor" placeholder="Buscar por nome ou email..." style="border:none;background:transparent;flex:1;padding:10px;">
+                <button class="btn-executar" id="btnRefreshUsers" style="max-width:160px;padding:8px 16px;font-size:0.85rem;white-space:nowrap;">
+                    <i class="bi bi-arrow-clockwise"></i> Recarregar
+                </button>
+            </div>
+
+            <!-- Users Table -->
+            <div class="admin-users-table-wrapper">
+                <table class="admin-users-table" id="adminUsersTable">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Email</th>
+                            <th>Último acesso</th>
+                            <th>Status</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersBody">
+                        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">Carregando usuários...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: ADMIN PUBLICAR BISUS ========== -->
+        <section class="page-content" id="page-admin-bisus">
+            <div class="admin-page-header">
+                <div>
+                    <h1 class="page-title">Publicar Bisus & Dicas</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Crie publicações que aparecerão na tela dos alunos.</p>
+                </div>
+            </div>
+
+            <!-- Admin Bisus: List + Form toggle -->
+            <div id="admin-bisus-list-view">
+                <button class="btn-executar" id="btnAdminNovoBisu" style="max-width:260px;margin-bottom:24px;">
+                    <i class="bi bi-plus-lg"></i> Nova Publicação
+                </button>
+
+                <div class="admin-bisus-grid" id="adminBisusGrid">
+                    <div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">Carregando publicações...</div>
+                </div>
+            </div>
+
+            <div id="admin-bisus-form-view" class="d-none">
+                <a href="#" class="back-link" id="backToAdminBisusList"><i class="bi bi-arrow-left"></i> Voltar para publicações</a>
+                <h2 class="section-title" style="margin:16px 0 20px;">Nova Publicação</h2>
+                <div class="card-mentor" style="padding:24px;max-width:900px;">
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label class="meta-label">Título do Artigo</label>
+                        <input type="text" class="input-mentor" id="adminBisuTitulo" placeholder="Ex: Como usar a repetição espaçada nos estudos" style="width:100%;font-size:1.1rem;padding:14px;">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div class="form-group">
+                            <label class="meta-label">Categoria</label>
+                            <input type="text" class="input-mentor" id="adminBisuCategoria" placeholder="Ex: Ferramenta, Revisão, Mentalidade" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label">URL da Imagem de Capa</label>
+                            <input type="url" class="input-mentor" id="adminBisuImagem" placeholder="https://..." style="width:100%;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label class="meta-label">Resumo / Subtítulo</label>
+                        <input type="text" class="input-mentor" id="adminBisuResumo" placeholder="Uma breve descrição do artigo..." style="width:100%;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label class="meta-label">Conteúdo do Artigo</label>
+                        <!-- Rich Text Toolbar -->
+                        <div class="rte-toolbar" id="adminBisuToolbar">
+                            <button type="button" data-cmd="bold" title="Negrito"><i class="bi bi-type-bold"></i></button>
+                            <button type="button" data-cmd="italic" title="Itálico"><i class="bi bi-type-italic"></i></button>
+                            <button type="button" data-cmd="underline" title="Sublinhado"><i class="bi bi-type-underline"></i></button>
+                            <span class="rte-sep"></span>
+                            <button type="button" data-cmd="formatBlock" data-arg="h2" title="Título"><i class="bi bi-type-h2"></i></button>
+                            <button type="button" data-cmd="formatBlock" data-arg="h3" title="Subtítulo"><i class="bi bi-type-h3"></i></button>
+                            <button type="button" data-cmd="formatBlock" data-arg="p" title="Parágrafo"><i class="bi bi-paragraph"></i></button>
+                            <span class="rte-sep"></span>
+                            <button type="button" data-cmd="insertUnorderedList" title="Lista"><i class="bi bi-list-ul"></i></button>
+                            <button type="button" data-cmd="insertOrderedList" title="Lista Numerada"><i class="bi bi-list-ol"></i></button>
+                            <button type="button" data-cmd="formatBlock" data-arg="blockquote" title="Citação"><i class="bi bi-quote"></i></button>
+                            <span class="rte-sep"></span>
+                            <button type="button" data-cmd="createLink" title="Inserir Link"><i class="bi bi-link-45deg"></i></button>
+                        </div>
+                        <div class="rte-editor" id="adminBisuEditor" contenteditable="true" style="min-height:350px;max-height:600px;overflow-y:auto;padding:20px;background:var(--bg-primary);border:1px solid var(--border-color);border-top:none;border-radius:0 0 var(--radius) var(--radius);color:var(--text-primary);font-size:1rem;line-height:1.8;outline:none;" placeholder="Escreva seu artigo aqui..."></div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:12px;">
+                        <button class="btn-actions" id="btnAdminCancelarBisu" style="padding:10px 20px;border:1px solid var(--border-color);border-radius:var(--radius);font-weight:600;">Cancelar</button>
+                        <button class="btn-executar" id="btnAdminSalvarBisu" style="max-width:200px;"><i class="bi bi-check-lg"></i> Publicar Artigo</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: ADMIN MENSAGENS & AVISOS ========== -->
+        <section class="page-content" id="page-admin-mensagens">
+            <div class="admin-page-header">
+                <div>
+                    <h1 class="page-title">Mensagens & Avisos</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Envie mensagens motivacionais e avisos para os alunos.</p>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                <!-- Mensagem do Dia -->
+                <div class="card-mentor" style="padding:24px;">
+                    <h3 class="section-title" style="margin-bottom:16px;"><i class="bi bi-chat-heart" style="margin-right:8px;color:var(--accent-green-light);"></i>Mensagem do Dia</h3>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:16px;">Aparece no dashboard do aluno como mensagem do mentor.</p>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <textarea class="input-mentor" id="adminMensagemDia" style="width:100%;height:120px;resize:vertical;padding:12px;" placeholder="Escreva uma mensagem motivacional..."></textarea>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <span style="font-size:0.8rem;color:var(--text-muted);" id="mensagemDiaStatus">Nenhuma mensagem ativa</span>
+                        <button class="btn-executar" id="btnSalvarMensagemDia" style="max-width:180px;padding:10px 20px;font-size:0.9rem;"><i class="bi bi-send"></i> Publicar</button>
+                    </div>
+                    <!-- Histórico de mensagens -->
+                    <div style="border-top:1px solid var(--border-color);padding-top:12px;">
+                        <h4 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px;"><i class="bi bi-clock-history" style="margin-right:6px;"></i>Histórico de mensagens</h4>
+                        <div id="adminMensagensHistorico" style="max-height:250px;overflow-y:auto;">
+                            <div style="text-align:center;padding:15px;color:var(--text-muted);font-size:0.85rem;">Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Avisos -->
+                <div class="card-mentor" style="padding:24px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 class="section-title" style="margin:0;"><i class="bi bi-bell" style="margin-right:8px;color:var(--accent-yellow);"></i>Avisos</h3>
+                        <button class="btn-executar" id="btnNovoAvisoAdmin" style="max-width:160px;padding:8px 14px;font-size:0.85rem;"><i class="bi bi-plus-lg"></i> Novo</button>
+                    </div>
+                    <!-- Formulário Novo Aviso (oculto por padrão) -->
+                    <div id="formNovoAviso" style="display:none;padding:16px;background:var(--bg-tertiary);border-radius:var(--radius);margin-bottom:16px;border:1px solid var(--border-color);">
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label class="meta-label">Título do aviso</label>
+                            <input type="text" class="input-mentor" id="adminAvisoTitulo" placeholder="Ex: Manutenção programada" style="width:100%;padding:10px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label class="meta-label">Mensagem</label>
+                            <textarea class="input-mentor" id="adminAvisoMensagem" placeholder="Descreva o aviso..." style="width:100%;height:80px;resize:vertical;padding:10px;"></textarea>
+                        </div>
+                        <div style="display:flex;justify-content:flex-end;gap:8px;">
+                            <button class="btn-actions" id="btnCancelarAviso" style="padding:8px 16px;">Cancelar</button>
+                            <button class="btn-executar" id="btnSalvarAviso" style="max-width:140px;padding:8px 16px;font-size:0.85rem;"><i class="bi bi-check-lg"></i> Publicar</button>
+                        </div>
+                    </div>
+                    <div id="adminAvisosList" style="max-height:400px;overflow-y:auto;">
+                        <div style="text-align:center;padding:30px;color:var(--text-muted);">Carregando avisos...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: ADMIN CONCURSOS OFICIAIS ========== -->
+        <section class="page-content" id="page-admin-concursos">
+            <!-- VIEW 1: Lista -->
+            <div id="admin-concursos-list-view">
+                <div class="admin-page-header">
+                    <div>
+                        <h1 class="page-title">Concursos Oficiais</h1>
+                        <p style="color:var(--text-secondary);margin-top:4px;">Cadastre concursos com disciplinas e pesos. Os alunos poderão importar com 1 clique.</p>
+                    </div>
+                    <button class="btn-executar" id="btnNovoConcursoOficial" style="max-width:240px;"><i class="bi bi-plus-lg"></i> Novo Concurso</button>
+                </div>
+
+                <div id="adminConcursosOficiaisList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-top:20px;">
+                    <div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">Carregando concursos...</div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: Criar/Editar (igual ao editor do aluno) -->
+            <div id="admin-concursos-edit-view" class="d-none">
+                <a href="#" class="back-link" id="backToAdminConcursosList"><i class="bi bi-arrow-left"></i> Voltar para concursos oficiais</a>
+                <h1 class="page-title" id="adminConcursoEditTitle">Novo Concurso Oficial</h1>
+                <div class="card-mentor" style="margin:20px 0;max-width:900px;">
+                    <div class="modal-field" style="margin-bottom:20px;">
+                        <label class="field-label">Nome do concurso</label>
+                        <input type="text" class="input-mentor" id="adminConcursoNome" placeholder="Ex: Polícia Rodoviária Federal" style="width:100%;">
+                    </div>
+                    <h3 class="section-title" style="margin-bottom:12px;">Disciplinas e Pesos</h3>
+                    <p class="section-text" style="margin-bottom:16px;">O peso representa a quantidade de questões que a matéria costuma ter na prova.</p>
+                    <div class="materias-table-wrapper">
+                        <table class="materias-table" id="adminConcursoDisciplinasTable">
+                            <thead><tr><th>Disciplina</th><th style="width:120px;">Peso (Qtd questões)</th><th style="width:60px;"></th></tr></thead>
+                            <tbody id="adminConcursoDisciplinasBody"></tbody>
+                        </table>
+                    </div>
+                    <button class="btn-nova-rotina" id="btnAddDisciplinaOficial" style="margin-top:12px;"><i class="bi bi-plus-lg"></i> Adicionar disciplina</button>
+                    <div class="concurso-footer" style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border-color);">
+                        <span style="color:var(--text-secondary);">Total de questões: <strong id="adminConcursoTotalQuestoes">0</strong></span>
+                        <button class="btn-executar" id="btnSalvarConcursoOficial" style="max-width:220px;">Salvar concurso</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE: ADMIN FEEDBACK ========== -->
+        <section class="page-content" id="page-admin-feedback">
+            <div class="admin-page-header">
+                <div>
+                    <h1 class="page-title">Feedback dos Alunos</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Bugs reportados e sugestões de melhoria enviados pelos alunos.</p>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+                <button class="btn-filter-feedback active" data-filter="todos" style="padding:8px 20px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;">Todos</button>
+                <button class="btn-filter-feedback" data-filter="bug" style="padding:8px 20px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;"><i class="bi bi-bug-fill" style="margin-right:6px;color:var(--accent-red);"></i> Bugs</button>
+                <button class="btn-filter-feedback" data-filter="sugestao" style="padding:8px 20px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;"><i class="bi bi-lightbulb-fill" style="margin-right:6px;color:var(--accent-blue);"></i> Sugestões</button>
+                <button class="btn-filter-feedback" data-filter="pendente" style="padding:8px 20px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;"><i class="bi bi-hourglass-split" style="margin-right:6px;color:var(--accent-yellow);"></i> Pendentes</button>
+                <button class="btn-filter-feedback" data-filter="resolvido" style="padding:8px 20px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;"><i class="bi bi-check-circle" style="margin-right:6px;color:var(--accent-green-light);"></i> Resolvidos</button>
+            </div>
+
+            <!-- Lista de Feedbacks -->
+            <div id="adminFeedbacksList">
+                <div style="text-align:center;padding:40px;color:var(--text-muted);">Carregando feedbacks...</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===================== ACTIVITY MODAL ===================== -->
+    <div class="modal-overlay" id="activityModal">
+        <div class="modal-mentor">
+            <button class="modal-close" id="modalClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+            <!-- Activity Type Toggle -->
+            <div class="activity-toggle">
+                <span class="toggle-label" id="labelOutras">Outras atividades</span>
+                <label class="switch-mentor">
+                    <input type="checkbox" id="activityToggle">
+                    <span class="slider-mentor"></span>
+                </label>
+                <span class="toggle-label" id="labelEstudo">Horário de estudo</span>
+            </div>
+
+            <!-- Activity Name -->
+            <div class="modal-field">
+                <input type="text" class="input-mentor" id="activityName" placeholder="Nome da atividade">
+            </div>
+
+            <!-- Time Selection -->
+            <div class="modal-section">
+                <label class="field-label">Horário</label>
+                <div class="time-picker-row">
+                    <div class="time-input-group">
+                        <input type="time" class="input-mentor time-input" id="startTime" value="08:00">
+                    </div>
+                    <span class="time-separator">às</span>
+                    <div class="time-input-group">
+                        <input type="time" class="input-mentor time-input" id="endTime" value="09:00">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Day Selection -->
+            <div class="modal-section">
+                <label class="field-label">Dias da semana</label>
+                <div class="days-selector">
+                    <button class="day-btn active" data-day="0">S</button>
+                    <button class="day-btn" data-day="1">T</button>
+                    <button class="day-btn" data-day="2">Q</button>
+                    <button class="day-btn" data-day="3">Q</button>
+                    <button class="day-btn" data-day="4">S</button>
+                    <button class="day-btn" data-day="5">S</button>
+                    <button class="day-btn" data-day="6">D</button>
+                </div>
+            </div>
+
+            <!-- Modal Actions -->
+            <div class="modal-actions">
+                <button class="btn-remove" id="btnRemoveActivity">
+                    <i class="bi bi-trash3"></i> Remover Atividade
+                </button>
+                <button class="btn-cancel" id="btnCancelModal">Cancelar</button>
+                <button class="btn-save" id="btnSaveActivity">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== SIDEBAR OVERLAY (Mobile) ===================== -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ===================== CONTEXT MENU ===================== -->
+    <div class="context-menu" id="contextMenu">
+        <button class="context-item" data-action="ativar">
+            <i class="bi bi-check-circle"></i> Ativar rotina
+        </button>
+        <button class="context-item" data-action="editar">
+            <i class="bi bi-pencil"></i> Editar rotina
+        </button>
+        <button class="context-item" data-action="duplicar">
+            <i class="bi bi-copy"></i> Duplicar rotina
+        </button>
+        <button class="context-item text-danger" data-action="excluir">
+            <i class="bi bi-trash3"></i> Excluir rotina
+        </button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-mentor" id="toastNotification">
+        <i class="bi bi-check-circle-fill"></i>
+        <span id="toastMessage">Ação realizada com sucesso!</span>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase Config & DB -->
+    <script src="firebase-config.js"></script>
+    <!-- Custom JS -->
+    <script src="app-core.js"></script>
+    <script src="app-ciclos.js"></script>
+    <script src="app-simulados.js"></script>
+    <script src="app-bisus.js"></script>
+    <script src="app-edital.js"></script>
+    <script src="app-admin.js"></script>
+    <!-- Service Worker Registration (PWA) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            const APP_VERSION = '1.0.2';
+            let refreshing = false;
+            let newWorkerWaiting = null;
+
+            // Show version in Config page
+            const versionEl = document.getElementById('appVersionDisplay');
+            if (versionEl) versionEl.textContent = 'v' + APP_VERSION;
+
+            // Show update banner
+            function showUpdateBanner() {
+                // Remove existing
+                document.getElementById('updateBanner')?.remove();
+                const banner = document.createElement('div');
+                banner.id = 'updateBanner';
+                banner.innerHTML = `
+                    <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--accent-green);color:#0a0a0a;padding:12px 24px;border-radius:30px;font-weight:700;font-size:0.9rem;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:16px;cursor:pointer;animation:slideUp 0.4s ease;">
+                        <span>🆕 Nova versão disponível!</span>
+                        <span style="background:rgba(0,0,0,0.15);padding:6px 14px;border-radius:20px;font-size:0.8rem;">Atualizar agora</span>
+                    </div>
+                `;
+                banner.addEventListener('click', () => {
+                    if (newWorkerWaiting) {
+                        newWorkerWaiting.postMessage('SKIP_WAITING');
+                    }
+                    banner.remove();
+                });
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 30000);
+            }
+
+            function applyUpdate() {
+                if (newWorkerWaiting) {
+                    newWorkerWaiting.postMessage('SKIP_WAITING');
+                    showToast('Atualizando...');
+                }
+            }
+
+            // Auto-reload when new SW takes over
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
+
+            function registerSW() {
+                navigator.serviceWorker.register('sw.js?v=' + APP_VERSION)
+                    .then((registration) => {
+                        console.log('✅ SW registered v' + APP_VERSION);
+
+                        if (registration.waiting) {
+                            newWorkerWaiting = registration.waiting;
+                            showUpdateBanner();
+                        }
+
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (!newWorker) return;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    newWorkerWaiting = newWorker;
+                                    showUpdateBanner();
+                                    // Update config page status
+                                    const statusEl = document.getElementById('updateStatus');
+                                    if (statusEl) {
+                                        statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Nova versão pronta! Clique no banner ou recarregue.</span>';
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch((err) => console.log('⚠️ SW:', err));
+            }
+
+            // Force update check immediately
+            registerSW();
+            navigator.serviceWorker.getRegistration().then((reg) => {
+                if (reg) reg.update();
+            });
+
+            // Check every 5 minutes
+            setInterval(() => {
+                navigator.serviceWorker.getRegistration().then((reg) => {
+                    if (reg) reg.update();
+                });
+            }, 5 * 60 * 1000);
+
+            // Check on visibility change
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    navigator.serviceWorker.getRegistration().then((reg) => {
+                        if (reg) reg.update();
+                    });
+                }
+            });
+
+            // ===== MANUAL UPDATE BUTTON (Configurações) =====
+            document.getElementById('btnVerificarAtualizacao')?.addEventListener('click', async function() {
+                const btn = this;
+                const statusEl = document.getElementById('updateStatus');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Verificando...';
+                btn.disabled = true;
+                if (statusEl) statusEl.innerHTML = '<span style="color:var(--text-muted);">Buscando atualizações...</span>';
+
+                try {
+                    const reg = await navigator.serviceWorker.getRegistration();
+                    if (!reg) {
+                        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-red);">Service Worker não encontrado.</span>';
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    // Track if we got a response
+                    let resolved = false;
+                    const timeout = 15000; // 15 seconds max wait
+
+                    // Listen for new worker
+                    const onUpdateFound = () => {
+                        if (resolved) return;
+                        const newWorker = reg.installing;
+                        if (!newWorker) return;
+                        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-yellow);"><i class="bi bi-hourglass-split"></i> Instalando atualização...</span>';
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed') {
+                                resolved = true;
+                                if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Atualização pronta! Aplicando...</span>';
+                                newWorkerWaiting = newWorker;
+                                newWorker.postMessage('SKIP_WAITING');
+                            }
+                        });
+                    };
+
+                    reg.addEventListener('updatefound', onUpdateFound, { once: true });
+
+                    // Also check if already waiting
+                    if (reg.waiting) {
+                        resolved = true;
+                        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Atualização já disponível! Aplicando...</span>';
+                        newWorkerWaiting = reg.waiting;
+                        reg.waiting.postMessage('SKIP_WAITING');
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    // Force update check with cache buster
+                    await reg.update();
+                    
+                    // Also try direct fetch to bypass any cache
+                    fetch('/sw.js?v=' + Date.now()).catch(() => {});
+
+                    // Wait for update or timeout
+                    await new Promise((resolve) => {
+                        const checkInterval = setInterval(() => {
+                            if (resolved) {
+                                clearInterval(checkInterval);
+                                resolve();
+                            }
+                            // Re-check waiting
+                            if (reg.waiting && !resolved) {
+                                resolved = true;
+                                clearInterval(checkInterval);
+                                if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Atualização encontrada! Aplicando...</span>';
+                                newWorkerWaiting = reg.waiting;
+                                reg.waiting.postMessage('SKIP_WAITING');
+                                resolve();
+                            }
+                        }, 500);
+                        setTimeout(() => {
+                            clearInterval(checkInterval);
+                            if (!resolved) {
+                                resolved = true;
+                                if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-green-light);"><i class="bi bi-check-circle"></i> Você já está na versão mais recente! (v' + APP_VERSION + ')</span>';
+                            }
+                            resolve();
+                        }, timeout);
+                    });
+
+                } catch (e) {
+                    if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-red);">Erro: ' + e.message + '</span>';
+                } finally {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }
+            });
+        }
+    </script>
+    <style>
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Screenshots / images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+capturas/
+
+# PWA icons (tracked)
+!icon-192.png
+!icon-512.png
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
