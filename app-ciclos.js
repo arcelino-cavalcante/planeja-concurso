@@ -102,115 +102,131 @@ function showCiclosView(viewId) {
     document.getElementById(viewId).classList.remove('d-none');
 }
 
-// Round to nearest 30 min, minimum 60 (1h)
 function round30(minutes) { return Math.max(60, Math.round(minutes / 30) * 30); }
+function formatMin(min) { const h = Math.floor(min/60); const m = min % 60; return m > 0 ? `${h}:${String(m).padStart(2,'0')}h` : `${h}:00h`; }
 
-// Calculate hours per subject based on weight proportion
-// Only active subjects get time allocated; inactive get 0
-function calcHorasPorMateria(disciplinas, totalHoras, niveis) {
-    const activeDisciplinas = disciplinas.filter(d => d.ativo !== false);
-    const totalPeso = activeDisciplinas.reduce((s, d) => s + d.peso, 0);
-    if (totalPeso === 0) return disciplinas.map(() => 0);
-    
-    let result = disciplinas.map((d, i) => {
-        if (d.ativo === false) return 0;
-        let minutos = (d.peso / totalPeso) * totalHoras * 60;
-        const nivel = (niveis && niveis[i]) || 0;
-        minutos *= (1 - nivel * 0.1); // 10% per star
-        return minutos;
-    });
-    // redistribute saved time among active subjects
-    const totalOriginal = totalHoras * 60;
-    const totalAfter = result.reduce((s, m) => s + m, 0);
-    const saved = totalOriginal - totalAfter;
-    if (saved > 0) {
-        const zeroNivel = result.map((m, i) => ((niveis && niveis[i]) || disciplinas[i].ativo === false) ? 0 : 1);
-        const sumZero = zeroNivel.reduce((s, v) => s + v, 0);
-        if (sumZero > 0) result = result.map((m, i) => m + (zeroNivel[i] ? saved / sumZero : 0));
-    }
-    return result.map((m, i) => disciplinas[i].ativo === false ? 0 : round30(m));
+// ===== ALGORITMO DE PRIORIDADE INTELIGENTE =====
+// Fórmula: Prioridade = (Peso × Dificuldade × (6 - Retenção)) + DiasSemEstudar
+function calculatePriority(m, maxPeso, now) {
+    if (m.ativo === false) return 0;
+    const pesoNorm = maxPeso > 0 ? m.peso / maxPeso : 0;
+    const difNorm = (m.dificuldade || 3) / 5;
+    const retInv = (6 - (m.retencao || 3)) / 5; // retenção baixa = prioridade alta
+    const diasSemEstudar = m.ultimoEstudo
+        ? Math.max(0, (now - m.ultimoEstudo) / (1000 * 60 * 60 * 24))
+        : 7;
+    const atrasoNorm = Math.min(diasSemEstudar / 7, 1);
+    return Math.round((pesoNorm * 0.35 + difNorm * 0.30 + retInv * 0.20 + atrasoNorm * 0.15) * 100);
 }
 
-// Generate cycle sequence (round-robin weighted, max 2h sessions)
-function generateCycleSequence(materias) {
-    const activeMaterias = materias.filter(m => m.ativo !== false && m.totalMin > 0);
-    if (activeMaterias.length === 0) return [];
+// Distribui horas proporcionais à prioridade
+function calcHorasInteligente(materias, totalHoras) {
+    const now = Date.now();
+    const active = materias.filter(m => m.ativo !== false);
+    if (active.length === 0) return materias.map(() => 0);
+    const maxPeso = Math.max(...active.map(m => m.peso), 1);
+    const prioridades = materias.map(m => calculatePriority(m, maxPeso, now));
+    const totalPrioridade = prioridades.reduce((s, p) => s + p, 0);
+    if (totalPrioridade === 0) return materias.map(() => 0);
+    const totalMin = totalHoras * 60;
+    return prioridades.map((p, i) => {
+        if (materias[i].ativo === false) return 0;
+        return round30((p / totalPrioridade) * totalMin);
+    });
+}
 
-    const totalPeso = activeMaterias.reduce((s, m) => s + m.peso, 0);
-    
-    // Each subject gets a number of sessions proportional to its weight.
-    // Target: fewer, longer sessions. Base = ~2 sessions for the lightest, scale up.
-    const minPeso = Math.min(...activeMaterias.map(m => m.peso));
-    
-    let allSessions = [];
-    activeMaterias.forEach((m, i) => {
-        // Number of sessions: proportional to how much heavier this subject is vs the lightest
-        // Lightest subject = 1 session, others scale proportionally
-        const ratio = m.peso / minPeso;
-        let count = Math.max(1, Math.round(ratio));
-        // Cap at a reasonable max: don't split into more than ~5 sessions
-        count = Math.min(count, Math.ceil(m.totalMin / 60)); // at least 1h per session
-        
-        let remaining = m.totalMin;
-        for (let s = 0; s < count; s++) {
-            if (remaining <= 0) break;
-            const sessionsLeft = count - s;
-            let dur = round30(remaining / sessionsLeft);
-            dur = Math.max(60, Math.min(remaining, dur));
-            allSessions.push({ nome: m.nome, duracao: dur, idx: i, peso: m.peso });
+// Gera ciclo inteligente com intercalação anti-fadiga
+function generateIntelligentCycle(materias) {
+    const active = materias.filter(m => m.ativo !== false && (m.totalMin || 0) > 0);
+    if (active.length === 0) return [];
+
+    const now = Date.now();
+    const maxPeso = Math.max(...active.map(m => m.peso), 1);
+
+    // Agrupa matérias por categoria para intercalação
+    const categorias = {};
+    active.forEach(m => {
+        const cat = m.categoria || 'geral';
+        if (!categorias[cat]) categorias[cat] = [];
+        categorias[cat].push(m);
+    });
+
+    let allBlocks = [];
+    active.forEach((m, originalIdx) => {
+        const totalMin = m.totalMin;
+        if (totalMin <= 0) return;
+        const prioridade = calculatePriority(m, maxPeso, now);
+        const numBlocos = Math.max(1, Math.round(prioridade / 20));
+        const duracaoPorBloco = round30(totalMin / numBlocos);
+
+        let remaining = totalMin;
+        for (let b = 0; b < numBlocos && remaining >= 60; b++) {
+            const dur = Math.min(duracaoPorBloco, remaining);
+            allBlocks.push({
+                nome: m.nome,
+                duracao: round30(dur),
+                idx: originalIdx,
+                prioridade,
+                categoria: m.categoria || 'geral',
+                dificuldade: m.dificuldade || 3
+            });
             remaining -= dur;
         }
     });
-    
-    // Sort by peso descending, then duration descending
-    allSessions.sort((a, b) => b.peso - a.peso || b.duracao - a.duracao);
-    
-    // Group by subject
-    const bySubject = {};
-    allSessions.forEach(s => { 
-        if (!bySubject[s.idx]) bySubject[s.idx] = []; 
-        bySubject[s.idx].push(s); 
-    });
-    
-    // Sort keys by weight descending
-    const keys = Object.keys(bySubject).sort((a, b) => 
-        (bySubject[b][0]?.peso || 0) - (bySubject[a][0]?.peso || 0)
-    );
-    
-    // Interleave round-robin, ensuring no same subject twice in a row
+
+    // Ordena por prioridade decrescente
+    allBlocks.sort((a, b) => b.prioridade - a.prioridade);
+
+    // Intercala categorias para evitar fadiga
     const result = [];
-    let hasMore = true;
-    let lastIdx = -1;
-    
-    while (hasMore) {
-        hasMore = false;
-        // First pass: prefer subjects different from last
-        for (const k of keys) {
-            if (bySubject[k].length > 0 && k !== lastIdx) {
-                result.push(bySubject[k].shift());
-                lastIdx = k;
-                hasMore = true;
+    const used = new Set();
+
+    while (result.length < allBlocks.length) {
+        let added = false;
+        const lastCat = result.length > 0 ? result[result.length - 1].categoria : null;
+        const lastDiff = result.length > 0 ? result[result.length - 1].dificuldade : 0;
+
+        // Prioridade: categoria diferente E (dificuldade alternada ou mesma)
+        for (let i = 0; i < allBlocks.length; i++) {
+            if (used.has(i)) continue;
+            const b = allBlocks[i];
+            const catOk = b.categoria !== lastCat;
+            const diffOk = Math.abs(b.dificuldade - lastDiff) >= 2 || lastDiff === 0;
+            if (catOk && diffOk) {
+                result.push(b);
+                used.add(i);
+                added = true;
                 break;
             }
         }
-        // If no different subject available, pick any remaining
-        if (!hasMore) {
-            for (const k of keys) {
-                if (bySubject[k].length > 0) {
-                    result.push(bySubject[k].shift());
-                    lastIdx = k;
-                    hasMore = true;
+        // Fallback: só categoria diferente
+        if (!added) {
+            for (let i = 0; i < allBlocks.length; i++) {
+                if (used.has(i)) continue;
+                if (allBlocks[i].categoria !== lastCat || lastCat === null) {
+                    result.push(allBlocks[i]);
+                    used.add(i);
+                    added = true;
+                    break;
+                }
+            }
+        }
+        // Último recurso: qualquer bloco
+        if (!added) {
+            for (let i = 0; i < allBlocks.length; i++) {
+                if (!used.has(i)) {
+                    result.push(allBlocks[i]);
+                    used.add(i);
                     break;
                 }
             }
         }
     }
-    
+
     return result;
 }
 
-function formatMin(min) { const h = Math.floor(min/60); const m = min % 60; return m > 0 ? `${h}:${String(m).padStart(2,'0')}h` : `${h}:00h`; }
-
+// ===== CONFIG VIEW =====
 // Open ciclo wizard (select concurso)
 function openCicloWizard() {
     const grid = document.getElementById('ciclosConcursoGrid');
@@ -227,7 +243,6 @@ function openCicloWizard() {
             grid.querySelectorAll('.concurso-card').forEach(x => x.classList.remove('selected'));
             card.classList.add('selected');
             selectedConcursoForCiclo = c;
-            // Auto-proceed to config
             setTimeout(() => openCicloConfigFromConcurso(c), 300);
         });
         grid.appendChild(card);
@@ -241,55 +256,87 @@ function openCicloConfigFromConcurso(conc) {
     document.getElementById('configCicloNome').value = 'Ciclo - ' + conc.nome;
     document.getElementById('configConcursoNome').textContent = conc.nome;
     document.getElementById('configHorasInput').value = horas;
-    currentCicloMaterias = conc.disciplinas.map(d => ({ nome: d.nome, peso: d.peso, nivel: 0, ativo: true }));
+    currentCicloMaterias = conc.disciplinas.map(d => ({
+        nome: d.nome, peso: d.peso, ativo: true,
+        dificuldade: 3, retencao: 3, categoria: 'geral',
+        ultimoEstudo: null, sessoesConcluidas: 0
+    }));
     renderMateriasConfig(horas);
     showCiclosView('ciclos-config-view');
 }
 
-// Open config for editing an existing ciclo
 function openCicloConfigForEdit(ciclo) {
     editingCicloId = ciclo.id;
     const horas = getStudyHours() || 20;
     document.getElementById('configCicloNome').value = ciclo.nome;
     document.getElementById('configConcursoNome').textContent = ciclo.concurso || '';
-    document.getElementById('configHorasInput').value = parseInt(ciclo.duracao) || horas;
-    // Load subjects with their saved ativo state
+    document.getElementById('configHorasInput').value = parseInt(ciclo.duracaoHoras) || horas;
     currentCicloMaterias = (ciclo.subjects || []).map(s => ({
         nome: s.nome,
         peso: s.peso || 1,
-        nivel: s.nivel || 0,
         ativo: s.ativo !== false,
-        totalMin: s.totalMin || 0
+        dificuldade: s.dificuldade || 3,
+        retencao: s.retencao || 3,
+        categoria: s.categoria || 'geral',
+        ultimoEstudo: s.ultimoEstudo || null,
+        sessoesConcluidas: s.sessoesConcluidas || 0
     }));
-    // Recalculate hours
     const totalH = parseInt(document.getElementById('configHorasInput').value) || horas;
     renderMateriasConfig(totalH);
     showCiclosView('ciclos-config-view');
 }
 
-// Recalculate when hours input changes
 document.getElementById('configHorasInput').addEventListener('input', function() {
-    const h = parseInt(this.value) || 1;
-    renderMateriasConfig(h);
+    renderMateriasConfig(parseInt(this.value) || 1);
 });
 
 function renderMateriasConfig(totalHoras) {
     if (!totalHoras) totalHoras = getStudyHours();
-    const niveis = currentCicloMaterias.map(m => m.nivel);
-    const horasArr = calcHorasPorMateria(currentCicloMaterias, totalHoras, niveis);
+    const now = Date.now();
+    const maxPeso = Math.max(...currentCicloMaterias.filter(m => m.ativo !== false).map(m => m.peso), 1);
+    const horasArr = calcHorasInteligente(currentCicloMaterias, totalHoras);
+    const prioridades = currentCicloMaterias.map(m => calculatePriority(m, maxPeso, now));
+
     const tbody = document.getElementById('materiasBody'); tbody.innerHTML = '';
     const activeCount = currentCicloMaterias.filter(m => m.ativo !== false).length;
+
     currentCicloMaterias.forEach((m, idx) => {
         const tr = document.createElement('tr');
         if (m.ativo === false) tr.classList.add('materia-inativa');
-        const starsHtml = [1,2,3,4,5].map(s =>
-            `<i class="bi bi-star${s <= m.nivel ? '-fill' : ''} ${s <= m.nivel ? 'active' : ''}" data-idx="${idx}" data-star="${s}"></i>`
-        ).join('');
         m.totalMin = horasArr[idx];
+        m._prioridade = prioridades[idx];
         const horasDisplay = m.ativo === false ? '—' : formatMin(horasArr[idx]);
-        tr.innerHTML = `<td><span>${m.nome}</span></td>
+        const dif = m.dificuldade || 3;
+        const ret = m.retencao || 3;
+        const cat = m.categoria || 'geral';
+        const catLabel = { exatas: 'Exatas', humanas: 'Humanas', legislacao: 'Legislação', geral: 'Geral' }[cat] || 'Geral';
+        const prioridadeBar = m.ativo !== false && prioridades[idx] > 0
+            ? `<div style="margin-top:4px;height:3px;background:var(--bg-primary);border-radius:2px;overflow:hidden;"><div style="width:${prioridades[idx]}%;height:3px;background:var(--accent-yellow);border-radius:2px;transition:width 0.3s;"></div></div><span style="font-size:0.7rem;color:var(--text-muted);">Prioridade ${prioridades[idx]}</span>`
+            : '';
+
+        tr.innerHTML = `
+            <td><span>${m.nome}</span>${prioridadeBar}</td>
             <td><strong>${m.peso}</strong></td>
-            <td><div class="materia-stars">${starsHtml}</div></td>
+            <td>
+                <div class="materia-slider-group" data-idx="${idx}" data-field="dificuldade">
+                    <input type="range" min="1" max="5" value="${dif}" class="materia-range" data-idx="${idx}" data-field="dificuldade">
+                    <span class="materia-range-val">${dif}</span>
+                </div>
+            </td>
+            <td>
+                <div class="materia-slider-group" data-idx="${idx}" data-field="retencao">
+                    <input type="range" min="1" max="5" value="${ret}" class="materia-range" data-idx="${idx}" data-field="retencao">
+                    <span class="materia-range-val">${ret}</span>
+                </div>
+            </td>
+            <td>
+                <select class="input-mentor materia-cat-select" data-idx="${idx}" style="padding:4px 8px;font-size:0.8rem;width:auto;">
+                    <option value="exatas" ${cat === 'exatas' ? 'selected' : ''}>Exatas</option>
+                    <option value="humanas" ${cat === 'humanas' ? 'selected' : ''}>Humanas</option>
+                    <option value="legislacao" ${cat === 'legislacao' ? 'selected' : ''}>Legislação</option>
+                    <option value="geral" ${cat === 'geral' ? 'selected' : ''}>Geral</option>
+                </select>
+            </td>
             <td><span class="materia-hours">${horasDisplay}</span></td>
             <td>
                 <label class="materia-toggle" title="${m.ativo !== false ? 'Desativar matéria' : 'Ativar matéria'}">
@@ -299,19 +346,28 @@ function renderMateriasConfig(totalHoras) {
             </td>`;
         tbody.appendChild(tr);
     });
-    tbody.querySelectorAll('.materia-stars i').forEach(star => {
-        star.addEventListener('click', () => {
-            const idx = parseInt(star.dataset.idx);
-            const starVal = parseInt(star.dataset.star);
-            // Toggle: if clicking the same star, unset (nivel = 0)
-            if (currentCicloMaterias[idx].nivel === starVal) {
-                currentCicloMaterias[idx].nivel = 0;
-            } else {
-                currentCicloMaterias[idx].nivel = starVal;
-            }
+
+    // Range sliders
+    tbody.querySelectorAll('.materia-range').forEach(range => {
+        range.addEventListener('input', function() {
+            const idx = parseInt(this.dataset.idx);
+            const field = this.dataset.field;
+            currentCicloMaterias[idx][field] = parseInt(this.value);
+            this.nextElementSibling.textContent = this.value;
             renderMateriasConfig(totalHoras);
         });
     });
+
+    // Category selects
+    tbody.querySelectorAll('.materia-cat-select').forEach(sel => {
+        sel.addEventListener('change', function() {
+            const idx = parseInt(this.dataset.idx);
+            currentCicloMaterias[idx].categoria = this.value;
+            renderMateriasConfig(totalHoras);
+        });
+    });
+
+    // Toggle ativo/inativo
     tbody.querySelectorAll('.materia-toggle-input').forEach(toggle => {
         toggle.addEventListener('change', function() {
             const idx = parseInt(this.dataset.idx);
@@ -319,7 +375,7 @@ function renderMateriasConfig(totalHoras) {
             renderMateriasConfig(totalHoras);
         });
     });
-    // Update active count warning
+
     if (activeCount === 0) {
         document.getElementById('btnGerarCiclo').disabled = true;
         showToast('Ative pelo menos uma matéria para gerar o ciclo.');
@@ -334,45 +390,55 @@ document.getElementById('backToCiclosList').addEventListener('click', (e) => { e
 document.getElementById('backToCiclosFromConfig').addEventListener('click', (e) => { e.preventDefault(); showCiclosView('ciclos-list-view'); });
 document.getElementById('backToCiclosFromExec').addEventListener('click', (e) => { e.preventDefault(); if (timerInterval) { clearInterval(timerInterval); timerInterval = null; timerRunning = false; } showCiclosView('ciclos-list-view'); });
 
-// Generate ciclo (or update existing)
+// ===== GERAR CICLO INTELIGENTE =====
 document.getElementById('btnGerarCiclo').addEventListener('click', () => {
     const activeMaterias = currentCicloMaterias.filter(m => m.ativo !== false);
     if (activeMaterias.length === 0) return showToast('Ative pelo menos uma matéria!');
-    
+
     const nome = document.getElementById('configCicloNome').value || 'Novo Ciclo';
     const totalH = parseInt(document.getElementById('configHorasInput').value) || 20;
-    const sequence = generateCycleSequence(currentCicloMaterias);
+    const sequence = generateIntelligentCycle(currentCicloMaterias);
     const totalSeqMin = sequence.reduce((s, x) => s + x.duracao, 0);
-    const subjects = currentCicloMaterias.map(m => ({ 
-        nome: m.nome, sessao: formatMin(m.totalMin), 
-        tempoRestante: formatMin(m.totalMin), peso: m.peso, 
-        totalMin: m.totalMin, ativo: m.ativo !== false, nivel: m.nivel || 0
+
+    const subjects = currentCicloMaterias.map(m => ({
+        nome: m.nome, peso: m.peso, ativo: m.ativo !== false,
+        totalMin: m.totalMin || 0,
+        dificuldade: m.dificuldade || 3,
+        retencao: m.retencao || 3,
+        categoria: m.categoria || 'geral',
+        ultimoEstudo: m.ultimoEstudo || null,
+        sessoesConcluidas: m.sessoesConcluidas || 0,
+        sessao: formatMin(m.totalMin || 0),
+        tempoRestante: formatMin(m.totalMin || 0)
     }));
-    
+
     if (editingCicloId) {
-        // Update existing ciclo
         const idx = ciclos.findIndex(c => c.id === editingCicloId);
         if (idx !== -1) {
-            ciclos[idx] = { 
+            ciclos[idx] = {
                 ...ciclos[idx],
-                nome, subjects, sequence, 
-                duracao: formatMin(totalSeqMin)
+                nome, subjects, sequence,
+                duracao: formatMin(totalSeqMin),
+                duracaoHoras: totalH
             };
         }
         editingCicloId = null;
         showToast('Ciclo atualizado!');
     } else {
-        // Create new ciclo
-        const newCiclo = { 
-            id: Date.now(), nome, 
-            concurso: selectedConcursoForCiclo?.nome || '', 
-            duracao: formatMin(totalSeqMin), avanco: '0:00h', 
-            ciclosRealizados: 0, subjects, sequence 
+        const newCiclo = {
+            id: Date.now(), nome,
+            concurso: selectedConcursoForCiclo?.nome || '',
+            duracao: formatMin(totalSeqMin),
+            duracaoHoras: totalH,
+            avanco: '0:00h',
+            ciclosRealizados: 0,
+            currentPosition: 0,
+            subjects, sequence
         };
         ciclos.push(newCiclo);
-        showToast('Ciclo gerado com sucesso!');
+        showToast('Ciclo inteligente gerado!');
     }
-    saveAll(); renderCiclosList(); 
+    saveAll(); renderCiclosList();
     showCiclosView('ciclos-list-view');
 });
 
@@ -384,10 +450,13 @@ function renderCiclosList() {
     else { createCard.style.display = 'block'; btnNovo.style.display = 'none'; }
     container.innerHTML = '';
     ciclos.forEach(c => {
+        const totalBlocos = (c.sequence || []).length;
+        const materiasCount = (c.subjects || []).filter(s => s.ativo !== false).length;
+        const pos = (c.currentPosition || 0);
         const card = document.createElement('div'); card.className = 'ciclo-list-card';
-        card.innerHTML = `<div class="ciclo-list-badge"><i class="bi bi-trophy"></i></div>
+        card.innerHTML = `<div class="ciclo-list-badge"><i class="bi bi-cpu"></i></div>
             <div class="ciclo-list-info"><div class="ciclo-list-name">${c.nome}</div>
-            <div class="ciclo-list-meta"><span>Duração: <strong>${c.duracao}</strong></span><span>Ciclos: <strong>${c.ciclosRealizados}</strong></span></div></div>
+            <div class="ciclo-list-meta"><span>${materiasCount} matérias</span><span>${totalBlocos} blocos</span><span>Posição: ${pos + 1}/${totalBlocos}</span></div></div>
             <button class="btn-exec-ciclo" data-id="${c.id}"><i class="bi bi-play-fill"></i> Executar</button>
             <button class="btn-actions btn-del-ciclo" data-id="${c.id}" style="margin-left:8px;"><i class="bi bi-trash3"></i></button>`;
         container.appendChild(card);
@@ -403,15 +472,20 @@ let revisionMinutes = 0;
 let studyMinutes = 0;
 
 function openExecView(ciclo) {
-    currentExecCiclo = ciclo; currentSubjectIndex = 0;
+    currentExecCiclo = ciclo;
+    currentSubjectIndex = ciclo.currentPosition || 0;
+    if (currentSubjectIndex >= (ciclo.sequence || ciclo.subjects).length) {
+        currentSubjectIndex = 0;
+    }
     divisionEnabled = false; currentPhase = 'study';
     document.getElementById('divisionToggle').checked = false;
     document.getElementById('divisionContent').style.display = 'none';
     document.getElementById('wheelBadge').style.display = 'none';
     document.getElementById('execCicloLabel').textContent = ciclo.nome;
-    renderWheel(ciclo.sequence || ciclo.subjects);
-    selectSubject(0);
-    renderExecSubjects(ciclo.sequence || []);
+    const seq = ciclo.sequence || ciclo.subjects;
+    renderWheel(seq);
+    selectSubject(currentSubjectIndex);
+    renderExecSubjects(seq);
     showCiclosView('ciclos-exec-view');
 }
 
@@ -593,11 +667,38 @@ document.getElementById('btnIniciarTimer').addEventListener('click', function() 
                 } else {
                     showToast('Sessão concluída! ✅');
                     document.getElementById('wheelBadge').style.display = 'none';
-                    // Move to next subject
+
+                    // Salva posição no ciclo contínuo
                     const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
-                    if (currentSubjectIndex < items.length - 1) {
-                        setTimeout(() => selectSubject(currentSubjectIndex + 1), 1500);
+                    const nextIdx = currentSubjectIndex + 1;
+                    if (nextIdx >= items.length) {
+                        currentExecCiclo.currentPosition = 0; // reinicia ciclo
+                        currentExecCiclo.ciclosRealizados = (currentExecCiclo.ciclosRealizados || 0) + 1;
+                    } else {
+                        currentExecCiclo.currentPosition = nextIdx;
                     }
+
+                    // Atualiza últimoEstudo da matéria atual
+                    const currentItem = items[currentSubjectIndex];
+                    if (currentItem) {
+                        const subjectIdx = currentItem.idx;
+                        if (subjectIdx !== undefined && currentExecCiclo.subjects[subjectIdx]) {
+                            currentExecCiclo.subjects[subjectIdx].ultimoEstudo = Date.now();
+                            currentExecCiclo.subjects[subjectIdx].sessoesConcluidas = (currentExecCiclo.subjects[subjectIdx].sessoesConcluidas || 0) + 1;
+                        }
+                    }
+
+                    // Salva progresso
+                    const cicloIdx = ciclos.findIndex(c => c.id === currentExecCiclo.id);
+                    if (cicloIdx !== -1) ciclos[cicloIdx] = currentExecCiclo;
+                    saveAll();
+
+                    // Mostra prompt de avaliação de desempenho
+                    showPerformancePrompt(() => {
+                        if (currentSubjectIndex < items.length - 1 || currentExecCiclo.currentPosition === 0) {
+                            setTimeout(() => selectSubject(currentSubjectIndex + 1), 800);
+                        }
+                    });
                 }
             }
         }, 1000);
@@ -656,14 +757,99 @@ document.getElementById('btnConfirmDivision').addEventListener('click', () => {
     showToast('Divisão confirmada! Inicie a revisão.');
 });
 
+// ===== PROMPT DE DESEMPENHO PÓS-SESSÃO =====
+function showPerformancePrompt(onComplete) {
+    const currentItem = (currentExecCiclo.sequence || currentExecCiclo.subjects)[currentSubjectIndex];
+    const nome = currentItem?.nome || 'Matéria';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    overlay.style.zIndex = '3000';
+    overlay.innerHTML = `
+        <div class="modal-mentor" style="max-width:400px;text-align:center;">
+            <h3 style="margin:0 0 4px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">AVALIAR SESSÃO</h3>
+            <p style="color:var(--text-secondary);margin-bottom:20px;">Como foi seu rendimento em <strong>${nome}</strong>?</p>
+            <div class="perf-stars" style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;">
+                ${[1,2,3,4,5].map(n => `
+                    <button class="perf-star-btn" data-rating="${n}" style="font-size:1.8rem;background:none;border:none;color:var(--text-muted);cursor:pointer;transition:all 0.2s;padding:4px;">
+                        <i class="bi bi-star-fill"></i>
+                    </button>
+                `).join('')}
+            </div>
+            <div class="perf-labels" style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-bottom:16px;padding:0 8px;">
+                <span>Difícil</span><span>Regular</span><span>Fácil</span>
+            </div>
+            <button class="btn-cancel perf-skip" style="margin-right:12px;">Pular</button>
+            <button class="btn-save perf-done" style="display:none;">Confirmar</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    let selectedRating = 0;
+    const stars = overlay.querySelectorAll('.perf-star-btn');
+    const doneBtn = overlay.querySelector('.perf-done');
+    const skipBtn = overlay.querySelector('.perf-skip');
+
+    stars.forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedRating = parseInt(btn.dataset.rating);
+            stars.forEach((s, i) => {
+                s.style.color = i < selectedRating ? 'var(--accent-yellow)' : 'var(--text-muted)';
+            });
+            doneBtn.style.display = 'inline-block';
+        });
+        btn.addEventListener('mouseenter', () => {
+            const hoverVal = parseInt(btn.dataset.rating);
+            stars.forEach((s, i) => {
+                if (i < hoverVal) s.style.color = 'var(--accent-yellow)';
+            });
+        });
+        btn.addEventListener('mouseleave', () => {
+            stars.forEach((s, i) => {
+                s.style.color = i < selectedRating ? 'var(--accent-yellow)' : 'var(--text-muted)';
+            });
+        });
+    });
+
+    const close = () => {
+        document.body.removeChild(overlay);
+        if (onComplete) onComplete();
+    };
+
+    doneBtn.addEventListener('click', () => {
+        if (selectedRating > 0 && currentExecCiclo) {
+            const item = (currentExecCiclo.sequence || currentExecCiclo.subjects)[currentSubjectIndex];
+            if (item && item.idx !== undefined && currentExecCiclo.subjects[item.idx]) {
+                // Ajusta dificuldade com base no rating (rating baixo = mais difícil → aumenta dificuldade)
+                const subj = currentExecCiclo.subjects[item.idx];
+                const newDiff = Math.round(subj.dificuldade * 0.7 + (6 - selectedRating) * 1.2 * 0.3);
+                subj.dificuldade = Math.max(1, Math.min(5, newDiff));
+            }
+            const cicloIdx = ciclos.findIndex(c => c.id === currentExecCiclo.id);
+            if (cicloIdx !== -1) ciclos[cicloIdx] = currentExecCiclo;
+            saveAll();
+        }
+        close();
+    });
+
+    skipBtn.addEventListener('click', close);
+}
+
 function renderExecSubjects(sequence) {
     const container = document.getElementById('execSubjectsList'); container.innerHTML = '';
     const items = sequence.length ? sequence : currentExecCiclo.subjects;
+    const catColors = { exatas: 'var(--accent-blue)', humanas: 'var(--accent-yellow)', legislacao: 'var(--accent-green)', geral: 'var(--text-muted)' };
     items.forEach((s, i) => {
         const row = document.createElement('div');
         row.className = `exec-subject-row${i === 0 ? ' active-subject' : ''}`;
         const dur = s.duracao ? formatMin(s.duracao) : s.sessao;
-        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${dur}</span><div class="exec-subject-actions"><button data-idx="${i}"><i class="bi bi-play-fill"></i></button></div>`;
+        const cat = (currentExecCiclo.subjects[s.idx]?.categoria) || 'geral';
+        const catLabel = { exatas: 'Exatas', humanas: 'Humanas', legislacao: 'Legislação', geral: 'Geral' }[cat];
+        row.innerHTML = `
+            <span class="materia-name">${s.nome} <span class="exec-cat-badge" style="background:${catColors[cat] || catColors.geral};color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:var(--radius-sm);margin-left:6px;opacity:0.8;">${catLabel}</span></span>
+            <span class="sessao-time">${dur}</span>
+            <span class="tempo-rest"><i class="bi bi-clock"></i> ${dur}</span>
+            <div class="exec-subject-actions"><button data-idx="${i}"><i class="bi bi-play-fill"></i></button></div>`;
         row.querySelector('button').addEventListener('click', () => selectSubject(i));
         container.appendChild(row);
     });

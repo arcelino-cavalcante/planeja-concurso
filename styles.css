@@ -608,6 +608,66 @@ select.input-mentor option {
 .materia-stars i:hover { color: var(--accent-yellow); }
 .materia-hours { color: var(--accent-green-light); font-weight: 700; font-size: 1rem; }
 
+/* ===== CICLO INTELIGENTE: Sliders e Controles ===== */
+.materia-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 120px;
+}
+.materia-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+.materia-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--accent-green);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.materia-range::-webkit-slider-thumb:hover {
+    background: var(--accent-green-light);
+}
+.materia-range-val {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent-yellow);
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Category select dropdown in table */
+.materia-cat-select {
+    padding: 4px 8px !important;
+    font-size: 0.8rem !important;
+    width: auto !important;
+    min-width: 100px;
+}
+
+/* Execution category badge */
+.exec-cat-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+}
+
+/* Performance rating modal */
+.perf-star-btn:hover i {
+    transform: scale(1.2);
+}
+.perf-star-btn:active i {
+    transform: scale(0.95);
+}
+
 /* Matéria toggle (ativo/inativo) */
 .materia-toggle {
     position: relative;
