@@ -1,6 +1,10 @@
 # Planeja Concurso
 
-Plataforma de estudos, gestão de rotinas e otimização do foco para concurseiros.
+Central Tática de Estudos para Concurseiros.
+
+Disciplina. Foco. Aprovação.
+
+Plataforma de estudos com design militar: gerencie rotinas, ciclos e simulados com a disciplina de um verdadeiro soldado concurseiro.
 
 ## Funcionalidades
 

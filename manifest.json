@@ -1,13 +1,13 @@
 {
-  "name": "Planeja Concurso - Plataforma de Estudos",
+  "name": "Planeja Concurso - Central Tática de Estudos",
   "short_name": "Planeja Concurso",
-  "description": "Plataforma de estudos e gerenciamento de rotinas para concurseiros",
+  "description": "Central tática de estudos: gerencie rotinas, ciclos e simulados com disciplina militar. Foco. Disciplina. Aprovação.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#0c0f0e",
+  "theme_color": "#4b5320",
   "lang": "pt-BR",
   "icons": [
     {
