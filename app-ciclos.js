@@ -143,34 +143,38 @@ function generateIntelligentCycle(materias) {
     const now = Date.now();
     const maxPeso = Math.max(...active.map(m => m.peso), 1);
 
-    // Agrupa matérias por categoria para intercalação
-    const categorias = {};
-    active.forEach(m => {
-        const cat = m.categoria || 'geral';
-        if (!categorias[cat]) categorias[cat] = [];
-        categorias[cat].push(m);
-    });
-
     let allBlocks = [];
     active.forEach((m, originalIdx) => {
         const totalMin = m.totalMin;
         if (totalMin <= 0) return;
         const prioridade = calculatePriority(m, maxPeso, now);
         const numBlocos = Math.max(1, Math.round(prioridade / 20));
-        const duracaoPorBloco = round30(totalMin / numBlocos);
 
         let remaining = totalMin;
-        for (let b = 0; b < numBlocos && remaining >= 60; b++) {
-            const dur = Math.min(duracaoPorBloco, remaining);
+        for (let b = 0; b < numBlocos && remaining >= 30; b++) {
+            const sessionsLeft = numBlocos - b;
+            let dur = round30(remaining / sessionsLeft);
+            dur = Math.min(dur, remaining);
             allBlocks.push({
                 nome: m.nome,
-                duracao: round30(dur),
+                duracao: Math.max(60, dur),
                 idx: originalIdx,
                 prioridade,
                 categoria: m.categoria || 'geral',
                 dificuldade: m.dificuldade || 3
             });
             remaining -= dur;
+        }
+        // Se sobrou algum tempo (>= 30 min), adiciona como bloco extra
+        if (remaining >= 30) {
+            allBlocks.push({
+                nome: m.nome,
+                duracao: round30(remaining),
+                idx: originalIdx,
+                prioridade,
+                categoria: m.categoria || 'geral',
+                dificuldade: m.dificuldade || 3
+            });
         }
     });
 
@@ -419,7 +423,8 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
                 ...ciclos[idx],
                 nome, subjects, sequence,
                 duracao: formatMin(totalSeqMin),
-                duracaoHoras: totalH
+                duracaoHoras: totalH,
+                currentPosition: 0
             };
         }
         editingCicloId = null;
@@ -503,8 +508,8 @@ function renderWheel(items) {
     }, 0);
 
     let angle = -90;
-    const darkColors = ['#484848','#3e3e3e','#545454','#424242','#4e4e4e','#383838','#505050','#464646'];
-    const greenActive = '#5a8a2a';
+    const darkColors = ['#3a3d38','#2e322c','#42453f','#363a33','#40433d','#2c302a','#444740','#383c35'];
+    const greenActive = '#4b5320';
 
     items.forEach((s, i) => {
         const itemMin = s.duracao || s.totalMin || 30;
@@ -598,6 +603,12 @@ function selectSubject(idx) {
     const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
     const s = items[idx];
     const totalMin = s.duracao || s.totalMin || 120;
+
+    // Salva posição atual no ciclo
+    currentExecCiclo.currentPosition = idx;
+    const cicloIdx = ciclos.findIndex(c => c.id === currentExecCiclo.id);
+    if (cicloIdx !== -1) ciclos[cicloIdx] = currentExecCiclo;
+    saveAll();
 
     document.getElementById('wheelSubject').textContent = s.nome.length > 16 ? s.nome.substring(0, 16) + '...' : s.nome;
     document.getElementById('execSubjectName').textContent = s.nome;
@@ -695,8 +706,13 @@ document.getElementById('btnIniciarTimer').addEventListener('click', function() 
 
                     // Mostra prompt de avaliação de desempenho
                     showPerformancePrompt(() => {
-                        if (currentSubjectIndex < items.length - 1 || currentExecCiclo.currentPosition === 0) {
-                            setTimeout(() => selectSubject(currentSubjectIndex + 1), 800);
+                        const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
+                        const nextIdx = currentSubjectIndex + 1;
+                        if (nextIdx < items.length) {
+                            setTimeout(() => selectSubject(nextIdx), 800);
+                        } else {
+                            // Ciclo completo, reinicia do início
+                            setTimeout(() => selectSubject(0), 800);
                         }
                     });
                 }
@@ -841,7 +857,7 @@ function renderExecSubjects(sequence) {
     const catColors = { exatas: 'var(--accent-blue)', humanas: 'var(--accent-yellow)', legislacao: 'var(--accent-green)', geral: 'var(--text-muted)' };
     items.forEach((s, i) => {
         const row = document.createElement('div');
-        row.className = `exec-subject-row${i === 0 ? ' active-subject' : ''}`;
+        row.className = `exec-subject-row${i === currentSubjectIndex ? ' active-subject' : ''}`;
         const dur = s.duracao ? formatMin(s.duracao) : s.sessao;
         const cat = (currentExecCiclo.subjects[s.idx]?.categoria) || 'geral';
         const catLabel = { exatas: 'Exatas', humanas: 'Humanas', legislacao: 'Legislação', geral: 'Geral' }[cat];
