@@ -181,41 +181,57 @@ function generateIntelligentCycle(materias) {
     // Ordena por prioridade decrescente
     allBlocks.sort((a, b) => b.prioridade - a.prioridade);
 
-    // Intercala categorias para evitar fadiga
+    // Intercala: nunca mesma matéria consecutiva, prioriza categorias diferentes, alterna dificuldade
     const result = [];
     const used = new Set();
 
     while (result.length < allBlocks.length) {
         let added = false;
-        const lastCat = result.length > 0 ? result[result.length - 1].categoria : null;
-        const lastDiff = result.length > 0 ? result[result.length - 1].dificuldade : 0;
+        const last = result.length > 0 ? result[result.length - 1] : null;
+        const lastIdx = last ? last.idx : -1;
+        const lastCat = last ? last.categoria : null;
+        const lastDiff = last ? last.dificuldade : 0;
 
-        // Prioridade: categoria diferente E (dificuldade alternada ou mesma)
+        // Nível 1: matéria diferente + categoria diferente + dificuldade alternada
         for (let i = 0; i < allBlocks.length; i++) {
             if (used.has(i)) continue;
             const b = allBlocks[i];
-            const catOk = b.categoria !== lastCat;
-            const diffOk = Math.abs(b.dificuldade - lastDiff) >= 2 || lastDiff === 0;
-            if (catOk && diffOk) {
+            if (b.idx === lastIdx) continue; // nunca mesma matéria
+            if (b.categoria !== lastCat && (Math.abs(b.dificuldade - lastDiff) >= 2 || lastDiff === 0)) {
                 result.push(b);
                 used.add(i);
                 added = true;
                 break;
             }
         }
-        // Fallback: só categoria diferente
+        // Nível 2: matéria diferente + categoria diferente (ignora dificuldade)
         if (!added) {
             for (let i = 0; i < allBlocks.length; i++) {
                 if (used.has(i)) continue;
-                if (allBlocks[i].categoria !== lastCat || lastCat === null) {
-                    result.push(allBlocks[i]);
+                const b = allBlocks[i];
+                if (b.idx === lastIdx) continue;
+                if (b.categoria !== lastCat || lastCat === null) {
+                    result.push(b);
                     used.add(i);
                     added = true;
                     break;
                 }
             }
         }
-        // Último recurso: qualquer bloco
+        // Nível 3: matéria diferente (ignora categoria e dificuldade)
+        if (!added) {
+            for (let i = 0; i < allBlocks.length; i++) {
+                if (used.has(i)) continue;
+                const b = allBlocks[i];
+                if (b.idx !== lastIdx) {
+                    result.push(b);
+                    used.add(i);
+                    added = true;
+                    break;
+                }
+            }
+        }
+        // Último recurso: qualquer bloco restante (único caso em que repete matéria)
         if (!added) {
             for (let i = 0; i < allBlocks.length; i++) {
                 if (!used.has(i)) {
