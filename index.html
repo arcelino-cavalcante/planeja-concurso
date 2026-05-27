@@ -108,7 +108,7 @@
                 <li class="nav-item" data-page="rotinas">
                     <a href="#" class="nav-link-custom">
                         <i class="bi bi-book"></i>
-                        <span>Minhas rotinas</span>
+                        <span>Minha rotina</span>
                     </a>
                 </li>
                 <li class="nav-item" data-page="concursos">
@@ -120,7 +120,7 @@
                 <li class="nav-item" data-page="ciclos">
                     <a href="#" class="nav-link-custom">
                         <i class="bi bi-arrow-repeat"></i>
-                        <span>Meus ciclos</span>
+                        <span>Meu ciclo</span>
                     </a>
                 </li>
                 <li class="nav-item" data-page="simulados">
@@ -416,9 +416,7 @@
             <!-- Calendar/Schedule View -->
             <div id="rotinas-calendar-view" class="d-none">
                 <div class="calendar-header-area">
-                    <a href="#" class="back-link" id="backToRotinas">
-                        <i class="bi bi-arrow-left"></i> Voltar para minhas rotinas
-                    </a>
+                    <!-- removed back link -->
                     <h1 class="page-title">Nova rotina de estudos</h1>
                     <div class="routine-name-field">
                         <label class="field-label">Nome da rotina</label>
@@ -549,7 +547,7 @@
 
             <!-- VIEW 2: Select Concurso for Ciclo -->
             <div id="ciclos-wizard-view" class="d-none">
-                <a href="#" class="back-link" id="backToCiclosList"><i class="bi bi-arrow-left"></i> Voltar para meus ciclos</a>
+                <!-- removed back link -->
                 <div class="wizard-card" style="margin:20px 0;">
                     <h2 class="wizard-question">Selecione o concurso para seu ciclo</h2>
                     <p class="wizard-desc">As matérias e pesos serão carregados do concurso selecionado. As horas serão calculadas com base na sua rotina ativa.</p>
@@ -568,7 +566,8 @@
 
             <!-- VIEW 3: Ciclo Config (Matérias) -->
             <div id="ciclos-config-view" class="d-none">
-                <a href="#" class="back-link" id="backToCiclosFromConfig"><i class="bi bi-arrow-left"></i> Voltar para meus ciclos</a>
+                <button id="btnDeleteCiclo" class="btn-mentor btn-danger" style="float: right; margin-top: -10px; padding: 4px 12px; font-size: 0.85rem;"><i class="bi bi-trash"></i> Excluir Ciclo</button>
+                <!-- removed back link -->
                 <h1 class="page-title">Configurar ciclo</h1>
 
                 <!-- Ciclo Info Card -->
@@ -613,9 +612,7 @@
             <!-- VIEW 4: Ciclo Execution -->
             <div id="ciclos-exec-view" class="d-none">
                 <div class="exec-top-bar">
-                    <a href="#" class="back-link" id="backToCiclosFromExec">
-                        <i class="bi bi-arrow-left"></i> Voltar para meus ciclos
-                    </a>
+                    <!-- removed back link -->
                     
                     <!-- Meta de Estudos do Dia na Execução -->
                     <div class="exec-day-meta" id="execDayMetaInfo" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:6px 12px; border-radius:var(--radius-sm); font-family:var(--font-heading); font-size:0.9rem; letter-spacing:0.5px;">
@@ -1859,7 +1856,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
-            const APP_VERSION = '1.4.2';
+            const APP_VERSION = '1.4.3';
             let refreshing = false;
             let newWorkerWaiting = null;
 
