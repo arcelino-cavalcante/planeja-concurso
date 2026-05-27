@@ -417,10 +417,10 @@
             <div id="rotinas-calendar-view" class="d-none">
                 <div class="calendar-header-area">
                     <!-- removed back link -->
-                    <h1 class="page-title">Nova rotina de estudos</h1>
-                    <div class="routine-name-field">
+                    <h1 class="page-title">Minha rotina de estudos</h1>
+                    <div class="routine-name-field" style="display: none;">
                         <label class="field-label">Nome da rotina</label>
-                        <input type="text" class="input-mentor" id="routineNameInput" placeholder="Informe um nome para sua rotina">
+                        <input type="text" class="input-mentor" id="routineNameInput" value="Minha Rotina">
                     </div>
                 </div>
 
@@ -1856,7 +1856,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
-            const APP_VERSION = '1.4.3';
+            const APP_VERSION = '1.4.4';
             let refreshing = false;
             let newWorkerWaiting = null;
 
