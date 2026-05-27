@@ -566,8 +566,9 @@
 
             <!-- VIEW 3: Ciclo Config (Matérias) -->
             <div id="ciclos-config-view" class="d-none">
+                <a href="#" class="back-link" id="backToCiclosFromConfig" style="float: left;"><i class="bi bi-arrow-left"></i> Voltar</a>
                 <button id="btnDeleteCiclo" class="btn-mentor btn-danger" style="float: right; margin-top: -10px; padding: 4px 12px; font-size: 0.85rem;"><i class="bi bi-trash"></i> Excluir Ciclo</button>
-                <!-- removed back link -->
+                <div style="clear: both;"></div>
                 <h1 class="page-title">Configurar ciclo</h1>
 
                 <!-- Ciclo Info Card -->
@@ -1856,7 +1857,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
-            const APP_VERSION = '1.4.4';
+            const APP_VERSION = '1.4.5';
             let refreshing = false;
             let newWorkerWaiting = null;
 
