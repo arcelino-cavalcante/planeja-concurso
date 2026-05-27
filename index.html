@@ -579,7 +579,8 @@
                             <input type="text" class="input-mentor" id="configCicloNome" value="">
                             <div class="ciclo-meta">
                                 <div><span class="meta-label">Concurso:</span><br><strong id="configConcursoNome">-</strong></div>
-                                <div><span class="meta-label">Horas semanais de estudo</span><br><input type="number" class="input-mentor" id="configHorasInput" value="20" min="1" max="100" style="width:80px;display:inline;padding:4px 8px;"></div>
+                                <div><span class="meta-label">Rotina vinculada:</span><br><select class="input-mentor" id="configRotinaSelect" style="display:inline;padding:4px 8px;max-width:180px;"></select></div>
+                                <div><span class="meta-label">Horas semanais</span><br><strong id="configHorasDisplay">0h</strong><input type="hidden" id="configHorasInput" value="20"></div>
                             </div>
                         </div>
                     </div>
@@ -1818,8 +1819,8 @@
 
     <!-- ===================== CONTEXT MENU ===================== -->
     <div class="context-menu" id="contextMenu">
-        <button class="context-item" data-action="ativar">
-            <i class="bi bi-check-circle"></i> Ativar rotina
+        <button class="context-item" data-action="ativar" id="contextAtivarBtn">
+            <i class="bi bi-check-circle"></i> <span id="contextAtivarText">Ativar rotina</span>
         </button>
         <button class="context-item" data-action="editar">
             <i class="bi bi-pencil"></i> Editar rotina
@@ -1859,7 +1860,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
-            const APP_VERSION = '1.3.2';
+            const APP_VERSION = '1.4.0';
             let refreshing = false;
             let newWorkerWaiting = null;
 
