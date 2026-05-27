@@ -1,6 +1,6 @@
 // ===== PLANEJA CONCURSO - Service Worker (PWA) =====
 // ALWAYS bump this version on deploy to trigger updates
-const SW_VERSION = '1.0.2';
+const SW_VERSION = '1.2.1';
 const CACHE_NAME = 'planeja-concurso-v3-' + SW_VERSION;
 const ASSETS = [
     './',
@@ -11,7 +11,9 @@ const ASSETS = [
     './app-ciclos.js',
     './app-simulados.js',
     './app-bisus.js',
+    './app-edital.js',
     './app-admin.js',
+    './app-qg.js',
     './manifest.json',
     './icon-192.png',
     './icon-512.png'
@@ -59,8 +61,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Skip Firebase/Firestore API calls (don't cache)
+    // Skip Firebase/Firestore/Storage API calls (don't cache)
     if (url.hostname.includes('firestore') ||
+        url.hostname.includes('firebasestorage') ||
         url.hostname.includes('googleapis') ||
         url.hostname.includes('identitytoolkit')) {
         return; // let browser handle normally

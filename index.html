@@ -21,48 +21,50 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- ===================== LOGIN OVERLAY ===================== -->
-    <div id="loginOverlay" style="position:fixed;inset:0;z-index:10000;background:url('https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;display:none;align-items:center;justify-content:center;">
-        <div style="position:absolute;inset:0;background:rgba(10, 10, 10, 0.85);backdrop-filter:blur(10px);"></div>
-        <div class="card-mentor" style="position:relative;padding:48px 40px;width:100%;max-width:420px;text-align:center;border:1px solid rgba(255,255,255,0.08);background:rgba(26, 26, 26, 0.65);box-shadow:0 24px 48px rgba(0,0,0,0.6);border-radius:24px;">
-            <div class="logo-icon" style="width:80px;height:80px;font-size:2.5rem;margin:0 auto 20px;background:var(--bg-tertiary);box-shadow:0 8px 16px rgba(0,0,0,0.3);"><i class="bi bi-mortarboard-fill" style="background:linear-gradient(135deg, var(--accent-green-light), var(--accent-green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;"></i></div>
-            <h2 style="margin-bottom:8px;font-weight:900;letter-spacing:-0.5px;font-size:2rem;">PLANEJA CONCURSO</h2>
-            <p style="color:var(--text-secondary);margin-bottom:40px;font-size:1.1rem;">Sua plataforma de aprovação</p>
-            
+     <div id="loginOverlay" style="position:fixed;inset:0;z-index:10000;background:var(--bg-primary);display:none;align-items:center;justify-content:center;">
+        <div class="card-mentor" style="position:relative;padding:48px 40px;width:100%;max-width:420px;text-align:center;border:1px solid var(--border-color);box-shadow:var(--shadow-lg);border-radius:4px;">
+            <div style="font-size:2.8rem;color:var(--accent-green-light);margin-bottom:12px;"><i class="bi bi-mortarboard-fill"></i></div>
+            <h2 style="font-family:var(--font-heading);margin-bottom:4px;font-weight:900;letter-spacing:2px;font-size:1.6rem;color:var(--text-primary);">PLANEJA CONCURSO</h2>
+            <p style="color:var(--text-secondary);margin-bottom:32px;font-size:0.95rem;">Sua plataforma de aprovação</p>
+
             <div id="loginAlunoView">
-                <button class="btn-executar" id="btnGoogleLogin" style="width:100%;display:flex;align-items:center;justify-content:center;gap:16px;background:rgba(255,255,255,0.05);color:var(--text-primary);border:1px solid rgba(255,255,255,0.1);padding:16px;border-radius:12px;font-size:1.1rem;font-weight:600;transition:all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);box-shadow:0 4px 6px rgba(0,0,0,0.2);">
-                    <svg width="24" height="24" viewBox="0 0 48 48" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                <button class="btn-executar" id="btnGoogleLogin" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px;font-size:1rem;font-weight:600;">
+                    <svg width="22" height="22" viewBox="0 0 48 48">
                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
                         <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                         <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                     </svg>
-                    <span>Entrar com o Google</span>
+                    Entrar com o Google
                 </button>
-                <div style="margin-top:24px;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
-                    Ao entrar, você concorda com nossos <a href="#" style="color:var(--accent-green-light);text-decoration:none;">Termos de Uso</a> e <a href="#" style="color:var(--accent-green-light);text-decoration:none;">Privacidade</a>.
+                <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-color);">
+                    <a href="#admin" id="linkToAdmin" style="font-size:0.8rem;color:var(--text-muted);text-decoration:none;font-family:var(--font-heading);text-transform:uppercase;letter-spacing:1px;transition:color 0.2s;" onmouseenter="this.style.color='var(--accent-green-light)'" onmouseleave="this.style.color='var(--text-muted)'">
+                        <i class="bi bi-shield-lock"></i> Acesso Administrativo
+                    </a>
                 </div>
             </div>
 
             <div id="loginAdminView" style="display:none;text-align:left;">
-                <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:24px;">
-                    <i class="bi bi-shield-lock" style="color:var(--accent-red);font-size:1.2rem;"></i>
-                    <h4 style="margin:0;color:var(--accent-red);font-weight:700;">Acesso Administrativo</h4>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
+                    <i class="bi bi-shield-lock" style="color:var(--accent-green-light);font-size:1.2rem;"></i>
+                    <h4 style="margin:0;color:var(--text-primary);font-weight:700;font-family:var(--font-heading);text-transform:uppercase;letter-spacing:1px;">Acesso Admin</h4>
                 </div>
-                <div class="form-group" style="margin-bottom:20px;">
-                    <label class="meta-label">Email Corporativo</label>
-                    <input type="email" class="input-mentor" id="adminEmail" style="width:100%;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;">
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="meta-label">Email</label>
+                    <input type="email" class="input-mentor" id="adminEmail" style="width:100%;">
                 </div>
-                <div class="form-group" style="margin-bottom:32px;">
-                    <label class="meta-label">Senha de Acesso</label>
-                    <input type="password" class="input-mentor" id="adminSenha" style="width:100%;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;">
+                <div class="form-group" style="margin-bottom:24px;">
+                    <label class="meta-label">Senha</label>
+                    <input type="password" class="input-mentor" id="adminSenha" style="width:100%;">
                 </div>
-                <button class="btn-executar" id="btnAdminLogin" style="width:100%;padding:14px;border-radius:10px;font-weight:700;letter-spacing:0.5px;">Entrar no Painel</button>
+                <button class="btn-executar" id="btnAdminLogin" style="width:100%;padding:14px;font-weight:700;">Entrar no Painel</button>
+                <a href="#" id="linkToAluno" style="display:block;text-align:center;margin-top:16px;font-size:0.8rem;color:var(--text-muted);text-decoration:none;font-family:var(--font-heading);text-transform:uppercase;letter-spacing:1px;">← Voltar</a>
             </div>
         </div>
     </div>
@@ -131,6 +133,12 @@
                     <a href="#" class="nav-link-custom">
                         <i class="bi bi-file-earmark-text"></i>
                         <span>Edital Verticalizado</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="qg">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-shield-shaded"></i>
+                        <span>QG do Combatente</span>
                     </a>
                 </li>
                 <li class="nav-item" data-page="bisus">
@@ -259,6 +267,25 @@
 
         <!-- ========== PAGE: INÍCIO ========== -->
         <section class="page-content active" id="page-inicio">
+            <!-- Banner Tático de Rotina Diária -->
+            <div class="tactical-banner" id="dashboardTacticalBanner">
+                <div class="tactical-banner-left">
+                    <div class="tactical-badge">STATUS TÁTICO</div>
+                    <div class="tactical-time-info">
+                        <span class="tactical-date" id="dashboardCurrentDate">DOMINGO, 24 DE MAIO</span>
+                        <span class="tactical-hours" id="dashboardRoutineHoursToday">
+                            <i class="bi bi-clock-history"></i> CARGA HORÁRIA DE HOJE: <strong id="todayStudyHoursText">0h 00m</strong> DE ESTUDOS PLANEJADOS
+                        </span>
+                    </div>
+                </div>
+                <div class="tactical-banner-right">
+                    <div class="tactical-status" id="dashboardTacticalStatus">
+                        <span class="status-dot green"></span>
+                        <span class="status-text">EM COMBATE</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="dashboard-grid">
                 <!-- Ciclo de Estudos Card -->
                 <div class="card-mentor ciclo-card">
@@ -269,8 +296,9 @@
                         <div class="ciclo-badge">
                             <i class="bi bi-shield-fill-check"></i>
                         </div>
-                        <div class="ciclo-text">
-                            <span id="dashboardCicloNome">Nenhum ciclo ativo</span>
+                        <div class="ciclo-text" style="display:flex; flex-direction:column; gap:2px;">
+                            <span id="dashboardCicloNome" style="font-weight:700; text-transform:uppercase; font-family:var(--font-heading); font-size:1.15rem; letter-spacing:0.5px;">Nenhum ciclo ativo</span>
+                            <span id="dashboardCicloRotinaHoje" style="font-size:0.85rem; color:var(--text-secondary);">Hoje: Carregando...</span>
                         </div>
                     </div>
                     <div class="progress-ring-container">
@@ -298,7 +326,7 @@
                             <span class="hora-value" id="dashboardHorasEstudadas">00h 00m</span>
                         </div>
                     </div>
-                    <button class="btn-executar">
+                    <button class="btn-executar" id="btnExecutarCicloDashboard">
                         <i class="bi bi-play-fill"></i>
                         Executar ciclo atual
                     </button>
@@ -309,18 +337,11 @@
                     <!-- Welcome Card -->
                     <div class="card-mentor welcome-card">
                         <div class="welcome-content">
-                            <div class="welcome-message" id="mentorMessage">
-                                <p>Nenhuma mensagem do mentor para hoje.</p>
-                            </div>
-                            <div class="welcome-user">
-                                <div class="welcome-avatar">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
-                                <div class="welcome-text">
-                                    <span class="welcome-label">Bem-vindo</span>
-                                    <span class="welcome-name" id="dashboardUserName">Aluno</span>
-                                </div>
-                            </div>
+                            <span class="welcome-label">Bem-vindo</span>
+                            <span class="welcome-name" id="dashboardUserName">Aluno</span>
+                        </div>
+                        <div class="welcome-message" id="mentorMessage" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);">
+                            <p style="color:var(--text-secondary);font-size:0.85rem;">Nenhuma mensagem do mentor para hoje.</p>
                         </div>
                     </div>
 
@@ -332,10 +353,23 @@
                         <div id="avisosList" style="margin-top:12px;"></div>
                     </div>
 
-                    <!-- Pendências Card -->
-                    <div class="card-mentor pendencias-card">
-                        <h3 class="section-title">Pendências</h3>
-                        <p class="section-text">Você não possui pendências.</p>
+                    <!-- Carga Horária Semanal (Gráfico) -->
+                    <div class="card-mentor chart-card" id="weeklyChartCard">
+                        <h3 class="section-title" style="margin-bottom:16px;"><i class="bi bi-bar-chart-line-fill"></i> Relatório de Carga Semanal</h3>
+                        <div class="weekly-bar-chart" id="weeklyBarChartContainer">
+                            <!-- Bars will be rendered dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Histórico de Combate (Estudos) -->
+                    <div class="card-mentor pendencias-card" id="historyCard">
+                        <h3 class="section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                            <span><i class="bi bi-clock-history"></i> Histórico de Combate</span>
+                            <button id="btnLimparHistorico" style="background:none;border:none;color:var(--accent-red);font-size:0.75rem;cursor:pointer;font-family:var(--font-heading);text-transform:uppercase;letter-spacing:1px;font-weight:700;"><i class="bi bi-trash3"></i> Limpar</button>
+                        </h3>
+                        <div id="historicoListContainer" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;padding-right:4px;">
+                            <!-- Will be rendered by JS -->
+                        </div>
                     </div>
 
                     <!-- Média de Horas Card -->
@@ -582,9 +616,21 @@
                     <a href="#" class="back-link" id="backToCiclosFromExec">
                         <i class="bi bi-arrow-left"></i> Voltar para meus ciclos
                     </a>
-                    <button class="btn-nova-rotina" id="btnEditarCiclo">
-                        <i class="bi bi-pencil"></i> Editar ciclo
-                    </button>
+                    
+                    <!-- Meta de Estudos do Dia na Execução -->
+                    <div class="exec-day-meta" id="execDayMetaInfo" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:6px 12px; border-radius:var(--radius-sm); font-family:var(--font-heading); font-size:0.9rem; letter-spacing:0.5px;">
+                        <span class="status-dot green" id="execDayMetaDot" style="width:8px; height:8px; border-radius:50%; background:var(--accent-green-light); box-shadow:0 0 6px var(--accent-green-light); display:inline-block;"></span>
+                        <span style="color:var(--text-secondary); text-transform:uppercase;">META DE HOJE: <strong id="execTodayHoursText" style="color:var(--accent-yellow); font-weight:700;">0h 00m</strong></span>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn-executar" id="btnEntrarModoFoco" style="padding: 8px 16px; font-family:'Barlow Condensed', sans-serif; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; background: var(--accent-yellow); color: #000; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 0;">
+                            <i class="bi bi-bullseye"></i> Modo Foco
+                        </button>
+                        <button class="btn-nova-rotina" id="btnEditarCiclo">
+                            <i class="bi bi-pencil"></i> Editar ciclo
+                        </button>
+                    </div>
                 </div>
 
                 <div class="exec-layout">
@@ -635,6 +681,27 @@
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Pomodoro / Intervalo Tático Card -->
+                        <div class="time-division-card" style="margin-top: 15px;">
+                            <div class="division-header">
+                                <span>Intervalo de Foco (Pomodoro)</span>
+                                <label class="division-check">
+                                    <input type="checkbox" id="pomodoroToggle"> Habilitar
+                                </label>
+                            </div>
+                            <div class="division-content" id="pomodoroContent" style="display:none; padding: 12px 0 0 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                                    <span style="font-size:0.85rem; color:var(--text-secondary);">Duração do Descanso Tático:</span>
+                                    <span id="pomodoroBreakMinutesText" style="font-family:var(--font-heading); font-weight:700; color:var(--accent-yellow);">5 minutos</span>
+                                </div>
+                                <input type="range" class="division-slider" id="pomodoroSlider" min="5" max="10" value="5" step="1">
+                                <div style="display:flex; justify-content:space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                                    <span>5 min</span>
+                                    <span>10 min</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -648,6 +715,112 @@
                     </div>
                     <div id="execSubjectsList"></div>
                 </div>
+            </div>
+
+            <!-- VIEW 5: Modo Foco Overlay (Single Screen, No Scroll) -->
+            <div id="ciclos-foco-view" class="d-none focus-container" style="height: 100vh; background: var(--bg-primary); display: flex; flex-direction: column; justify-content: space-between; padding: 25px 30px; box-sizing: border-box; font-family: var(--font-body); overflow: hidden;">
+                
+                <!-- Header: Sair do Foco & Meta de Hoje -->
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto;">
+                    <button class="btn-focus-exit" id="btnSairModoFoco" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 18px; border-radius: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                        <i class="bi bi-fullscreen-exit" style="color: var(--accent-green-light);"></i> Sair do Modo Foco
+                    </button>
+                    
+                    <div style="display:flex; align-items:center; gap:8px; background:var(--bg-secondary); border:1px solid var(--border-color); padding:8px 18px; border-radius:0; font-family:'Barlow Condensed', sans-serif; font-size:0.9rem; letter-spacing:0.5px; text-transform:uppercase;">
+                        <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-green-light); box-shadow:0 0 8px var(--accent-green-light); display:inline-block; animation: pulse-green 2s infinite;"></span>
+                        <span style="color:var(--text-secondary);">META DE HOJE: <strong id="focoTodayHoursText" style="color:var(--accent-green-light); font-weight:700;">0h 00m</strong></span>
+                    </div>
+                </div>
+
+                <!-- Main Layout Grid (3 Columns) -->
+                <div style="display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 30px; align-items: center; flex: 1; width: 100%; max-width: 1200px; margin: 20px auto;">
+                    
+                    <!-- LEFT COLUMN: Divisão de Tempo -->
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 22px; box-sizing: border-box; min-height: 290px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+                                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary);">Divisão do Tempo</span>
+                                <label style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                                    <input type="checkbox" id="focoDivisionToggle" style="accent-color: var(--accent-green-light);"> Habilitar
+                                </label>
+                            </div>
+                            
+                            <div id="focoDivisionContent" style="display: none;">
+                                <div style="display: flex; justify-content: space-between; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.1rem; margin-bottom: 12px;">
+                                    <span id="focoDivRevisaoTime" style="color: var(--accent-blue);">00:40:00</span>
+                                    <span id="focoDivConteudoTime" style="color: var(--text-secondary);">01:20:00</span>
+                                </div>
+                                <input type="range" class="division-slider" id="focoDivisionSlider" min="0" max="100" value="33" style="width: 100%; margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 15px;">
+                                    <span><span style="width:6px; height:6px; background:var(--accent-blue); display:inline-block; border-radius:50%; margin-right:4px;"></span> Revisão</span>
+                                    <span>Conteúdo Novo <span style="width:6px; height:6px; background:var(--text-secondary); display:inline-block; border-radius:50%; margin-left:4px;"></span></span>
+                                </div>
+                                <button class="btn-executar" id="btnConfirmDivisionFoco" style="max-width: 100%; width: 100%; font-size: 0.8rem; padding: 10px; border-radius: 0;">
+                                    Confirmar Divisão
+                                </button>
+                            </div>
+                            
+                            <div id="focoDivisionDisabledMsg" style="display: block; text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 40px 0;">
+                                <i class="bi bi-info-circle" style="font-size: 1.2rem; display: block; margin-bottom: 8px;"></i> Divisão desabilitada. Habilite para programar revisões.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CENTER COLUMN: Giant Clock & Subject -->
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <div style="text-align: center; margin-bottom: 25px; max-width: 90%;">
+                            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 3px;">ESTUDANDO AGORA</span>
+                            <h1 id="focoSubjectName" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 2.3rem; text-transform: uppercase; color: var(--text-primary); margin: 4px 0 0 0; letter-spacing: 0.5px; line-height: 1.2;">Legislação de Trânsito</h1>
+                        </div>
+
+                        <div style="position: relative; width: 310px; height: 310px; border-radius: 50%; background: var(--bg-card); border: 2px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
+                            <div style="position: absolute; inset: -3px; border-radius: 50%; border: 2px solid var(--accent-green-light); opacity: 0.2; filter: blur(4px); pointer-events: none;"></div>
+                            
+                            <span id="focoWheelBadge" style="font-family:'Barlow Condensed', sans-serif; font-weight:800; font-size:0.8rem; color:#fff; background:var(--accent-green); padding:3px 10px; border-radius:2px; text-transform:uppercase; margin-bottom:8px; display:none; letter-spacing: 0.5px; position: relative; z-index: 2;">Revisão</span>
+                            
+                            <span id="focoWheelTimer" style="font-family:'Barlow Condensed', sans-serif; font-weight:800; font-size:3.8rem; color:var(--text-primary); letter-spacing:1px; margin-bottom: 5px; position: relative; z-index: 2;">02:00:00</span>
+                            
+                            <button class="btn-iniciar" id="btnIniciarTimerFoco" style="position: relative; z-index: 10; margin-top: 12px; padding: 10px 24px; font-size: 0.95rem; border-radius: 0; background: var(--accent-green); color: #fff; font-weight: 700; border: none; cursor: pointer; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: var(--shadow);">
+                                <i class="bi bi-play-fill"></i> Iniciar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Pomodoro Break -->
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 22px; box-sizing: border-box; min-height: 290px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+                                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary);">Intervalo de Foco</span>
+                                <label style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                                    <input type="checkbox" id="focoPomodoroToggle" style="accent-color: var(--accent-green-light);"> Habilitar
+                                </label>
+                            </div>
+                            
+                            <div id="focoPomodoroContent" style="display: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Descanso Tático:</span>
+                                    <span id="focoPomodoroBreakMinutesText" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; color: var(--accent-green-light);">5 minutos</span>
+                                </div>
+                                <input type="range" class="division-slider" id="focoPomodoroSlider" min="5" max="10" value="5" step="1" style="width: 100%; margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
+                                    <span>5 min</span>
+                                    <span>10 min</span>
+                                </div>
+                            </div>
+                            
+                            <div id="focoPomodoroDisabledMsg" style="display: block; text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 40px 0;">
+                                <i class="bi bi-info-circle" style="font-size: 1.2rem; display: block; margin-bottom: 8px;"></i> Pomodoro desabilitado. Habilite para descanso automático.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer: Decorative operational mark -->
+                <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; opacity: 0.5;">
+                    O Mentor • Divisão de Operações de Estudo de Elite
+                </div>
+
             </div>
 
         </section>
@@ -806,6 +979,109 @@
             </div>
         </section>
 
+        <!-- ========== PAGE: QG DO COMBATENTE ========== -->
+        <section class="page-content" id="page-qg">
+            <div class="page-header-custom">
+                <div>
+                    <a href="#" class="back-link" id="backToHomeFromQg">
+                        <i class="bi bi-arrow-left"></i> Voltar para home
+                    </a>
+                    <h1 class="page-title">Quartel-General (QG) do Combatente</h1>
+                </div>
+            </div>
+
+            <div class="qg-layout">
+                <!-- LEFT: Soldier Profile & Patent Timeline -->
+                <div class="qg-left-col">
+                    <!-- Profile Header Card -->
+                    <div class="card-mentor qg-profile-card">
+                        <div class="qg-profile-header">
+
+                            <!-- Photo uploader -->
+                            <div class="qg-avatar-wrapper" id="qgAvatarWrapper" title="Clique para enviar sua foto">
+                                <img id="qgAvatarImg" class="qg-avatar-img" src="" alt="Foto do perfil" style="display:none">
+                                <div id="qgAvatarPlaceholder" class="qg-avatar-placeholder">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                                <div class="qg-avatar-overlay">
+                                    <i class="bi bi-camera-fill"></i>
+                                </div>
+                                <input type="file" id="qgAvatarInput" accept="image/*" style="display:none">
+                            </div>
+
+                            <h2 id="qgUserPatentName" class="qg-profile-patent-name">RECRUTA</h2>
+                            <p class="qg-profile-label">Sua Patente Atual</p>
+                        </div>
+
+                        <div class="qg-profile-stats">
+                            <div class="qg-stat-item">
+                                <i class="bi bi-clock-fill"></i>
+                                <div>
+                                    <span id="qgTotalHours" class="qg-stat-value">0.0</span>
+                                    <span class="qg-stat-unit">horas acumuladas</span>
+                                </div>
+                            </div>
+                            <div class="qg-stat-item">
+                                <i class="bi bi-flag-fill"></i>
+                                <div>
+                                    <span id="qgPatentsUnlocked" class="qg-stat-value">1</span>
+                                    <span class="qg-stat-unit">patentes desbloqueadas</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Next patent progress -->
+                        <div class="qg-next-progress" id="qgNextProgress">
+                            <div class="qg-next-header">
+                                <span class="qg-next-label">Próxima Promoção</span>
+                                <span id="qgNextPatentName" class="qg-next-name">Cabo</span>
+                            </div>
+                            <div class="qg-progress-bar">
+                                <div id="qgPatentProgressFill" class="qg-progress-fill" style="width: 0%;"></div>
+                            </div>
+                            <div class="qg-next-footer">
+                                <span id="qgCurrentHoursText">0h</span>
+                                <span id="qgMissingHoursText">Faltam 10h</span>
+                                <span id="qgTargetHoursText">10h</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patent Timeline -->
+                    <div class="card-mentor qg-patent-timeline-card">
+                        <h3 class="qg-section-title">
+                            <i class="bi bi-bar-chart-steps"></i> Linha de Promoções
+                        </h3>
+                        <div class="qg-patent-timeline" id="qgPatentsList">
+                            <!-- Dynamically loaded -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Leaderboard -->
+                <div class="qg-right-col">
+                    <div class="card-mentor qg-leaderboard-card">
+                        <div class="qg-leaderboard-header">
+                            <h2 class="qg-section-title">
+                                <i class="bi bi-trophy-fill"></i> Ranking de Horas
+                            </h2>
+                            <span class="qg-online-badge">Online</span>
+                        </div>
+
+                        <!-- Podium Top 3 -->
+                        <div class="qg-podium" id="qgPodium">
+                            <!-- Dynamically loaded -->
+                        </div>
+
+                        <!-- Remaining leaderboard -->
+                        <div class="qg-leaderboard-list" id="qgLeaderboardList">
+                            <!-- Dynamically loaded -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- ========== PAGE: EDITAL VERTICALIZADO ========== -->
         <section class="page-content" id="page-edital">
             <div class="page-header-custom">
@@ -822,6 +1098,17 @@
             <div id="edital-list-view">
                 <div style="display:flex;gap:12px;margin-bottom:20px;">
                     <button class="btn-executar" id="btnNovoEdital"><i class="bi bi-plus-lg"></i> Novo Edital</button>
+                    <button class="btn-nova-rotina" id="btnImportarEditalConcurso"><i class="bi bi-download"></i> Importar do Concurso</button>
+                </div>
+                <!-- Concurso selection for import -->
+                <div id="editalConcursoSelector" class="card-mentor" style="display:none;padding:24px;margin-bottom:20px;">
+                    <h3 class="section-title" style="margin-bottom:8px;">Selecione o concurso</h3>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:16px;">As matérias do concurso serão importadas como base do edital. Você poderá adicionar tópicos a cada matéria.</p>
+                    <div class="concurso-grid" id="editalConcursoGrid"></div>
+                    <div id="editalNoConcursoMsg" style="display:none;text-align:center;padding:20px;color:var(--text-muted);">
+                        <i class="bi bi-exclamation-circle" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>
+                        <p>Nenhum concurso cadastrado. Vá em <strong>Meus Concursos</strong> para cadastrar um.</p>
+                    </div>
                 </div>
                 <div id="editaisListCards"></div>
             </div>
@@ -954,6 +1241,17 @@
                         <label class="meta-label">Nome de exibição</label>
                         <input type="text" class="input-mentor" id="configNomeInput" placeholder="Seu nome" style="width:100%;">
                     </div>
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label class="meta-label">Gênero</label>
+                        <select class="input-mentor" id="configGenderSelect" style="width:100%; border-radius:0; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color); padding:10px;">
+                            <option value="M">Masculino (Soldado)</option>
+                            <option value="F">Feminino (Soldada)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label class="meta-label">Mensagem de Honra / Lema</label>
+                        <input type="text" class="input-mentor" id="configMottoInput" placeholder="Sua frase de foco" style="width:100%;">
+                    </div>
                     <div class="config-info-row">
                         <span class="meta-label">Email</span>
                         <span id="configEmailDisplay" style="color:var(--text-secondary);font-size:0.9rem;">—</span>
@@ -1084,56 +1382,38 @@
 
         <!-- ========== PAGE: ADMIN DASHBOARD ========== -->
         <section class="page-content" id="page-admin-dashboard">
-            <div class="admin-page-header">
+            <div class="page-header-custom">
                 <div>
                     <h1 class="page-title">Painel Administrativo</h1>
                     <p style="color:var(--text-secondary);margin-top:4px;">Visão geral do sistema Planeja Concurso</p>
                 </div>
             </div>
 
-            <!-- Admin Stats Grid -->
-            <div class="admin-stats-grid" id="adminStatsGrid">
-                <div class="admin-stat-card">
-                    <div class="admin-stat-icon" style="background:rgba(139,154,58,0.15);color:var(--accent-green-light);">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-                    <div class="admin-stat-info">
-                        <span class="admin-stat-value" id="statTotalUsers">0</span>
-                        <span class="admin-stat-label">Usuários Totais</span>
-                    </div>
+            <div class="dashboard-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="card-mentor" style="text-align:center;">
+                    <div style="font-size:2.2rem;color:var(--accent-green-light);margin-bottom:8px;"><i class="bi bi-people-fill"></i></div>
+                    <div class="card-title-custom">Usuários Totais</div>
+                    <span id="statTotalUsers" style="font-family:var(--font-heading);font-weight:800;font-size:2.4rem;color:var(--text-primary);">0</span>
                 </div>
-                <div class="admin-stat-card">
-                    <div class="admin-stat-icon" style="background:rgba(58,108,215,0.15);color:var(--accent-blue);">
-                        <i class="bi bi-person-check-fill"></i>
-                    </div>
-                    <div class="admin-stat-info">
-                        <span class="admin-stat-value" id="statActiveUsers">0</span>
-                        <span class="admin-stat-label">Usuários Ativos</span>
-                    </div>
+                <div class="card-mentor" style="text-align:center;">
+                    <div style="font-size:2.2rem;color:var(--accent-blue);margin-bottom:8px;"><i class="bi bi-person-check-fill"></i></div>
+                    <div class="card-title-custom">Ativos</div>
+                    <span id="statActiveUsers" style="font-family:var(--font-heading);font-weight:800;font-size:2.4rem;color:var(--text-primary);">0</span>
                 </div>
-                <div class="admin-stat-card">
-                    <div class="admin-stat-icon" style="background:rgba(201,64,64,0.15);color:var(--accent-red);">
-                        <i class="bi bi-person-x-fill"></i>
-                    </div>
-                    <div class="admin-stat-info">
-                        <span class="admin-stat-value" id="statInactiveUsers">0</span>
-                        <span class="admin-stat-label">Desativados</span>
-                    </div>
+                <div class="card-mentor" style="text-align:center;">
+                    <div style="font-size:2.2rem;color:var(--accent-red);margin-bottom:8px;"><i class="bi bi-person-x-fill"></i></div>
+                    <div class="card-title-custom">Desativados</div>
+                    <span id="statInactiveUsers" style="font-family:var(--font-heading);font-weight:800;font-size:2.4rem;color:var(--text-primary);">0</span>
                 </div>
-                <div class="admin-stat-card">
-                    <div class="admin-stat-icon" style="background:rgba(201,184,78,0.15);color:var(--accent-yellow);">
-                        <i class="bi bi-journal-richtext"></i>
-                    </div>
-                    <div class="admin-stat-info">
-                        <span class="admin-stat-value" id="statTotalBisus">0</span>
-                        <span class="admin-stat-label">Bisus Publicados</span>
-                    </div>
+                <div class="card-mentor" style="text-align:center;">
+                    <div style="font-size:2.2rem;color:var(--accent-yellow);margin-bottom:8px;"><i class="bi bi-journal-richtext"></i></div>
+                    <div class="card-title-custom">Bisus</div>
+                    <span id="statTotalBisus" style="font-family:var(--font-heading);font-weight:800;font-size:2.4rem;color:var(--text-primary);">0</span>
                 </div>
             </div>
 
-            <!-- Recent Activity -->
-            <div class="card-mentor" style="padding:24px;margin-top:24px;max-width:900px;">
-                <h3 class="section-title" style="margin-bottom:16px;"><i class="bi bi-clock-history" style="margin-right:8px;color:var(--accent-green-light);"></i>Últimos Usuários Cadastrados</h3>
+            <div class="card-mentor" style="margin-top:24px;">
+                <h3 class="card-title-custom" style="margin-bottom:16px;"><i class="bi bi-clock-history" style="margin-right:8px;color:var(--accent-green-light);"></i>Últimos Usuários Cadastrados</h3>
                 <div id="recentUsersContainer">
                     <div style="text-align:center;padding:30px;color:var(--text-muted);">Carregando...</div>
                 </div>
@@ -1142,44 +1422,37 @@
 
         <!-- ========== PAGE: ADMIN USUÁRIOS ========== -->
         <section class="page-content" id="page-admin-usuarios">
-            <div class="admin-page-header">
+            <div class="page-header-custom">
                 <div>
                     <h1 class="page-title">Gerenciar Usuários</h1>
                     <p style="color:var(--text-secondary);margin-top:4px;">Ative ou desative o acesso dos alunos à plataforma.</p>
                 </div>
             </div>
 
-            <!-- Search -->
-            <div class="admin-search-bar" style="display:flex;align-items:center;gap:12px;">
-                <i class="bi bi-search"></i>
-                <input type="text" id="adminSearchUsers" class="input-mentor" placeholder="Buscar por nome ou email..." style="border:none;background:transparent;flex:1;padding:10px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                <input type="text" id="adminSearchUsers" class="input-mentor" placeholder="Buscar por nome ou email..." style="flex:1;">
                 <button class="btn-executar" id="btnRefreshUsers" style="max-width:160px;padding:8px 16px;font-size:0.85rem;white-space:nowrap;">
                     <i class="bi bi-arrow-clockwise"></i> Recarregar
                 </button>
             </div>
 
-            <!-- Users Table -->
-            <div class="admin-users-table-wrapper">
-                <table class="admin-users-table" id="adminUsersTable">
-                    <thead>
-                        <tr>
-                            <th>Usuário</th>
-                            <th>Email</th>
-                            <th>Último acesso</th>
-                            <th>Status</th>
-                            <th>Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminUsersBody">
-                        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">Carregando usuários...</td></tr>
-                    </tbody>
-                </table>
+            <div class="rotinas-table" style="max-width:100%;">
+                <div class="table-header" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 100px;">
+                    <span>Usuário</span>
+                    <span>Email</span>
+                    <span>Último acesso</span>
+                    <span>Status</span>
+                    <span>Ação</span>
+                </div>
+                <div id="adminUsersBody">
+                    <div style="text-align:center;padding:40px;color:var(--text-muted);">Carregando usuários...</div>
+                </div>
             </div>
         </section>
 
         <!-- ========== PAGE: ADMIN PUBLICAR BISUS ========== -->
         <section class="page-content" id="page-admin-bisus">
-            <div class="admin-page-header">
+            <div class="page-header-custom">
                 <div>
                     <h1 class="page-title">Publicar Bisus & Dicas</h1>
                     <p style="color:var(--text-secondary);margin-top:4px;">Crie publicações que aparecerão na tela dos alunos.</p>
@@ -1199,7 +1472,8 @@
 
             <div id="admin-bisus-form-view" class="d-none">
                 <a href="#" class="back-link" id="backToAdminBisusList"><i class="bi bi-arrow-left"></i> Voltar para publicações</a>
-                <h2 class="section-title" style="margin:16px 0 20px;">Nova Publicação</h2>
+                <h2 class="section-title" id="adminBisuEditTitle" style="margin:16px 0 20px;">Nova Publicação</h2>
+                <input type="hidden" id="adminBisuEditId">
                 <div class="card-mentor" style="padding:24px;max-width:900px;">
                     <div class="form-group" style="margin-bottom:16px;">
                         <label class="meta-label">Título do Artigo</label>
@@ -1293,6 +1567,7 @@
                             <label class="meta-label">Mensagem</label>
                             <textarea class="input-mentor" id="adminAvisoMensagem" placeholder="Descreva o aviso..." style="width:100%;height:80px;resize:vertical;padding:10px;"></textarea>
                         </div>
+                        <input type="hidden" id="adminAvisoEditId">
                         <div style="display:flex;justify-content:flex-end;gap:8px;">
                             <button class="btn-actions" id="btnCancelarAviso" style="padding:8px 16px;">Cancelar</button>
                             <button class="btn-executar" id="btnSalvarAviso" style="max-width:140px;padding:8px 16px;font-size:0.85rem;"><i class="bi bi-check-lg"></i> Publicar</button>
@@ -1434,6 +1709,110 @@
         </div>
     </div>
 
+    <!-- ===================== SYLLABUS SYNC MODAL ===================== -->
+    <div class="modal-overlay" id="syllabusSyncModal">
+        <div class="modal-mentor" style="max-width: 440px; border: 2px solid var(--accent-yellow); box-shadow: 0 0 20px rgba(255, 193, 7, 0.25); border-radius: 0;">
+            <button class="modal-close" id="syllabusSyncClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 3rem; color: var(--accent-yellow); margin-bottom: 12px;">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+                <h3 style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    MISSÃO CUMPRIDA! 🎖️
+                </h3>
+                <p style="font-size: 1rem; color: var(--text-secondary); line-height: 1.5; margin: 12px 0;">
+                    Você completou o bloco de estudos de <strong id="syncMateriaName" style="color: var(--accent-yellow);">[Matéria]</strong>. Quer marcar os tópicos que estudou no seu <strong>Edital Verticalizado</strong>?
+                </p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                <button class="btn-save" id="btnConfirmSyllabusSync" style="background: var(--accent-yellow); color: #000; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; letter-spacing: 1.5px; border: none; padding: 12px; font-size: 1rem; text-transform: uppercase; cursor: pointer; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    <i class="bi bi-check-lg"></i> Sim, ir para o edital
+                </button>
+                <button class="btn-cancel" id="btnCancelSyllabusSync" style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 1px; padding: 10px; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; border-radius: 0;">
+                    Agora não, continuar ciclo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== SOLDIER ONBOARDING MODAL ===================== -->
+    <div class="modal-overlay" id="soldierOnboardingModal">
+        <div class="modal-mentor" style="max-width: 460px; border: 2px solid var(--accent-green-light); box-shadow: 0 0 25px rgba(107,122,42,0.3); border-radius: 0;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h3 style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary); margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    ALISTAMENTO MILITAR
+                </h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4; margin: 10px 0;">
+                    Recruta, seja bem-vindo(a) ao Quartel-General dos Estudos. Configure suas credenciais de combate para iniciarmos o alistamento!
+                </p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <!-- Soldier Name -->
+                <div class="form-group">
+                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Nome do Combatente</label>
+                    <input type="text" class="input-mentor" id="onboardSoldierName" placeholder="Como quer ser chamado(a) no Rank" style="width: 100%; border-radius: 0;">
+                </div>
+                
+                <!-- Gender Choice -->
+                <div class="form-group">
+                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Gênero do Combatente</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <label id="onboardGenderM" style="display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid var(--accent-green-light); background: rgba(107,122,42,0.08); padding: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem; transition: all 0.2s;">
+                            <input type="radio" name="onboardGender" value="M" checked style="display: none;">
+                            <i class="bi bi-gender-male"></i>Soldado
+                        </label>
+                        <label id="onboardGenderF" style="display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border-color); padding: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem; transition: all 0.2s;">
+                            <input type="radio" name="onboardGender" value="F" style="display: none;">
+                            <i class="bi bi-gender-female"></i>Soldada
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Honor Motto -->
+                <div class="form-group">
+                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Sua Mensagem de Honra / Lema</label>
+                    <textarea class="input-mentor" id="onboardSoldierMotto" placeholder="Ex: A disciplina é meu escudo tático mais forte contra a procrastinação!" style="width: 100%; height: 75px; resize: none; border-radius: 0; padding: 10px; font-size: 0.85rem; line-height: 1.4;"></textarea>
+                </div>
+            </div>
+            
+            <button class="btn-save" id="btnOnboardSave" style="width:100%; background: var(--accent-green); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; letter-spacing: 1.5px; border: none; padding: 14px; font-size: 1rem; text-transform: uppercase; cursor: pointer; border-radius: 0; box-shadow: var(--shadow);">
+                <i class="bi bi-check-lg"></i> Salvar e Entrar em Combate
+            </button>
+        </div>
+    </div>
+
+    <!-- ===================== COMBATANT PROFILE DETAILS MODAL ===================== -->
+    <div class="modal-overlay" id="combatantDetailModal">
+        <div class="modal-mentor" style="max-width: 420px; border: 2px solid var(--accent-green-light); box-shadow: 0 0 25px rgba(107,122,42,0.3); border-radius: 0; text-align: center;">
+            <button class="modal-close" id="combatantDetailClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            
+            <div id="detailPatentBadge" style="font-size: 4.5rem; color: var(--accent-green-light); filter: drop-shadow(0 0 15px rgba(107,122,42,0.35)); margin: 15px 0 10px 0;">
+                <i class="bi bi-shield-shaded"></i>
+            </div>
+            
+            <h2 id="detailCombatantName" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; text-transform: uppercase; margin: 5px 0 0 0; color: var(--text-primary);">NOME</h2>
+            <span id="detailPatentName" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-green-light);">PATENTE</span>
+            
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 12px; margin: 20px 0 15px 0;">
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary); display: block; letter-spacing: 0.5px; margin-bottom: 4px;">TEMPO DE ESTUDO ACUMULADO</span>
+                <strong id="detailStudyHours" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.8rem; color: var(--text-primary);">0.0 horas</strong>
+            </div>
+            
+            <div style="padding: 10px; border-left: 3px solid var(--accent-green-light); background: rgba(107,122,42,0.04); text-align: left; margin-bottom: 10px;">
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 0.8rem; color: var(--accent-green-light); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 4px;">Mensagem de Honra / Lema</span>
+                <p id="detailHonorMessage" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; font-style: italic; margin: 0; font-family: 'Inter', sans-serif;">
+                    "Frase inspiradora."
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- ===================== SIDEBAR OVERLAY (Mobile) ===================== -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -1465,6 +1844,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <!-- Firebase Config & DB -->
     <script src="firebase-config.js"></script>
     <!-- Custom JS -->
@@ -1473,11 +1853,13 @@
     <script src="app-simulados.js"></script>
     <script src="app-bisus.js"></script>
     <script src="app-edital.js"></script>
+    <script src="app-qg.js"></script>
     <script src="app-admin.js"></script>
     <!-- Service Worker Registration (PWA) -->
     <script>
         if ('serviceWorker' in navigator) {
-            const APP_VERSION = '1.0.2';
+            // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
+            const APP_VERSION = '1.2.1';
             let refreshing = false;
             let newWorkerWaiting = null;
 
@@ -1556,20 +1938,27 @@
                 if (reg) reg.update();
             });
 
-            // Check every 5 minutes
+            // Check every 2 minutes
             setInterval(() => {
                 navigator.serviceWorker.getRegistration().then((reg) => {
                     if (reg) reg.update();
                 });
-            }, 5 * 60 * 1000);
+            }, 2 * 60 * 1000);
 
-            // Check on visibility change
+            // Check on tab becoming visible (works when PWA is in background)
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible') {
                     navigator.serviceWorker.getRegistration().then((reg) => {
                         if (reg) reg.update();
                     });
                 }
+            });
+
+            // Check on window focus (critical for standalone PWA mode)
+            window.addEventListener('focus', () => {
+                navigator.serviceWorker.getRegistration().then((reg) => {
+                    if (reg) reg.update();
+                });
             });
 
             // ===== MANUAL UPDATE BUTTON (Configurações) =====
