@@ -11,39 +11,76 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const firestore = firebase.firestore();
 const auth = firebase.auth();
+const storage = firebase.storage();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 let currentUserUID = null;
 let isAdmin = false;
 
-// Admin ROUTING is provider-based (not email-based):
-// - Google login        → Student (aluno)
-// - Email/Password login → Admin
-// ADMIN_EMAIL is kept only for filtering admin from dashboard stats
-const ADMIN_EMAIL = 'admin@omentor.com';
-const ADMIN_EMAIL_LOWER = ADMIN_EMAIL.toLowerCase().trim();
+// Admin emails — only these can access the admin panel via Email/Password login
+const ADMIN_EMAILS = ['admin@gmail.com'];
 
 // Enable offline persistence
-firestore.enablePersistence({ synchronizeTabs: true }).catch(err => {
-    if (err.code === 'failed-precondition') console.warn('Firestore: multiple tabs open');
-    else if (err.code === 'unimplemented') console.warn('Firestore: browser not supported for offline');
+firestore.enablePersistence().catch(err => {
+    if (err.code === 'failed-precondition') console.warn('Firestore: outra aba já ativa');
+    else if (err.code === 'unimplemented') console.warn('Firestore: navegador não suporta offline');
 });
 
-// ===== HYBRID DB: localStorage (instant) + Firestore (cloud) scoped per user =====
+// ===== Debounced Firestore write queue (PRO — minimiza writes) =====
+const _writeQueue = {};
+const _writeTimers = {};
+const _writeRetries = {};
+const DEBOUNCE_MS = 2500;  // 2.5s — agrupa múltiplos saves em 1 write
+const MAX_RETRIES = 3;
+
+function _flushWrite(key, attempt = 0) {
+    if (!currentUserUID) return;
+    const data = _writeQueue[key];
+    if (data === undefined) return;
+    delete _writeQueue[key];
+    firestore.collection('users').doc(currentUserUID).collection('dados').doc(key).set({
+        items: data,
+        updatedAt: new Date().toISOString()
+    }, { merge: true }).then(() => {
+        delete _writeRetries[key];
+    }).catch(err => {
+        console.warn(`⚠️ Firestore write ${key}:`, err.message);
+        if (attempt < MAX_RETRIES) {
+            const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+            _writeRetries[key] = setTimeout(() => _flushWrite(key, attempt + 1), delay);
+        } else {
+            _writeQueue[key] = data; // requeue for next save
+        }
+    });
+}
+
+function _flushAll() {
+    Object.keys(_writeTimers).forEach(key => {
+        clearTimeout(_writeTimers[key]);
+        delete _writeTimers[key];
+    });
+    Object.keys(_writeRetries).forEach(key => {
+        clearTimeout(_writeRetries[key]);
+        delete _writeRetries[key];
+    });
+    Object.keys(_writeQueue).forEach(key => _flushWrite(key));
+}
+
+// Flush pending writes before page close
+window.addEventListener('beforeunload', () => _flushAll());
+// Also flush when visibility changes (tab switch)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) _flushAll();
+});
+
+// ===== HYBRID DB: localStorage (instant) + Firestore (debounced, retry) =====
 const DB = {
     save(key, data) {
         if (!currentUserUID) return;
-        // Instant local save (scoped to uid)
         localStorage.setItem(`mentor_${currentUserUID}_${key}`, JSON.stringify(data));
-        // Async cloud save (fire-and-forget)
-        firestore.collection('users').doc(currentUserUID).collection('dados').doc(key).set({
-            items: data,
-            updatedAt: new Date().toISOString()
-        }).then(() => {
-            console.log(`☁️ Firestore: ${key} salvo`);
-        }).catch(err => {
-            console.warn('⚠️ Firestore save error:', err);
-        });
+        _writeQueue[key] = data;
+        if (_writeTimers[key]) clearTimeout(_writeTimers[key]);
+        _writeTimers[key] = setTimeout(() => _flushWrite(key), DEBOUNCE_MS);
     },
 
     load(key, fallback = []) {
@@ -64,57 +101,86 @@ const DB = {
 
     clearAll() {
         if (!currentUserUID) return;
-        const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile'];
+        const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'lastNpcTick', 'npcsLeaderboard'];
         keys.forEach(key => {
             localStorage.removeItem(`mentor_${currentUserUID}_${key}`);
+            localStorage.removeItem(`mentor_${currentUserUID}_${key}_ts`);
             firestore.collection('users').doc(currentUserUID).collection('dados').doc(key).delete()
                 .catch(err => console.warn('Firestore delete error for ' + key + ':', err));
         });
-        console.log('🗑️ All data cleared from localStorage and Firestore');
-    }
+        console.log('🗑️ All data cleared');
+    },
+
+    // Force immediate flush of all pending writes
+    flush() { _flushAll(); }
 };
 
-// ===== SYNC FROM FIRESTORE → localStorage =====
+// ===== SYNC FROM FIRESTORE → localStorage (cached — só lê se necessário) =====
 async function syncFromFirestore() {
     if (!currentUserUID) return false;
+    // Skip if already synced in this session
+    if (sessionStorage.getItem(`synced_${currentUserUID}`)) return false;
     try {
         const snapshot = await firestore.collection('users').doc(currentUserUID).collection('dados').get();
         let synced = false;
         snapshot.forEach(doc => {
             const data = doc.data().items;
             if (data) {
-                localStorage.setItem(`mentor_${currentUserUID}_${doc.id}`, JSON.stringify(data));
-                synced = true;
+                // Only overwrite localStorage if cloud version is newer (or absent)
+                const localTime = localStorage.getItem(`mentor_${currentUserUID}_${doc.id}_ts`);
+                const cloudTime = doc.data().updatedAt || '';
+                if (!localTime || cloudTime > localTime) {
+                    localStorage.setItem(`mentor_${currentUserUID}_${doc.id}`, JSON.stringify(data));
+                    localStorage.setItem(`mentor_${currentUserUID}_${doc.id}_ts`, cloudTime);
+                    synced = true;
+                }
             }
         });
+        sessionStorage.setItem(`synced_${currentUserUID}`, '1');
         return synced;
     } catch (err) {
-        console.warn('📴 Offline mode — usando localStorage:', err.message);
+        console.warn('📴 Offline — usando localStorage:', err.message);
         return false;
     }
 }
 
-// ===== PUSH localStorage → Firestore (migration/first time setup) =====
+// ===== PUSH localStorage → Firestore (batch — 1 write total) =====
 async function pushLocalToFirestore() {
     if (!currentUserUID) return;
-    const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile'];
+    const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'lastNpcTick', 'npcsLeaderboard'];
+    const batch = firestore.batch();
+    const now = new Date().toISOString();
+    let hasOps = false;
     for (const key of keys) {
-        const local = DB.load(key, []);
-        if (local.length > 0 || (key === 'userProfile' && Object.keys(local).length > 0)) {
-            try {
-                const docRef = firestore.collection('users').doc(currentUserUID).collection('dados').doc(key);
-                const doc = await docRef.get();
-                if (!doc.exists) {
-                    await docRef.set({
-                        items: local,
-                        updatedAt: new Date().toISOString()
-                    });
-                    console.log(`⬆️ Pushed ${key} to Firestore`);
-                }
-            } catch (e) {
-                console.warn(`Push ${key} failed:`, e.message);
-            }
-        }
+        const local = DB.load(key, key === 'userProfile' ? {} : key === 'pomodoroEnabled' ? false : key === 'pomodoroBreakMin' ? 5 : key === 'lastNpcTick' ? Date.now() : []);
+        // Skip truly empty: null, undefined, empty arrays, empty objects, zero for non-scalar
+        const isEmpty = local === null || local === undefined
+            || (Array.isArray(local) && local.length === 0)
+            || (!Array.isArray(local) && typeof local === 'object' && Object.keys(local).length === 0);
+        if (isEmpty) continue;
+        const docRef = firestore.collection('users').doc(currentUserUID).collection('dados').doc(key);
+        batch.set(docRef, { items: local, updatedAt: now }, { merge: true });
+        localStorage.setItem(`mentor_${currentUserUID}_${key}_ts`, now);
+        hasOps = true;
+    }
+    if (hasOps) {
+        try { await batch.commit(); }
+        catch (e) { console.warn('Batch sync falhou:', e.message); }
+    }
+}
+
+// ===== AVATAR STORAGE (Firebase Storage — efficient for images) =====
+async function uploadAvatarToStorage(file) {
+    if (!currentUserUID) return null;
+    const ref = storage.ref(`avatars/${currentUserUID}`);
+    try {
+        const snapshot = await ref.put(file, { contentType: file.type, cacheControl: 'public,max-age=86400' });
+        const url = await snapshot.ref.getDownloadURL();
+        console.log('📷 Avatar uploaded to Storage');
+        return url;
+    } catch (e) {
+        console.warn('Avatar upload failed:', e.message);
+        return null;
     }
 }
 
@@ -125,6 +191,7 @@ function refreshAllData() {
     if (typeof concursos !== 'undefined') concursos = DB.load('concursos', []);
     if (typeof ciclos !== 'undefined') ciclos = DB.load('ciclos', []);
     if (typeof simulados !== 'undefined') simulados = DB.load('simulados', []);
+    if (typeof historicoEstudos !== 'undefined') historicoEstudos = DB.load('historicoEstudos', []);
     if (typeof userProfile !== 'undefined') {
         userProfile = DB.load('userProfile', { nome: auth.currentUser?.displayName || 'Aluno' });
     }
@@ -139,6 +206,7 @@ function refreshAllData() {
     // Load dashboard extras
     if (typeof loadMentorMessage === 'function') loadMentorMessage();
     if (typeof loadAvisos === 'function') loadAvisos();
+    if (typeof updateDashboard === 'function') updateDashboard();
 }
 
 // ===== AUTH & LOGIN UI LOGIC =====
@@ -162,6 +230,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     checkAdminHash();
     window.addEventListener('hashchange', checkAdminHash);
+
+    // Manual toggle via link clicks
+    document.getElementById('linkToAluno')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.hash = '';
+    });
 
     // Google Login (Student)
     document.getElementById('btnGoogleLogin')?.addEventListener('click', () => {
@@ -195,11 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             currentUserUID = user.uid;
 
-            // Detect admin by auth provider:
-            // Email/Password (providerId = 'password') → Admin
-            // Google (providerId = 'google.com') → Student
+            // Detect admin: Email/Password login + email matches admin list
             const providerId = user.providerData && user.providerData[0] ? user.providerData[0].providerId : '';
-            isAdmin = (providerId === 'password');
+            const isPasswordAuth = providerId === 'password';
+            const isAdminEmail = user.email && ADMIN_EMAILS.some(e => e.toLowerCase().trim() === user.email.toLowerCase().trim());
+            isAdmin = isPasswordAuth && isAdminEmail;
             console.log('✅ User logged in:', user.email, '| Provider:', providerId, '| isAdmin:', isAdmin);
             
             if (loadingOverlay) loadingOverlay.style.display = 'flex';
@@ -249,6 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 await pushLocalToFirestore();
                 await syncFromFirestore();
                 refreshAllData();
+
+                // Check if onboarding preconfiguration is needed
+                if (!userProfile.soldierConfigured) {
+                    if (typeof showSoldierOnboardingModal === 'function') {
+                        showSoldierOnboardingModal(user);
+                    }
+                }
 
                 // Setup student UI permissions for Bisus
                 if (document.getElementById('btnNovoBisu')) {

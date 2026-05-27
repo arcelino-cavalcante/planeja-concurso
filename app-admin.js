@@ -65,7 +65,7 @@ function setupAdminUI() {
 async function loadAdminDashboard() {
     try {
         // Fetch users count - force server to bypass offline cache
-        const usersSnap = await firestore.collection('users').get({ source: 'server' });
+        const usersSnap = await firestore.collection('users').get();
         let totalUsers = 0;
         let activeUsers = 0;
         let inactiveUsers = 0;
@@ -75,7 +75,7 @@ async function loadAdminDashboard() {
             const profile = doc.data().profile || doc.data();
             // Skip the admin user from counts (case-insensitive)
             const profileEmail = (profile.email || '').toLowerCase().trim();
-            if (profileEmail === ADMIN_EMAIL_LOWER) return;
+            if (ADMIN_EMAILS.some(e => e.toLowerCase().trim() === profileEmail)) return;
 
             totalUsers++;
             if (profile.active === false) {
@@ -164,14 +164,14 @@ function renderRecentUsers(users) {
 // ===== USER MANAGEMENT =====
 async function loadAllUsers() {
     try {
-        const snapshot = await firestore.collection('users').get({ source: 'server' });
+        const snapshot = await firestore.collection('users').get();
         allUsers = [];
 
         snapshot.forEach(doc => {
             const data = doc.data();
             const profile = data.profile || data;
             const profileEmail = (profile.email || '').toLowerCase().trim();
-            if (profileEmail === ADMIN_EMAIL_LOWER) return;
+            if (ADMIN_EMAILS.some(e => e.toLowerCase().trim() === profileEmail)) return;
 
             allUsers.push({
                 uid: doc.id,
@@ -198,38 +198,35 @@ function renderUsersTable(users) {
     if (!tbody) return;
 
     if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);"><i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:12px;"></i>Nenhum usuário encontrado.</td></tr>';
+        tbody.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);"><i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:12px;"></i>Nenhum usuário encontrado.</div>';
         return;
     }
 
     tbody.innerHTML = users.map(u => {
         const avatarContent = u.photoURL
-            ? `<img src="${u.photoURL}" alt="${u.nome}">`
-            : `<i class="bi bi-person-fill"></i>`;
+            ? `<img src="${u.photoURL}" alt="${u.nome}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">`
+            : `<i class="bi bi-person-fill" style="font-size:1.2rem;color:var(--text-muted);"></i>`;
         const dateStr = u.lastLogin
             ? new Date(u.lastLogin).toLocaleDateString('pt-BR')
             : '—';
-        const statusClass = u.active ? 'ativo' : 'desativado';
-        const statusText = u.active ? 'Ativo' : 'Desativado';
 
         return `
-            <tr>
-                <td>
-                    <div class="admin-user-cell">
-                        <div class="admin-user-avatar">${avatarContent}</div>
-                        <span class="admin-user-name">${u.nome}</span>
-                    </div>
-                </td>
-                <td style="color:var(--text-secondary);font-size:0.9rem;">${u.email}</td>
-                <td style="color:var(--text-muted);font-size:0.85rem;">${dateStr}</td>
-                <td><span class="admin-status-badge ${statusClass}">${statusText}</span></td>
-                <td>
-                    <label class="admin-toggle" title="${u.active ? 'Desativar acesso' : 'Ativar acesso'}">
+            <div class="rotina-row" style="display:grid;grid-template-columns:2fr 2fr 1.5fr 1fr 120px;margin:6px 0;padding:14px 20px;align-items:center;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;overflow:hidden;">${avatarContent}</div>
+                    <span style="font-weight:600;font-size:0.95rem;">${u.nome}</span>
+                </div>
+                <span style="color:var(--text-secondary);font-size:0.85rem;">${u.email}</span>
+                <span style="color:var(--text-muted);font-size:0.8rem;">${dateStr}</span>
+                <span class="status-badge ${u.active ? 'ativa' : 'desativada'}">${u.active ? 'Ativo' : 'Desativado'}</span>
+                <div style="display:flex;align-items:center;gap:8px;justify-self:center;">
+                    <label class="admin-toggle" title="${u.active ? 'Desativar' : 'Ativar'}">
                         <input type="checkbox" ${u.active ? 'checked' : ''} data-uid="${u.uid}" class="user-toggle-input">
                         <span class="admin-toggle-slider"></span>
                     </label>
-                </td>
-            </tr>
+                    <button class="btn-user-delete" data-uid="${u.uid}" title="Excluir usuário" style="background:none;border:none;color:var(--accent-red);cursor:pointer;font-size:1rem;padding:2px 4px;"><i class="bi bi-trash3"></i></button>
+                </div>
+            </div>
         `;
     }).join('');
 
@@ -239,6 +236,20 @@ function renderUsersTable(users) {
             const uid = this.dataset.uid;
             const newActive = this.checked;
             await toggleUserAccess(uid, newActive);
+        });
+    });
+
+    // Bind delete buttons
+    tbody.querySelectorAll('.btn-user-delete').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const uid = btn.dataset.uid;
+            const user = allUsers.find(u => u.uid === uid);
+            if (!confirm(`Excluir permanentemente ${user?.nome || 'este usuário'}?`)) return;
+            try {
+                await firestore.collection('users').doc(uid).delete();
+                showToast('Usuário excluído!');
+                loadAllUsers();
+            } catch (e) { showToast('Erro ao excluir: ' + e.message); }
         });
     });
 }
@@ -331,7 +342,10 @@ function renderAdminBisusGrid() {
                 </div>
                 <div class="admin-bisu-card-footer">
                     <span><i class="bi bi-calendar3"></i> ${dataFmt}</span>
-                    <button class="admin-bisu-delete" data-id="${b.id}"><i class="bi bi-trash3"></i> Excluir</button>
+                    <div style="display:flex;gap:6px;">
+                        <button class="admin-bisu-edit" data-id="${b.id}" style="background:none;border:none;color:var(--accent-blue);cursor:pointer;font-size:0.85rem;"><i class="bi bi-pencil"></i></button>
+                        <button class="admin-bisu-delete" data-id="${b.id}" style="background:none;border:none;color:var(--accent-red);cursor:pointer;font-size:0.85rem;"><i class="bi bi-trash3"></i></button>
+                    </div>
                 </div>
             </div>
         `;
@@ -341,15 +355,31 @@ function renderAdminBisusGrid() {
     container.querySelectorAll('.admin-bisu-delete').forEach(btn => {
         btn.addEventListener('click', async () => {
             const bisuId = btn.dataset.id;
-            if (confirm('Tem certeza que deseja excluir esta publicação?')) {
+            if (confirm('Excluir esta publicação?')) {
                 try {
                     await firestore.collection('bisus').doc(bisuId).delete();
                     showToast('Publicação excluída!');
                     loadAdminBisus();
-                } catch (e) {
-                    showToast('Erro ao excluir: ' + e.message);
-                }
+                } catch (e) { showToast('Erro ao excluir: ' + e.message); }
             }
+        });
+    });
+
+    // Bind edit buttons
+    container.querySelectorAll('.admin-bisu-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const bisu = adminBisusList.find(b => b.id === btn.dataset.id);
+            if (!bisu) return;
+            document.getElementById('adminBisuTitulo').value = bisu.titulo || '';
+            document.getElementById('adminBisuCategoria').value = bisu.categoria || '';
+            document.getElementById('adminBisuImagem').value = bisu.imagem || '';
+            document.getElementById('adminBisuResumo').value = bisu.resumo || '';
+            if (typeof setEditorContent === 'function') setEditorContent('adminBisuEditor', bisu.conteudo || '');
+            document.getElementById('adminBisuEditId').value = bisu.id;
+            document.getElementById('adminBisuEditTitle').textContent = 'Editar Publicação';
+            document.getElementById('btnAdminSalvarBisu').innerHTML = '<i class="bi bi-check-lg"></i> Atualizar Publicação';
+            document.getElementById('admin-bisus-list-view').classList.add('d-none');
+            document.getElementById('admin-bisus-form-view').classList.remove('d-none');
         });
     });
 }
@@ -360,6 +390,9 @@ document.getElementById('btnAdminNovoBisu')?.addEventListener('click', () => {
     document.getElementById('adminBisuCategoria').value = '';
     document.getElementById('adminBisuImagem').value = '';
     document.getElementById('adminBisuResumo').value = '';
+    document.getElementById('adminBisuEditId').value = '';
+    document.getElementById('adminBisuEditTitle').textContent = 'Nova Publicação';
+    document.getElementById('btnAdminSalvarBisu').innerHTML = '<i class="bi bi-check-lg"></i> Publicar';
     if (typeof setEditorContent === 'function') setEditorContent('adminBisuEditor', '');
     document.getElementById('admin-bisus-list-view').classList.add('d-none');
     document.getElementById('admin-bisus-form-view').classList.remove('d-none');
@@ -379,7 +412,7 @@ document.getElementById('btnAdminCancelarBisu')?.addEventListener('click', () =>
 // ===== CHECK USER ACCESS (called from firebase-config.js) =====
 async function checkUserAccess(uid) {
     try {
-        const doc = await firestore.collection('users').doc(uid).get({ source: 'server' });
+        const doc = await firestore.collection('users').doc(uid).get();
         if (doc.exists) {
             const data = doc.data();
             const profile = data.profile || data;
@@ -398,7 +431,7 @@ async function checkUserAccess(uid) {
 async function saveUserProfile(user) {
     if (!user) return;
     const userEmail = (user.email || '').toLowerCase().trim();
-    if (userEmail === ADMIN_EMAIL_LOWER) return;
+    if (ADMIN_EMAILS.some(e => e.toLowerCase().trim() === userEmail)) return;
     try {
         const userRef = firestore.collection('users').doc(user.uid);
         const doc = await userRef.get();
@@ -434,7 +467,7 @@ function loadAdminMensagens() {
 
 async function loadMensagemDiaAdmin() {
     try {
-        const snap = await firestore.collection('mensagens').orderBy('createdAt', 'desc').limit(1).get({ source: 'server' });
+        const snap = await firestore.collection('mensagens').orderBy('createdAt', 'desc').limit(1).get();
         if (!snap.empty) {
             const doc = snap.docs[0];
             document.getElementById('adminMensagemDia').value = doc.data().mensagem || '';
@@ -451,7 +484,7 @@ async function loadMensagemDiaAdmin() {
 
 async function loadMensagensHistorico() {
     try {
-        const snap = await firestore.collection('mensagens').orderBy('createdAt', 'desc').limit(10).get({ source: 'server' });
+        const snap = await firestore.collection('mensagens').orderBy('createdAt', 'desc').limit(10).get();
         const container = document.getElementById('adminMensagensHistorico');
         if (!container) return;
         if (snap.empty) {
@@ -461,13 +494,27 @@ async function loadMensagensHistorico() {
         container.innerHTML = snap.docs.map(doc => {
             const m = doc.data();
             const texto = m.mensagem.length > 80 ? m.mensagem.substring(0, 80) + '...' : m.mensagem;
+            const dateStr = new Date(m.createdAt).toLocaleString('pt-BR');
             return `
-                <div style="padding:8px 0;border-bottom:1px solid var(--border-color);font-size:0.82rem;">
-                    <p style="color:var(--text-primary);margin:0 0 2px;">${texto}</p>
-                    <span style="color:var(--text-muted);font-size:0.72rem;">${new Date(m.createdAt).toLocaleString('pt-BR')}</span>
+                <div style="padding:10px 12px;border:1px solid var(--border-color);border-radius:var(--radius);margin-bottom:6px;background:var(--bg-secondary);display:flex;justify-content:space-between;align-items:start;gap:8px;">
+                    <div style="flex:1;min-width:0;">
+                        <p style="color:var(--text-primary);margin:0 0 2px;font-size:0.85rem;">${texto}</p>
+                        <span style="color:var(--text-muted);font-size:0.72rem;">${dateStr}</span>
+                    </div>
+                    <button class="btn-del-msg-admin" data-id="${doc.id}" style="background:none;border:none;color:var(--accent-red);cursor:pointer;font-size:0.85rem;flex-shrink:0;"><i class="bi bi-trash3"></i></button>
                 </div>
             `;
         }).join('');
+
+        // Bind delete
+        container.querySelectorAll('.btn-del-msg-admin').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Excluir esta mensagem?')) return;
+                await firestore.collection('mensagens').doc(btn.dataset.id).delete();
+                showToast('Mensagem removida!');
+                loadMensagensHistorico();
+            });
+        });
     } catch (e) {
         console.warn('Erro ao carregar histórico:', e);
     }
@@ -488,7 +535,7 @@ document.getElementById('btnSalvarMensagemDia')?.addEventListener('click', async
 
 async function loadAvisosAdmin() {
     try {
-        const snap = await firestore.collection('avisos').orderBy('createdAt', 'desc').get({ source: 'server' });
+        const snap = await firestore.collection('avisos').orderBy('createdAt', 'desc').get();
         adminAvisosList = [];
         snap.forEach(doc => adminAvisosList.push({ id: doc.id, ...doc.data() }));
         renderAdminAvisos();
@@ -512,10 +559,26 @@ function renderAdminAvisos() {
                     <p style="color:var(--text-secondary);font-size:0.85rem;margin:0;">${a.mensagem}</p>
                     <span style="font-size:0.75rem;color:var(--text-muted);">${new Date(a.createdAt).toLocaleDateString('pt-BR')}</span>
                 </div>
-                <button class="btn-actions btn-del-aviso-admin" data-id="${a.id}" style="padding:4px 8px;border:none;background:rgba(201,64,64,0.1);color:var(--accent-red);border-radius:6px;cursor:pointer;font-size:0.8rem;"><i class="bi bi-trash3"></i></button>
+                <div style="display:flex;gap:4px;flex-shrink:0;">
+                    <button class="btn-edit-aviso-admin" data-id="${a.id}" style="padding:4px 8px;border:none;background:rgba(58,108,215,0.1);color:var(--accent-blue);border-radius:6px;cursor:pointer;font-size:0.8rem;"><i class="bi bi-pencil"></i></button>
+                    <button class="btn-actions btn-del-aviso-admin" data-id="${a.id}" style="padding:4px 8px;"><i class="bi bi-trash3"></i></button>
+                </div>
             </div>
         </div>
     `).join('');
+
+    // Bind edit
+    container.querySelectorAll('.btn-edit-aviso-admin').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const aviso = adminAvisosList.find(a => a.id === btn.dataset.id);
+            if (!aviso) return;
+            document.getElementById('adminAvisoTitulo').value = aviso.titulo || '';
+            document.getElementById('adminAvisoMensagem').value = aviso.mensagem || '';
+            document.getElementById('adminAvisoEditId').value = aviso.id;
+            document.getElementById('btnSalvarAviso').innerHTML = '<i class="bi bi-check-lg"></i> Atualizar';
+            document.getElementById('formNovoAviso').style.display = 'block';
+        });
+    });
 
     container.querySelectorAll('.btn-del-aviso-admin').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -535,6 +598,8 @@ document.getElementById('btnNovoAvisoAdmin')?.addEventListener('click', () => {
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
     document.getElementById('adminAvisoTitulo').value = '';
     document.getElementById('adminAvisoMensagem').value = '';
+    document.getElementById('adminAvisoEditId').value = '';
+    document.getElementById('btnSalvarAviso').innerHTML = '<i class="bi bi-check-lg"></i> Publicar';
 });
 
 document.getElementById('btnCancelarAviso')?.addEventListener('click', () => {
@@ -544,10 +609,19 @@ document.getElementById('btnCancelarAviso')?.addEventListener('click', () => {
 document.getElementById('btnSalvarAviso')?.addEventListener('click', async () => {
     const titulo = document.getElementById('adminAvisoTitulo').value.trim();
     const mensagem = document.getElementById('adminAvisoMensagem').value.trim();
+    const editId = document.getElementById('adminAvisoEditId').value;
     if (!titulo || !mensagem) return showToast('Preencha título e mensagem.');
     try {
-        await firestore.collection('avisos').add({ titulo, mensagem, createdAt: new Date().toISOString() });
-        showToast('Aviso publicado!');
+        const data = { titulo, mensagem, updatedAt: new Date().toISOString() };
+        if (editId) {
+            await firestore.collection('avisos').doc(editId).update(data);
+            document.getElementById('adminAvisoEditId').value = '';
+            document.getElementById('btnSalvarAviso').innerHTML = '<i class="bi bi-check-lg"></i> Publicar';
+        } else {
+            data.createdAt = new Date().toISOString();
+            await firestore.collection('avisos').add(data);
+        }
+        showToast(editId ? 'Aviso atualizado!' : 'Aviso publicado!');
         document.getElementById('formNovoAviso').style.display = 'none';
         loadAvisosAdmin();
     } catch (e) { showToast('Erro ao publicar.'); }
@@ -559,7 +633,7 @@ let adminConcursoOficialEditId = null;
 
 async function loadAdminConcursosOficiais() {
     try {
-        const snap = await firestore.collection('concursos_oficiais').orderBy('createdAt', 'desc').get({ source: 'server' });
+        const snap = await firestore.collection('concursos_oficiais').orderBy('createdAt', 'desc').get();
         adminConcursosOficiais = [];
         snap.forEach(doc => adminConcursosOficiais.push({ id: doc.id, ...doc.data() }));
         renderAdminConcursosOficiais();
@@ -716,7 +790,7 @@ let adminFeedbackFilter = 'todos';
 
 async function loadAdminFeedbacks() {
     try {
-        const snap = await firestore.collection('feedbacks').orderBy('createdAt', 'desc').get({ source: 'server' });
+        const snap = await firestore.collection('feedbacks').orderBy('createdAt', 'desc').get();
         adminFeedbacks = [];
         snap.forEach(doc => adminFeedbacks.push({ id: doc.id, ...doc.data() }));
         renderAdminFeedbacks();
@@ -762,6 +836,7 @@ function renderAdminFeedbacks() {
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span style="font-size:0.75rem;color:var(--text-muted);">${new Date(f.createdAt).toLocaleDateString('pt-BR')}</span>
                         ${actionBtn}
+                        <button class="btn-del-feedback" data-id="${f.id}" style="background:none;border:none;color:var(--accent-red);cursor:pointer;font-size:0.9rem;" title="Excluir"><i class="bi bi-trash3"></i></button>
                     </div>
                 </div>
                 <p style="color:var(--text-secondary);font-size:0.9rem;margin:0 0 10px;line-height:1.5;">${f.descricao}</p>
@@ -785,6 +860,14 @@ function renderAdminFeedbacks() {
         btn.addEventListener('click', async () => {
             await firestore.collection('feedbacks').doc(btn.dataset.id).update({ status: 'pendente' });
             showToast('Feedback reaberto!');
+            loadAdminFeedbacks();
+        });
+    });
+    container.querySelectorAll('.btn-del-feedback').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Excluir este feedback?')) return;
+            await firestore.collection('feedbacks').doc(btn.dataset.id).delete();
+            showToast('Feedback excluído!');
             loadAdminFeedbacks();
         });
     });

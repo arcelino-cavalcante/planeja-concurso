@@ -209,34 +209,25 @@ document.getElementById('btnAdminSalvarBisu')?.addEventListener('click', async (
     btn.disabled = true;
 
     try {
-        await firestore.collection('bisus').add({
-            titulo,
-            categoria,
-            imagem,
-            resumo,
-            conteudo,
-            createdAt: new Date().toISOString()
-        });
-        showToast('Artigo publicado!');
+        const editId = document.getElementById('adminBisuEditId')?.value;
+        const data = { titulo, categoria, imagem, resumo, conteudo, updatedAt: new Date().toISOString() };
+        if (editId) {
+            await firestore.collection('bisus').doc(editId).update(data);
+        } else {
+            data.createdAt = new Date().toISOString();
+            await firestore.collection('bisus').add(data);
+        }
+        showToast(editId ? 'Publicação atualizada!' : 'Artigo publicado!');
         document.getElementById('admin-bisus-form-view').classList.add('d-none');
         document.getElementById('admin-bisus-list-view').classList.remove('d-none');
         await fetchBisus();
-        await loadAdminBisus();
+        if (typeof loadAdminBisus === 'function') loadAdminBisus();
     } catch (e) {
         alert('Erro ao salvar: ' + e.message);
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
-});
-
-// Clear admin form when opening
-document.getElementById('btnAdminNovoBisu')?.addEventListener('click', () => {
-    document.getElementById('adminBisuTitulo').value = '';
-    document.getElementById('adminBisuCategoria').value = '';
-    document.getElementById('adminBisuImagem').value = '';
-    document.getElementById('adminBisuResumo').value = '';
-    setEditorContent('adminBisuEditor', '');
 });
 
 // ===== LOAD ON AUTH =====

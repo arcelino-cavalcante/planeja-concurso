@@ -5,14 +5,289 @@ let rotinas = [];
 let concursos = [];
 let ciclos = [];
 let simulados = [];
+let historicoEstudos = [];
 let userProfile = { nome: 'Aluno' };
 let currentActivities = [];
 let editingActivityIndex = -1;
 let editingCellDay = -1;
 let contextMenuRotina = null;
 
-function saveAll() { DB.save('rotinas', rotinas); DB.save('concursos', concursos); DB.save('ciclos', ciclos); }
+function saveAll() { 
+    DB.save('rotinas', rotinas); 
+    DB.save('concursos', concursos); 
+    DB.save('ciclos', ciclos); 
+    DB.save('historicoEstudos', historicoEstudos);
+    if (typeof updateDashboard === 'function') updateDashboard(); 
+}
 function getActiveRotina() { return rotinas.find(r => r.status === 'ativa'); }
+
+function formatHours(minutes) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+}
+
+function updateDashboard() {
+    const now = new Date();
+    const today = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const daysOfWeek = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'];
+    const months = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+    
+    // Update Date
+    const dateEl = document.getElementById('dashboardCurrentDate');
+    if (dateEl) {
+        dateEl.textContent = `${daysOfWeek[today]}, ${now.getDate()} DE ${months[now.getMonth()]}`;
+    }
+    
+    const activeRotina = getActiveRotina();
+    let todayStudyMin = 0;
+    
+    if (activeRotina && activeRotina.atividades) {
+        activeRotina.atividades.forEach(act => {
+            if (act.isStudy && act.days.includes(today)) {
+                const sh = parseInt(act.startTime.split(':')[0]), sm = parseInt(act.startTime.split(':')[1]);
+                const eh = parseInt(act.endTime.split(':')[0]), em = parseInt(act.endTime.split(':')[1]);
+                todayStudyMin += (eh*60+em) - (sh*60+sm);
+            }
+        });
+    }
+    
+    // Update Banner Carga Horária and Status
+    const hoursEl = document.getElementById('todayStudyHoursText');
+    const statusEl = document.getElementById('dashboardTacticalStatus');
+    const cicloRotinaHojeEl = document.getElementById('dashboardCicloRotinaHoje');
+    
+    // Update Execution View goal details
+    const execHoursEl = document.getElementById('execTodayHoursText');
+    const execDotEl = document.getElementById('execDayMetaDot');
+    
+    const formattedTodayHours = todayStudyMin > 0 ? 
+        `${Math.floor(todayStudyMin/60)}h ${todayStudyMin%60 > 0 ? (todayStudyMin%60) + 'm' : ''}` : 
+        '0h';
+        
+    if (hoursEl) {
+        hoursEl.textContent = formattedTodayHours;
+    }
+    
+    if (execHoursEl) {
+        execHoursEl.textContent = formattedTodayHours;
+    }
+    
+    if (execDotEl) {
+        if (todayStudyMin > 0) {
+            execDotEl.style.background = 'var(--accent-green-light)';
+            execDotEl.style.boxShadow = '0 0 6px var(--accent-green-light)';
+        } else {
+            execDotEl.style.background = 'var(--accent-yellow)';
+            execDotEl.style.boxShadow = '0 0 6px var(--accent-yellow)';
+        }
+    }
+    
+    if (cicloRotinaHojeEl) {
+        if (activeRotina) {
+            cicloRotinaHojeEl.textContent = `Hoje: ${formattedTodayHours} planejados na rotina "${activeRotina.nome}"`;
+        } else {
+            cicloRotinaHojeEl.textContent = 'Sem rotina ativa selecionada';
+        }
+    }
+    
+    if (statusEl) {
+        if (todayStudyMin > 0) {
+            statusEl.innerHTML = `<span class="status-dot green"></span> <span class="status-text">EM COMBATE</span>`;
+            statusEl.className = 'tactical-status';
+        } else {
+            statusEl.innerHTML = `<span class="status-dot yellow"></span> <span class="status-text">DESCANSO TÁTICO</span>`;
+            statusEl.className = 'tactical-status';
+        }
+    }
+    
+    // Update Active Cycle Card
+    let activeCiclo = null;
+    const activeCicloId = localStorage.getItem('activeCicloId');
+    if (activeCicloId) {
+        activeCiclo = ciclos.find(c => c.id === parseInt(activeCicloId));
+    }
+    if (!activeCiclo && ciclos.length > 0) {
+        activeCiclo = ciclos[0]; // fallback to first cycle
+        localStorage.setItem('activeCicloId', activeCiclo.id);
+    }
+    
+    const cicloNomeEl = document.getElementById('dashboardCicloNome');
+    const propostasEl = document.getElementById('dashboardHorasPropostas');
+    const estudadasEl = document.getElementById('dashboardHorasEstudadas');
+    const percentageEl = document.getElementById('dashboardRingPercentage');
+    const ringProgressEl = document.querySelector('.progress-ring .ring-progress');
+    const ringDotEl = document.querySelector('.progress-ring .ring-dot');
+    const playBtn = document.getElementById('btnExecutarCicloDashboard');
+    
+    if (activeCiclo) {
+        if (cicloNomeEl) cicloNomeEl.textContent = activeCiclo.nome;
+        
+        // Calculate cycle total duration and studied duration
+        const proposedMin = activeCiclo.duracaoMin || 
+            (activeCiclo.sequence ? activeCiclo.sequence.reduce((acc, curr) => acc + (curr.duracao || 0), 0) : 0);
+            
+        // Store on object if not present to ensure coherence
+        if (!activeCiclo.duracaoMin) {
+            activeCiclo.duracaoMin = proposedMin;
+        }
+        if (activeCiclo.horasEstudadasMin === undefined) {
+            activeCiclo.horasEstudadasMin = 0;
+        }
+        
+        const studiedMin = activeCiclo.horasEstudadasMin;
+        
+        if (propostasEl) propostasEl.textContent = formatHours(proposedMin);
+        if (estudadasEl) estudadasEl.textContent = formatHours(studiedMin);
+        
+        const pct = proposedMin > 0 ? Math.min(1, studiedMin / proposedMin) : 0;
+        const pctText = `${Math.round(pct * 100)}%`;
+        
+        if (percentageEl) percentageEl.textContent = pctText;
+        
+        // SVG Ring attributes
+        if (ringProgressEl) {
+            // Circumference of r=85 is 534
+            const offset = 534 - (pct * 534);
+            ringProgressEl.setAttribute('stroke-dashoffset', offset);
+        }
+        if (ringDotEl) {
+            ringDotEl.style.transform = `rotate(${pct * 360}deg)`;
+            ringDotEl.style.transformOrigin = '100px 100px';
+        }
+        
+        if (playBtn) {
+            playBtn.innerHTML = `<i class="bi bi-play-fill"></i> Executar ciclo atual`;
+            playBtn.style.opacity = '1';
+        }
+    } else {
+        if (cicloNomeEl) cicloNomeEl.textContent = 'NENHUM CICLO ATIVO';
+        if (propostasEl) propostasEl.textContent = '00h 00m';
+        if (estudadasEl) estudadasEl.textContent = '00h 00m';
+        if (percentageEl) percentageEl.textContent = '0%';
+        if (ringProgressEl) ringProgressEl.setAttribute('stroke-dashoffset', '534');
+        if (ringDotEl) {
+            ringDotEl.style.transform = 'none';
+        }
+        if (playBtn) {
+            playBtn.innerHTML = `<i class="bi bi-plus-lg"></i> Criar primeiro ciclo`;
+        }
+    }
+    
+    // Update dashboard weekly hours stats (media)
+    const mediaHoursEl = document.getElementById('dashboardMediaHoras');
+    const mediaPercentEl = document.getElementById('dashboardMediaPercent');
+    if (mediaHoursEl) {
+        // Calculate average weekly hours based on active routine
+        let totalWeekMin = 0;
+        if (activeRotina && activeRotina.atividades) {
+            activeRotina.atividades.forEach(act => {
+                if (act.isStudy) {
+                    const sh = parseInt(act.startTime.split(':')[0]), sm = parseInt(act.startTime.split(':')[1]);
+                    const eh = parseInt(act.endTime.split(':')[0]), em = parseInt(act.endTime.split(':')[1]);
+                    totalWeekMin += ((eh*60+em) - (sh*60+sm)) * act.days.length;
+                }
+            });
+        }
+        const dailyAvgMin = Math.round(totalWeekMin / 7);
+        const avgH = Math.floor(dailyAvgMin / 60);
+        const avgM = dailyAvgMin % 60;
+        mediaHoursEl.textContent = `${String(avgH).padStart(2,'0')}h ${String(avgM).padStart(2,'0')}m`;
+        
+        if (mediaPercentEl) {
+            const targetMin = 240; // 4 hours standard
+            const percent = Math.min(100, Math.round((dailyAvgMin / targetMin) * 100));
+            mediaPercentEl.textContent = `${percent}% meta`;
+            if (percent >= 100) {
+                mediaPercentEl.style.background = 'rgba(139,154,58,0.2)';
+                mediaPercentEl.style.color = 'var(--accent-green-light)';
+            } else {
+                mediaPercentEl.style.background = 'rgba(201,184,78,0.2)';
+                mediaPercentEl.style.color = 'var(--accent-yellow)';
+            }
+        }
+    }
+
+    // 4. Update Weekly Performance CSS Bar Chart
+    const currentDayIndex = today === 0 ? 6 : today - 1;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - currentDayIndex);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const weekDaysShort = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
+    const dayMinutes = [0, 0, 0, 0, 0, 0, 0];
+
+    if (typeof historicoEstudos !== 'undefined' && historicoEstudos) {
+        historicoEstudos.forEach(log => {
+            const logDate = new Date(log.data);
+            if (logDate >= startOfWeek) {
+                const logDayIndex = logDate.getDay();
+                const mappedIndex = logDayIndex === 0 ? 6 : logDayIndex - 1;
+                dayMinutes[mappedIndex] += log.duracaoMin || 0;
+            }
+        });
+    }
+
+    const maxMin = Math.max(...dayMinutes, 60);
+    const barChartContainer = document.getElementById('weeklyBarChartContainer');
+    if (barChartContainer) {
+        barChartContainer.innerHTML = dayMinutes.map((min, idx) => {
+            const h = Math.floor(min / 60);
+            const m = min % 60;
+            const valText = min > 0 ? (h > 0 ? `${h}h${m > 0 ? m : ''}` : `${m}m`) : '';
+            const pct = (min / maxMin) * 100;
+            const isActive = idx === currentDayIndex ? ' active' : '';
+            return `
+                <div class="chart-bar-wrapper${isActive}">
+                    <span class="chart-bar-val">${valText}</span>
+                    <div class="chart-bar" style="height: ${pct}%;"></div>
+                    <span class="chart-bar-label">${weekDaysShort[idx]}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 5. Update Histórico de Combate (Recent Studies)
+    const historyContainer = document.getElementById('historicoListContainer');
+    if (historyContainer) {
+        if (!historicoEstudos || historicoEstudos.length === 0) {
+            historyContainer.innerHTML = `
+                <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.9rem;">
+                    <i class="bi bi-shield-slash" style="font-size:2rem;display:block;margin-bottom:8px;color:var(--text-muted);"></i>
+                    Sem registros de combate recentes.<br>Complete uma sessão no timer para começar.
+                </div>
+            `;
+        } else {
+            const sortedHistory = [...historicoEstudos].reverse().slice(0, 5);
+            historyContainer.innerHTML = sortedHistory.map(log => {
+                const date = new Date(log.data);
+                const timeFmt = `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+                const dateFmt = `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}`;
+                const h = Math.floor(log.duracaoMin / 60);
+                const m = log.duracaoMin % 60;
+                const durFmt = h > 0 ? `${h}h ${m > 0 ? m + 'm' : ''}` : `${m}m`;
+                const badgeType = log.fase === 'Revisão' ? 'revisao' : 'estudo';
+                const badgeText = log.fase || 'Geral';
+                return `
+                    <div class="history-log-item">
+                        <div class="history-log-left">
+                            <span class="history-log-subject">${log.materiaNome}</span>
+                            <div class="history-log-meta">
+                                <span class="history-log-badge ${badgeType}">${badgeText}</span>
+                                <span>${log.cicloNome}</span>
+                            </div>
+                        </div>
+                        <div class="history-log-right">
+                            <span class="history-log-dur">+${durFmt}</span>
+                            <span class="history-log-date">${dateFmt} às ${timeFmt}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+}
+
 function getStudyHours() {
     const r = getActiveRotina();
     if (!r || !r.atividades) return 0;
@@ -23,7 +298,7 @@ function getStudyHours() {
         const eh = parseInt(act.endTime.split(':')[0]), em = parseInt(act.endTime.split(':')[1]);
         totalMin += ((eh*60+em)-(sh*60+sm)) * act.days.length;
     });
-    return Math.round(totalMin / 60);
+    return Math.round(totalMin / 6) / 10; // 1 decimal precision (e.g. 10.5h)
 }
 
 // ===== DOM =====
@@ -39,12 +314,15 @@ function showToast(msg) { toastMsg.textContent = msg; toastEl.classList.add('act
 function closeSidebar() { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('active'); }
 
 // ===== NAVIGATION =====
-navItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-        e.preventDefault();
-        // Skip student navigation if admin is logged in
-        if (isAdmin) return;
-        const page = item.dataset.page;
+function navigateToPage(page) {
+    const item = Array.from(navItems).find(n => n.dataset.page === page);
+    if (item) {
+        // Save study progress of the current minute before switching screen
+        const execView = document.getElementById('ciclos-exec-view');
+        if (execView && !execView.classList.contains('d-none') && typeof saveStudyProgress === 'function') {
+            saveStudyProgress();
+        }
+
         navItems.forEach(n => n.classList.remove('active'));
         item.classList.add('active');
         pages.forEach(p => p.classList.remove('active'));
@@ -54,10 +332,48 @@ navItems.forEach(item => {
         if (page === 'ciclos') { showCiclosView('ciclos-list-view'); renderCiclosList(); }
         if (page === 'simulados') { showSimuladosView('simulados-list-view'); renderSimuladosList(); }
         if (page === 'edital') { showEditalView('edital-list-view'); }
+        if (page === 'qg') { if (typeof updateQgView === 'function') updateQgView(); }
         if (page === 'bisus') { showBisusView('bisus-list-view'); }
         if (page === 'configuracoes') { refreshConfigPage(); }
         closeSidebar();
+        
+        // Refresh dashboard statistics whenever home page is accessed
+        if (page === 'inicio' && typeof updateDashboard === 'function') {
+            updateDashboard();
+        }
+    }
+}
+
+navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (isAdmin) return;
+        navigateToPage(item.dataset.page);
     });
+});
+
+// ===== EXECUTE CURRENT CYCLE FROM DASHBOARD =====
+document.getElementById('btnExecutarCicloDashboard')?.addEventListener('click', () => {
+    let activeCiclo = null;
+    const activeCicloId = localStorage.getItem('activeCicloId');
+    if (activeCicloId) {
+        activeCiclo = ciclos.find(c => c.id === parseInt(activeCicloId));
+    }
+    if (!activeCiclo && ciclos.length > 0) {
+        activeCiclo = ciclos[0];
+    }
+    
+    if (activeCiclo) {
+        navigateToPage('ciclos');
+        if (typeof openExecView === 'function') {
+            openExecView(activeCiclo);
+        }
+    } else {
+        navigateToPage('ciclos');
+        if (typeof openCicloWizard === 'function') {
+            openCicloWizard();
+        }
+    }
 });
 
 function updateUserProfileDisplay() {
@@ -70,7 +386,14 @@ updateUserProfileDisplay();
 // ===== CONFIGURAÇÕES =====
 function refreshConfigPage() {
     // Nome
-    document.getElementById('configNomeInput').value = userProfile.nome;
+    document.getElementById('configNomeInput').value = userProfile.nome || '';
+    // Gênero e Lema
+    if (document.getElementById('configGenderSelect')) {
+        document.getElementById('configGenderSelect').value = userProfile.genero || 'M';
+    }
+    if (document.getElementById('configMottoInput')) {
+        document.getElementById('configMottoInput').value = userProfile.lema || '';
+    }
     // Email
     const emailEl = document.getElementById('configEmailDisplay');
     if (emailEl) emailEl.textContent = auth.currentUser?.email || '—';
@@ -86,11 +409,24 @@ function refreshConfigPage() {
 
 document.getElementById('btnSalvarNome').addEventListener('click', () => {
     const novoNome = document.getElementById('configNomeInput').value.trim();
+    const novoGenero = document.getElementById('configGenderSelect').value;
+    const novoLema = document.getElementById('configMottoInput').value.trim();
+    
     if (novoNome) {
         userProfile.nome = novoNome;
+        userProfile.genero = novoGenero;
+        userProfile.lema = novoLema;
+        
         DB.save('userProfile', userProfile);
         updateUserProfileDisplay();
-        showToast('Nome atualizado!');
+        showToast('Perfil atualizado com sucesso!');
+        
+        // Push local changes to Firebase if online
+        if (typeof pushLocalToFirestore === 'function') {
+            pushLocalToFirestore();
+        }
+    } else {
+        showToast('Por favor, informe seu nome!');
     }
 });
 
@@ -115,7 +451,12 @@ document.querySelectorAll('[id^="backToHome"]').forEach(link => {
     });
 });
 
-if (menuToggle) menuToggle.addEventListener('click', () => { sidebar.classList.toggle('open'); sidebarOverlay.classList.toggle('active'); });
+if (menuToggle) menuToggle.addEventListener('click', () => {
+    const activeSidebar = document.getElementById('sidebarAdmin').style.display !== 'none'
+        ? document.getElementById('sidebarAdmin') : sidebar;
+    activeSidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('active');
+});
 sidebarOverlay.addEventListener('click', closeSidebar);
 
 // ===== ROTINAS =====
@@ -267,12 +608,12 @@ buildScheduleGrid();
 // ===== DASHBOARD: MENSAGEM DO MENTOR & AVISOS =====
 async function loadMentorMessage() {
     try {
-        const snap = await firestore.collection('mensagens').orderBy('createdAt', 'desc').limit(1).get({ source: 'server' });
+        const snap = await firestore.collection('mensagens').orderBy('createdAt', 'desc').limit(1).get();
         const el = document.getElementById('mentorMessage');
         if (!el) return;
         if (!snap.empty) {
             const msg = snap.docs[0].data().mensagem;
-            el.innerHTML = `<p>"${msg}"</p>`;
+            el.innerHTML = `<p style="font-style:italic;color:var(--text-secondary);margin:0;">"${msg}"</p>`;
         } else {
             el.innerHTML = '<p>Nenhuma mensagem do mentor para hoje.</p>';
         }
@@ -283,7 +624,7 @@ async function loadMentorMessage() {
 
 async function loadAvisos() {
     try {
-        const snap = await firestore.collection('avisos').orderBy('createdAt', 'desc').limit(3).get({ source: 'server' });
+        const snap = await firestore.collection('avisos').orderBy('createdAt', 'desc').limit(3).get();
         const container = document.getElementById('avisosList');
         const card = document.getElementById('avisosCard');
         if (!container || !card) return;
@@ -294,9 +635,13 @@ async function loadAvisos() {
         card.style.display = 'block';
         container.innerHTML = snap.docs.map(doc => {
             const a = doc.data();
-            return `<div class="aviso-item" style="padding:8px 0;border-bottom:1px solid var(--border-color);">
-                <strong style="color:var(--text-primary);font-size:0.9rem;">${a.titulo}</strong>
-                <p style="color:var(--text-secondary);font-size:0.85rem;margin:2px 0 0;">${a.mensagem}</p>
+            const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString('pt-BR') : '';
+            return `<div class="aviso-item" style="padding:10px 14px;background:var(--bg-secondary);border-radius:var(--radius);margin-bottom:8px;border-left:3px solid var(--accent-green-light);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <strong style="color:var(--text-primary);font-size:0.9rem;font-family:var(--font-heading);text-transform:uppercase;letter-spacing:0.5px;">${a.titulo}</strong>
+                    <span style="font-size:0.7rem;color:var(--text-muted);">${date}</span>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.85rem;margin:0;line-height:1.4;">${a.mensagem}</p>
             </div>`;
         }).join('');
     } catch (e) {
@@ -309,6 +654,7 @@ const inicioObserver = new MutationObserver(() => {
     if (document.getElementById('page-inicio')?.classList.contains('active')) {
         loadMentorMessage();
         loadAvisos();
+        if (typeof updateDashboard === 'function') updateDashboard();
     }
 });
 const paginaInicio = document.getElementById('page-inicio');
@@ -319,6 +665,7 @@ if (paginaInicio) {
 if (paginaInicio?.classList.contains('active')) {
     loadMentorMessage();
     loadAvisos();
+    if (typeof updateDashboard === 'function') updateDashboard();
 }
 
 // ===== FEEDBACK =====
@@ -432,3 +779,14 @@ if (paginaFeedback) {
 if (paginaFeedback?.classList.contains('active')) {
     loadMeusFeedbacks();
 }
+
+// ===== INIT STUDY HISTORY CONTROLS =====
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btnLimparHistorico')?.addEventListener('click', () => {
+        if (confirm('⚠️ Deseja realmente apagar todo o seu histórico de combate?')) {
+            historicoEstudos = [];
+            saveAll();
+            showToast('Histórico limpo!');
+        }
+    });
+});

@@ -94,16 +94,72 @@ let currentSubjectIndex = 0;
 let timerInterval = null;
 let timerRunning = false;
 let timerSeconds = 0;
+let elapsedSessionSeconds = 0;
 let selectedConcursoForCiclo = null;
 let editingCicloId = null;
 
+function saveStudyProgress() {
+    if (currentPhase === 'break') {
+        elapsedSessionSeconds = 0;
+        return;
+    }
+    if (!currentExecCiclo || currentSubjectIndex < 0) return;
+    const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
+    if (!items || items.length === 0) return;
+    const s = items[currentSubjectIndex];
+    if (!s) return;
+
+    const elapsedMinutes = Math.floor(elapsedSessionSeconds / 60);
+    if (elapsedMinutes > 0) {
+        if (s.tempoRestanteMin === undefined) {
+            s.tempoRestanteMin = s.duracao || s.totalMin || 120;
+        }
+        
+        s.tempoRestanteMin = Math.max(0, s.tempoRestanteMin - elapsedMinutes);
+        
+        if (currentExecCiclo.horasEstudadasMin === undefined) {
+            currentExecCiclo.horasEstudadasMin = 0;
+        }
+        currentExecCiclo.horasEstudadasMin += elapsedMinutes;
+        
+        if (typeof historicoEstudos !== 'undefined') {
+            const logEntry = {
+                id: Date.now(),
+                cicloNome: currentExecCiclo.nome,
+                materiaNome: s.nome,
+                duracaoMin: elapsedMinutes,
+                data: new Date().toISOString(),
+                fase: divisionEnabled ? (currentPhase === 'revision' ? 'Revisão' : 'Conteúdo Novo') : 'Geral'
+            };
+            historicoEstudos.push(logEntry);
+        }
+        
+        const proposedMin = currentExecCiclo.duracaoMin || 
+            (currentExecCiclo.sequence ? currentExecCiclo.sequence.reduce((acc, curr) => acc + (curr.duracao || 0), 0) : 0);
+        
+        if (currentExecCiclo.horasEstudadasMin >= proposedMin) {
+            currentExecCiclo.ciclosRealizados++;
+            currentExecCiclo.horasEstudadasMin = 0;
+            items.forEach(item => {
+                item.tempoRestanteMin = item.duracao || item.totalMin || 120;
+            });
+            showToast('🎖️ PARABÉNS! Você concluiu uma rodada inteira do ciclo!');
+        }
+        
+        saveAll();
+        renderExecSubjects(currentExecCiclo.sequence || []);
+    }
+    
+    elapsedSessionSeconds = elapsedSessionSeconds % 60;
+}
+
 function showCiclosView(viewId) {
-    ['ciclos-list-view','ciclos-wizard-view','ciclos-config-view','ciclos-exec-view'].forEach(id => document.getElementById(id).classList.add('d-none'));
+    ['ciclos-list-view','ciclos-wizard-view','ciclos-config-view','ciclos-exec-view','ciclos-foco-view'].forEach(id => document.getElementById(id).classList.add('d-none'));
     document.getElementById(viewId).classList.remove('d-none');
 }
 
-// Round to nearest 30 min, minimum 60 (1h)
-function round30(minutes) { return Math.max(60, Math.round(minutes / 30) * 30); }
+// Round to nearest 30 min, minimum 30min (allows lighter subjects to get less time)
+function round30(minutes) { return Math.max(30, Math.round(minutes / 30) * 30); }
 
 // Calculate hours per subject based on weight proportion
 // Only active subjects get time allocated; inactive get 0
@@ -119,91 +175,93 @@ function calcHorasPorMateria(disciplinas, totalHoras, niveis) {
         minutos *= (1 - nivel * 0.1); // 10% per star
         return minutos;
     });
-    // redistribute saved time among active subjects
+    // redistribute saved time proportionally among ALL active subjects (by weight)
     const totalOriginal = totalHoras * 60;
     const totalAfter = result.reduce((s, m) => s + m, 0);
     const saved = totalOriginal - totalAfter;
     if (saved > 0) {
-        const zeroNivel = result.map((m, i) => ((niveis && niveis[i]) || disciplinas[i].ativo === false) ? 0 : 1);
-        const sumZero = zeroNivel.reduce((s, v) => s + v, 0);
-        if (sumZero > 0) result = result.map((m, i) => m + (zeroNivel[i] ? saved / sumZero : 0));
+        const activeWeights = result.map((m, i) => disciplinas[i].ativo === false ? 0 : disciplinas[i].peso);
+        const sumWeights = activeWeights.reduce((s, v) => s + v, 0);
+        if (sumWeights > 0) result = result.map((m, i) => m + (activeWeights[i] / sumWeights) * saved);
     }
     return result.map((m, i) => disciplinas[i].ativo === false ? 0 : round30(m));
 }
 
-// Generate cycle sequence (round-robin weighted, max 2h sessions)
+// Generate cycle sequence with optimal spacing
+// Heavy subjects are spread apart, light subjects fill the gaps
 function generateCycleSequence(materias) {
     const activeMaterias = materias.filter(m => m.ativo !== false && m.totalMin > 0);
     if (activeMaterias.length === 0) return [];
 
-    const totalPeso = activeMaterias.reduce((s, m) => s + m.peso, 0);
-    
-    // Each subject gets a number of sessions proportional to its weight.
-    // Target: fewer, longer sessions. Base = ~2 sessions for the lightest, scale up.
     const minPeso = Math.min(...activeMaterias.map(m => m.peso));
     
-    let allSessions = [];
+    // Step 1: Create sessions for each subject
+    const sessionsBySubject = {};
     activeMaterias.forEach((m, i) => {
-        // Number of sessions: proportional to how much heavier this subject is vs the lightest
-        // Lightest subject = 1 session, others scale proportionally
         const ratio = m.peso / minPeso;
         let count = Math.max(1, Math.round(ratio));
-        // Cap at a reasonable max: don't split into more than ~5 sessions
-        count = Math.min(count, Math.ceil(m.totalMin / 60)); // at least 1h per session
+        count = Math.min(count, Math.ceil(m.totalMin / 30)); // at least 30min per session
         
+        sessionsBySubject[i] = [];
         let remaining = m.totalMin;
         for (let s = 0; s < count; s++) {
             if (remaining <= 0) break;
             const sessionsLeft = count - s;
             let dur = round30(remaining / sessionsLeft);
-            dur = Math.max(60, Math.min(remaining, dur));
-            allSessions.push({ nome: m.nome, duracao: dur, idx: i, peso: m.peso });
+            dur = Math.max(30, Math.min(remaining, dur));
+            sessionsBySubject[i].push({ nome: m.nome, duracao: dur, idx: i, peso: m.peso });
             remaining -= dur;
         }
     });
-    
-    // Sort by peso descending, then duration descending
-    allSessions.sort((a, b) => b.peso - a.peso || b.duracao - a.duracao);
-    
-    // Group by subject
-    const bySubject = {};
-    allSessions.forEach(s => { 
-        if (!bySubject[s.idx]) bySubject[s.idx] = []; 
-        bySubject[s.idx].push(s); 
-    });
-    
-    // Sort keys by weight descending
-    const keys = Object.keys(bySubject).sort((a, b) => 
-        (bySubject[b][0]?.peso || 0) - (bySubject[a][0]?.peso || 0)
-    );
-    
-    // Interleave round-robin, ensuring no same subject twice in a row
+
+    // Step 2: Interleave using "most remaining + max distance" greedy
+    // Always pick the subject with the most sessions left,
+    // but never the same as the last one.
+    // This naturally spaces heavy subjects and fills gaps with lighter ones.
     const result = [];
-    let hasMore = true;
-    let lastIdx = -1;
+    const remaining = {};
+    Object.keys(sessionsBySubject).forEach(k => { remaining[k] = sessionsBySubject[k].length; });
+    const totalSessions = Object.values(remaining).reduce((s, v) => s + v, 0);
+    // Track last position each subject was placed at
+    const lastPos = {};
     
-    while (hasMore) {
-        hasMore = false;
-        // First pass: prefer subjects different from last
-        for (const k of keys) {
-            if (bySubject[k].length > 0 && k !== lastIdx) {
-                result.push(bySubject[k].shift());
-                lastIdx = k;
-                hasMore = true;
-                break;
+    for (let pos = 0; pos < totalSessions; pos++) {
+        let bestKey = null;
+        let bestScore = -Infinity;
+        
+        for (const k of Object.keys(remaining)) {
+            if (remaining[k] <= 0) continue;
+            // Never repeat the same subject consecutively
+            if (result.length > 0 && result[result.length - 1].idx === parseInt(k)) continue;
+            
+            // Score: prioritize subjects with more remaining sessions
+            // and those that haven't appeared recently (larger distance = better)
+            const distance = lastPos[k] !== undefined ? (pos - lastPos[k]) : totalSessions;
+            const sessionsLeft = remaining[k];
+            // Ideal spacing for this subject = totalSessions / original count
+            const idealSpacing = totalSessions / sessionsBySubject[k].length;
+            // Score combines: how overdue this subject is + how many sessions remain
+            const score = (distance / idealSpacing) * 100 + sessionsLeft * 10;
+            
+            if (score > bestScore) {
+                bestScore = score;
+                bestKey = k;
             }
         }
-        // If no different subject available, pick any remaining
-        if (!hasMore) {
-            for (const k of keys) {
-                if (bySubject[k].length > 0) {
-                    result.push(bySubject[k].shift());
-                    lastIdx = k;
-                    hasMore = true;
-                    break;
-                }
+        
+        // Fallback: if no different subject available, pick the one with most remaining
+        if (bestKey === null) {
+            for (const k of Object.keys(remaining)) {
+                if (remaining[k] > 0) { bestKey = k; break; }
             }
         }
+        
+        if (bestKey === null) break;
+        
+        const session = sessionsBySubject[bestKey][sessionsBySubject[bestKey].length - remaining[bestKey]];
+        result.push(session);
+        remaining[bestKey]--;
+        lastPos[bestKey] = pos;
     }
     
     return result;
@@ -242,6 +300,8 @@ function openCicloConfigFromConcurso(conc) {
     document.getElementById('configConcursoNome').textContent = conc.nome;
     document.getElementById('configHorasInput').value = horas;
     currentCicloMaterias = conc.disciplinas.map(d => ({ nome: d.nome, peso: d.peso, nivel: 0, ativo: true }));
+    // Auto-adjust star levels based on simulado results
+    autoAdjustNiveis(currentCicloMaterias);
     renderMateriasConfig(horas);
     showCiclosView('ciclos-config-view');
 }
@@ -332,7 +392,11 @@ document.getElementById('btnStartWizard').addEventListener('click', openCicloWiz
 document.getElementById('btnNovoCiclo').addEventListener('click', openCicloWizard);
 document.getElementById('backToCiclosList').addEventListener('click', (e) => { e.preventDefault(); showCiclosView('ciclos-list-view'); });
 document.getElementById('backToCiclosFromConfig').addEventListener('click', (e) => { e.preventDefault(); showCiclosView('ciclos-list-view'); });
-document.getElementById('backToCiclosFromExec').addEventListener('click', (e) => { e.preventDefault(); if (timerInterval) { clearInterval(timerInterval); timerInterval = null; timerRunning = false; } showCiclosView('ciclos-list-view'); });
+document.getElementById('backToCiclosFromExec').addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    saveStudyProgress(); 
+    showCiclosView('ciclos-list-view'); 
+});
 
 // Generate ciclo (or update existing)
 document.getElementById('btnGerarCiclo').addEventListener('click', () => {
@@ -342,6 +406,9 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
     const nome = document.getElementById('configCicloNome').value || 'Novo Ciclo';
     const totalH = parseInt(document.getElementById('configHorasInput').value) || 20;
     const sequence = generateCycleSequence(currentCicloMaterias);
+    sequence.forEach(item => {
+        item.tempoRestanteMin = item.duracao;
+    });
     const totalSeqMin = sequence.reduce((s, x) => s + x.duracao, 0);
     const subjects = currentCicloMaterias.map(m => ({ 
         nome: m.nome, sessao: formatMin(m.totalMin), 
@@ -356,7 +423,8 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
             ciclos[idx] = { 
                 ...ciclos[idx],
                 nome, subjects, sequence, 
-                duracao: formatMin(totalSeqMin)
+                duracao: formatMin(totalSeqMin),
+                duracaoMin: totalSeqMin
             };
         }
         editingCicloId = null;
@@ -367,6 +435,8 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
             id: Date.now(), nome, 
             concurso: selectedConcursoForCiclo?.nome || '', 
             duracao: formatMin(totalSeqMin), avanco: '0:00h', 
+            duracaoMin: totalSeqMin,
+            horasEstudadasMin: 0,
             ciclosRealizados: 0, subjects, sequence 
         };
         ciclos.push(newCiclo);
@@ -392,26 +462,109 @@ function renderCiclosList() {
             <button class="btn-actions btn-del-ciclo" data-id="${c.id}" style="margin-left:8px;"><i class="bi bi-trash3"></i></button>`;
         container.appendChild(card);
     });
-    container.querySelectorAll('.btn-exec-ciclo').forEach(btn => btn.addEventListener('click', () => { const c = ciclos.find(x => x.id === parseInt(btn.dataset.id)); if (c) openExecView(c); }));
-    container.querySelectorAll('.btn-del-ciclo').forEach(btn => btn.addEventListener('click', () => { ciclos = ciclos.filter(c => c.id !== parseInt(btn.dataset.id)); saveAll(); renderCiclosList(); showToast('Ciclo excluído!'); }));
+    container.querySelectorAll('.btn-exec-ciclo').forEach(btn => btn.addEventListener('click', () => { 
+        const c = ciclos.find(x => x.id === parseInt(btn.dataset.id)); 
+        if (c) {
+            localStorage.setItem('activeCicloId', c.id);
+            if (typeof updateDashboard === 'function') updateDashboard();
+            openExecView(c); 
+        }
+    }));
+    container.querySelectorAll('.btn-del-ciclo').forEach(btn => btn.addEventListener('click', () => { 
+        const idToDelete = parseInt(btn.dataset.id);
+        ciclos = ciclos.filter(c => c.id !== idToDelete);
+        const activeCicloId = localStorage.getItem('activeCicloId');
+        if (activeCicloId && parseInt(activeCicloId) === idToDelete) {
+            localStorage.removeItem('activeCicloId');
+        }
+        saveAll(); 
+        renderCiclosList(); 
+        showToast('Ciclo excluído!'); 
+    }));
 }
 
 // Execution View
 let divisionEnabled = false;
-let currentPhase = 'study'; // 'revision' or 'study'
+let currentPhase = 'study'; // 'revision', 'study' or 'break'
 let revisionMinutes = 0;
 let studyMinutes = 0;
+let pomodoroEnabled = false;
+let pomodoroBreakMin = 5;
+let lastCompletedSubject = "";
+let lastCompletedContest = "";
 
 function openExecView(ciclo) {
-    currentExecCiclo = ciclo; currentSubjectIndex = 0;
-    divisionEnabled = false; currentPhase = 'study';
-    document.getElementById('divisionToggle').checked = false;
-    document.getElementById('divisionContent').style.display = 'none';
-    document.getElementById('wheelBadge').style.display = 'none';
+    const isAlreadyRunning = (currentExecCiclo && currentExecCiclo.id === ciclo.id);
+    
+    currentExecCiclo = ciclo;
     document.getElementById('execCicloLabel').textContent = ciclo.nome;
-    renderWheel(ciclo.sequence || ciclo.subjects);
-    selectSubject(0);
-    renderExecSubjects(ciclo.sequence || []);
+    
+    // Initialize Pomodoro UI
+    pomodoroEnabled = DB.load('pomodoroEnabled', false);
+    pomodoroBreakMin = DB.load('pomodoroBreakMin', 5);
+    
+    document.getElementById('pomodoroToggle').checked = pomodoroEnabled;
+    document.getElementById('pomodoroContent').style.display = pomodoroEnabled ? 'block' : 'none';
+    document.getElementById('pomodoroBreakMinutesText').textContent = pomodoroBreakMin + ' minutos';
+    document.getElementById('pomodoroSlider').value = pomodoroBreakMin;
+    
+    if (isAlreadyRunning) {
+        // Keep active states!
+        document.getElementById('divisionToggle').checked = divisionEnabled;
+        document.getElementById('divisionContent').style.display = divisionEnabled ? 'block' : 'none';
+        
+        if (divisionEnabled) {
+            document.getElementById('wheelBadge').style.display = 'inline-block';
+            document.getElementById('wheelBadge').textContent = currentPhase === 'revision' ? 'Revisão' : 'Conteúdo novo';
+            document.getElementById('wheelBadge').style.background = currentPhase === 'revision' ? 'var(--accent-blue)' : 'var(--accent-green)';
+        } else {
+            document.getElementById('wheelBadge').style.display = 'none';
+        }
+        
+        // Re-render components with active states
+        renderWheel(ciclo.sequence || ciclo.subjects);
+        renderExecSubjects(ciclo.sequence || []);
+        
+        // Update visual active row highlight
+        document.querySelectorAll('.exec-subject-row').forEach((row, i) => {
+            row.classList.toggle('active-subject', i === currentSubjectIndex);
+        });
+        
+        const s = (ciclo.sequence || ciclo.subjects)[currentSubjectIndex];
+        if (s) {
+            document.getElementById('wheelSubject').textContent = s.nome.length > 16 ? s.nome.substring(0, 16) + '...' : s.nome;
+            document.getElementById('execSubjectName').textContent = s.nome;
+        }
+        
+        updateTimerDisplay();
+        
+        // Set button label correctly based on running state
+        document.getElementById('btnIniciarTimer').innerHTML = timerRunning ? '<i class="bi bi-pause-fill"></i> Pausar' : '<i class="bi bi-play-fill"></i> Iniciar';
+    } else {
+        // If a new cycle starts, save old one first if any
+        saveStudyProgress();
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerRunning = false;
+        }
+        
+        currentSubjectIndex = 0;
+        divisionEnabled = false;
+        currentPhase = 'study';
+        elapsedSessionSeconds = 0;
+        
+        document.getElementById('divisionToggle').checked = false;
+        document.getElementById('divisionContent').style.display = 'none';
+        document.getElementById('wheelBadge').style.display = 'none';
+        
+        renderWheel(ciclo.sequence || ciclo.subjects);
+        selectSubject(0);
+        renderExecSubjects(ciclo.sequence || []);
+        
+        document.getElementById('btnIniciarTimer').innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
+    }
+    
     showCiclosView('ciclos-exec-view');
 }
 
@@ -520,6 +673,11 @@ function drawInnerRing(svg, cx, cy, oR, iR, revPct) {
 
 function selectSubject(idx) {
     if (timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('btnIniciarTimer').innerHTML = '<i class="bi bi-play-fill"></i> Iniciar'; }
+    
+    // Save progress of the previous subject before switching!
+    saveStudyProgress();
+    elapsedSessionSeconds = 0;
+    
     currentSubjectIndex = idx;
     const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
     const s = items[idx];
@@ -546,6 +704,32 @@ function selectSubject(idx) {
     updateTimerDisplay();
     renderWheel(items);
     document.querySelectorAll('.exec-subject-row').forEach((row, i) => row.classList.toggle('active-subject', i === idx));
+
+    // Update suggestion with matching Bisu or curated general tip
+    const suggestionEl = document.querySelector('.mentor-suggestion p');
+    if (suggestionEl) {
+        let matchingBisu = null;
+        if (typeof bisusList !== 'undefined' && bisusList && bisusList.length > 0) {
+            matchingBisu = bisusList.find(b => 
+                (b.categoria && b.categoria.toLowerCase().includes(s.nome.toLowerCase())) ||
+                (b.titulo && b.titulo.toLowerCase().includes(s.nome.toLowerCase()))
+            );
+        }
+        
+        if (matchingBisu) {
+            suggestionEl.innerHTML = `<strong>Bisu do Mentor (${matchingBisu.titulo}):</strong> ${matchingBisu.resumo || matchingBisu.conteudo.replace(/<[^>]*>/g, '').substring(0, 150) + '...'}`;
+        } else {
+            const fallbackSuggestions = [
+                "Para esta disciplina, use o Método da Recapitulação Ativa: após estudar um tópico, feche o material e tente explicar o conteúdo em voz alta com suas próprias palavras.",
+                "Não avance sem antes realizar pelo menos 5 a 10 questões rápidas sobre o conteúdo estudado para fixar as pegadinhas da banca examinadora.",
+                "Selecione os artigos da lei seca correspondentes e faça uma leitura tática com marcações rápidas nos termos 'sempre', 'nunca', 'salvo' e 'exclusivamente'.",
+                "Pratique a Técnica Feynman: simule que está ensinando esta matéria para um iniciante. Onde você hesitar ou travar na explicação é onde precisa revisar.",
+                "Mantenha um caderno de erros rápido para esta disciplina. Registre apenas as questões que você errou e o motivo real do erro para revisar no final da semana."
+            ];
+            const randomTip = fallbackSuggestions[idx % fallbackSuggestions.length];
+            suggestionEl.textContent = randomTip;
+        }
+    }
 }
 
 function updateDivisionDisplay(totalMin) {
@@ -561,50 +745,108 @@ function updateDivisionDisplay(totalMin) {
     document.getElementById('divisionSlider').value = Math.round((revisionMinutes / totalMin) * 100);
 }
 
-function updateTimerDisplay() {
-    const h = Math.floor(timerSeconds / 3600), m = Math.floor((timerSeconds % 3600) / 60), s = timerSeconds % 60;
-    document.getElementById('wheelTimer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+function syncFocoTimerControls() {
+    const btnMain = document.getElementById('btnIniciarTimer');
+    const btnFoco = document.getElementById('btnIniciarTimerFoco');
+    if (btnMain && btnFoco) {
+        btnFoco.innerHTML = btnMain.innerHTML;
+        if (timerRunning) {
+            btnFoco.style.background = 'var(--bg-secondary)';
+            btnFoco.style.color = 'var(--text-primary)';
+            btnFoco.style.border = '1px solid var(--border-color)';
+            btnFoco.style.boxShadow = 'none';
+        } else {
+            btnFoco.style.background = 'var(--accent-green)';
+            btnFoco.style.color = '#fff';
+            btnFoco.style.border = 'none';
+            btnFoco.style.boxShadow = 'var(--shadow)';
+        }
+    }
+
+    const badge = document.getElementById('wheelBadge');
+    const focoBadge = document.getElementById('focoWheelBadge');
+    if (badge && focoBadge) {
+        focoBadge.style.display = badge.style.display;
+        focoBadge.textContent = badge.textContent;
+        if (badge.textContent === 'Revisão') {
+            focoBadge.style.color = '#fff';
+            focoBadge.style.background = 'var(--accent-blue)';
+        } else if (badge.textContent === 'Descanso' || badge.textContent === 'Descanso Tático') {
+            focoBadge.style.color = '#000';
+            focoBadge.style.background = 'var(--accent-yellow)';
+        } else if (badge.style.display !== 'none') {
+            focoBadge.style.color = '#fff';
+            focoBadge.style.background = 'var(--accent-green)';
+        } else {
+            focoBadge.style.display = 'none';
+        }
+    }
 }
 
-// Timer button
-document.getElementById('btnIniciarTimer').addEventListener('click', function() {
+function updateTimerDisplay() {
+    const h = Math.floor(timerSeconds / 3600), m = Math.floor((timerSeconds % 3600) / 60), s = timerSeconds % 60;
+    const timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    document.getElementById('wheelTimer').textContent = timeStr;
+    const focoTimer = document.getElementById('focoWheelTimer');
+    if (focoTimer) focoTimer.textContent = timeStr;
+    syncFocoTimerControls();
+}
+
+function toggleStudyTimer() {
+    const btnMain = document.getElementById('btnIniciarTimer');
     if (timerRunning) {
         clearInterval(timerInterval); timerRunning = false;
-        this.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
+        if (btnMain) btnMain.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
+        saveStudyProgress();
+        if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
     } else {
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
         timerRunning = true;
-        this.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+        if (btnMain) btnMain.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+        if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
         timerInterval = setInterval(() => {
             if (timerSeconds > 0) {
                 timerSeconds--;
+                if (currentPhase !== 'break') {
+                    elapsedSessionSeconds++;
+                    if (elapsedSessionSeconds >= 60) {
+                        saveStudyProgress();
+                    }
+                }
                 updateTimerDisplay();
             } else {
+                if (currentPhase !== 'break') {
+                    saveStudyProgress();
+                    elapsedSessionSeconds = 0;
+                }
                 clearInterval(timerInterval); timerRunning = false;
-                document.getElementById('btnIniciarTimer').innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
-
-                // If division enabled and was in revision, switch to study phase
-                if (divisionEnabled && currentPhase === 'revision') {
+                if (btnMain) btnMain.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
+                if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
+                if (currentPhase === 'break') {
+                    endTacticalBreak();
+                } else if (divisionEnabled && currentPhase === 'revision') {
                     currentPhase = 'study';
                     timerSeconds = studyMinutes * 60;
                     document.getElementById('wheelBadge').textContent = 'Conteúdo novo';
-                    document.getElementById('wheelBadge').style.background = '#3a3a5a';
+                    document.getElementById('wheelBadge').style.background = 'var(--accent-green)';
                     updateTimerDisplay();
+                    playTacticalChime();
+                    sendTacticalNotification("Revisão Concluída! 🎖️", "Iniciando fase de Conteúdo Novo.");
                     showToast('Revisão concluída! Agora, conteúdo novo.');
                 } else {
-                    showToast('Sessão concluída! ✅');
-                    document.getElementById('wheelBadge').style.display = 'none';
-                    // Move to next subject
                     const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
-                    if (currentSubjectIndex < items.length - 1) {
-                        setTimeout(() => selectSubject(currentSubjectIndex + 1), 1500);
-                    }
+                    const s = items[currentSubjectIndex];
+                    handleSubjectCycleCompletion(s, items);
                 }
             }
         }, 1000);
     }
-});
+}
 
-// Division toggle
+document.getElementById('btnIniciarTimer').addEventListener('click', toggleStudyTimer);
+
 document.getElementById('divisionToggle').addEventListener('change', function() {
     divisionEnabled = this.checked;
     document.getElementById('divisionContent').style.display = this.checked ? 'block' : 'none';
@@ -614,13 +856,17 @@ document.getElementById('divisionToggle').addEventListener('change', function() 
     const totalMin = s?.duracao || s?.totalMin || 120;
 
     if (this.checked) {
+        timerSeconds = revisionMinutes * 60;
+        document.getElementById('wheelBadge').style.display = 'inline-block';
+        document.getElementById('wheelBadge').textContent = 'Revisão';
+        document.getElementById('wheelBadge').style.background = 'var(--accent-blue)';
         currentPhase = 'revision';
         revisionMinutes = Math.round(totalMin * 0.33);
         studyMinutes = totalMin - revisionMinutes;
         updateDivisionDisplay(totalMin);
         document.getElementById('wheelBadge').style.display = 'inline-block';
         document.getElementById('wheelBadge').textContent = 'Revisão';
-        document.getElementById('wheelBadge').style.background = '#4a7ccc';
+        document.getElementById('wheelBadge').style.background = 'var(--accent-blue)';
         timerSeconds = revisionMinutes * 60;
         updateTimerDisplay();
     } else {
@@ -645,25 +891,32 @@ document.getElementById('divisionSlider').addEventListener('input', function() {
 });
 
 // Confirm division button
-document.getElementById('btnConfirmDivision').addEventListener('click', () => {
+function confirmStudyDivision() {
     currentPhase = 'revision';
     timerSeconds = revisionMinutes * 60;
     document.getElementById('wheelBadge').textContent = 'Revisão';
-    document.getElementById('wheelBadge').style.background = '#4a7ccc';
+    document.getElementById('wheelBadge').style.background = 'var(--accent-blue)';
     updateTimerDisplay();
     const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
     renderWheel(items);
     showToast('Divisão confirmada! Inicie a revisão.');
-});
+}
+
+document.getElementById('btnConfirmDivision').addEventListener('click', confirmStudyDivision);
 
 function renderExecSubjects(sequence) {
     const container = document.getElementById('execSubjectsList'); container.innerHTML = '';
     const items = sequence.length ? sequence : currentExecCiclo.subjects;
     items.forEach((s, i) => {
         const row = document.createElement('div');
-        row.className = `exec-subject-row${i === 0 ? ' active-subject' : ''}`;
+        row.className = `exec-subject-row${i === currentSubjectIndex ? ' active-subject' : ''}`;
         const dur = s.duracao ? formatMin(s.duracao) : s.sessao;
-        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${dur}</span><div class="exec-subject-actions"><button data-idx="${i}"><i class="bi bi-play-fill"></i></button></div>`;
+        
+        // Dynamic remaining time calculation
+        const remMin = s.tempoRestanteMin !== undefined ? s.tempoRestanteMin : (s.duracao || s.totalMin || 120);
+        const remFmt = formatMin(remMin);
+        
+        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions"><button data-idx="${i}"><i class="bi bi-play-fill"></i></button></div>`;
         row.querySelector('button').addEventListener('click', () => selectSubject(i));
         container.appendChild(row);
     });
@@ -675,6 +928,20 @@ document.getElementById('btnEditarCiclo').addEventListener('click', () => {
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; timerRunning = false; }
         openCicloConfigForEdit(currentExecCiclo); 
     }
+});
+
+// ===== POMODORO EVENT BINDINGS =====
+document.getElementById('pomodoroToggle').addEventListener('change', function() {
+    pomodoroEnabled = this.checked;
+    DB.save('pomodoroEnabled', pomodoroEnabled);
+    document.getElementById('pomodoroContent').style.display = this.checked ? 'block' : 'none';
+    showToast(this.checked ? 'Pomodoro Ativado! Descanso tático configurado.' : 'Pomodoro Desativado.');
+});
+
+document.getElementById('pomodoroSlider').addEventListener('input', function() {
+    pomodoroBreakMin = parseInt(this.value);
+    DB.save('pomodoroBreakMin', pomodoroBreakMin);
+    document.getElementById('pomodoroBreakMinutesText').textContent = pomodoroBreakMin + ' minutos';
 });
 
 // ===== IMPORTAR CONCURSOS OFICIAIS (Aluno) =====
@@ -730,7 +997,608 @@ async function loadConcursosOficiais() {
     }
 }
 
+// ===== AUTO-ADJUST STAR LEVELS FROM SIMULADOS =====
+function autoAdjustNiveis(materias) {
+    if (!simulados || !simulados.length) return;
+    const withResult = simulados.filter(s => s.resultado && s.resultado.totalQ > 0 && s.disciplinas);
+    if (!withResult.length) return;
+
+    // Build per-subject accuracy map from all simulados
+    const materiaMap = {};
+    withResult.forEach(sim => {
+        sim.disciplinas.forEach(d => {
+            if (d.questoes <= 0) return;
+            if (!materiaMap[d.nome]) materiaMap[d.nome] = { totalQ: 0, totalA: 0 };
+            materiaMap[d.nome].totalQ += d.questoes;
+            materiaMap[d.nome].totalA += d.acertos;
+        });
+    });
+
+    // Map accuracy to star level (0-5)
+    // 0-19% = 0 stars, 20-39% = 1, 40-59% = 2, 60-74% = 3, 75-89% = 4, 90%+ = 5
+    materias.forEach(m => {
+        const stats = materiaMap[m.nome];
+        if (!stats || stats.totalQ === 0) return; // keep default (0) if no data
+        const pct = (stats.totalA / stats.totalQ) * 100;
+        if (pct >= 90) m.nivel = 5;
+        else if (pct >= 75) m.nivel = 4;
+        else if (pct >= 60) m.nivel = 3;
+        else if (pct >= 40) m.nivel = 2;
+        else if (pct >= 20) m.nivel = 1;
+        else m.nivel = 0;
+    });
+}
+
 // ===== INIT =====
 renderConcursosList();
 renderCiclosList();
+setTimeout(restoreActiveTimerState, 500);
+
+// ===== AUDIO ALERTS (Web Audio API Synthesized) =====
+function playTacticalChime() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // Sound 1 (Chime base note A5)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, ctx.currentTime);
+        gain1.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start();
+        osc1.stop(ctx.currentTime + 0.4);
+        
+        // Sound 2 (Harmonic echo note E6, slightly offset)
+        setTimeout(() => {
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1320, ctx.currentTime);
+            gain2.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start();
+            osc2.stop(ctx.currentTime + 0.5);
+        }, 150);
+    } catch (e) {
+        console.warn('Audio feedback blocked by browser settings:', e.message);
+    }
+}
+
+// ===== SYSTEM BROWSER NOTIFICATIONS =====
+function sendTacticalNotification(title, body) {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+        new Notification(title, { body });
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                new Notification(title, { body });
+            }
+        });
+    }
+}
+
+// ===== SAVE PROGRESS ON TAB CLOSE / REFRESH =====
+window.addEventListener('beforeunload', () => {
+    // 1. Commit elapsed minutes first
+    saveStudyProgress();
+    
+    // 2. Save active running state of the timer
+    if (currentExecCiclo) {
+        const state = {
+            cycleId: currentExecCiclo.id,
+            subjectIndex: currentSubjectIndex,
+            divisionEnabled: divisionEnabled,
+            currentPhase: currentPhase,
+            timerSeconds: timerSeconds,
+            timerRunning: timerRunning,
+            elapsedSessionSeconds: elapsedSessionSeconds,
+            closeTimestamp: Date.now()
+        };
+        localStorage.setItem('activeTimerState', JSON.stringify(state));
+    } else {
+        localStorage.removeItem('activeTimerState');
+    }
+});
+
+// ===== RESTORE ACTIVE TIMER STATE ON STARTUP =====
+function restoreActiveTimerState() {
+    const raw = localStorage.getItem('activeTimerState');
+    if (!raw) return;
+    try {
+        const state = JSON.parse(raw);
+        if (!state || !state.cycleId) return;
+        
+        const ciclo = ciclos.find(c => c.id === state.cycleId);
+        if (!ciclo) return;
+        
+        currentExecCiclo = ciclo;
+        currentSubjectIndex = state.subjectIndex || 0;
+        divisionEnabled = state.divisionEnabled || false;
+        currentPhase = state.currentPhase || 'study';
+        timerSeconds = state.timerSeconds || 0;
+        elapsedSessionSeconds = state.elapsedSessionSeconds || 0;
+        
+        // Set visual elements if currently in break phase
+        if (currentPhase === 'break') {
+            const badge = document.getElementById('wheelBadge');
+            if (badge) {
+                badge.style.display = 'inline-block';
+                badge.textContent = 'Descanso Tático';
+                badge.style.background = '#4a8b57';
+            }
+            document.getElementById('wheelSubject').textContent = 'Descansa!';
+            document.getElementById('execSubjectName').textContent = 'Descanso Tático - Recuperação de Foco';
+            const suggestionEl = document.querySelector('.mentor-suggestion p');
+            if (suggestionEl) {
+                suggestionEl.textContent = '🎖️ Descanso Tático Iniciado! Relaxe, beba água e faça alguns alongamentos para recuperar sua energia. Seu foco será recarregado em instantes para o próximo combate.';
+            }
+        }
+        
+        // If it was running, compute how many seconds passed while away!
+        if (state.timerRunning && state.closeTimestamp) {
+            const secondsPassed = Math.floor((Date.now() - state.closeTimestamp) / 1000);
+            if (secondsPassed > 0) {
+                const s = (ciclo.sequence || ciclo.subjects)[currentSubjectIndex];
+                if (s) {
+                    const remaining = timerSeconds - secondsPassed;
+                    if (remaining > 0) {
+                        timerSeconds = remaining;
+                        if (currentPhase !== 'break') {
+                            elapsedSessionSeconds += secondsPassed;
+                            saveStudyProgress();
+                        }
+                        // Resume ticking!
+                        resumeTimerTick();
+                    } else {
+                        // Timer completed while away!
+                        timerSeconds = 0;
+                        
+                        if (currentPhase === 'break') {
+                            currentPhase = 'study';
+                            showToast('Descanso tático concluído enquanto você estava fora! 🎯');
+                            playTacticalChime();
+                            sendTacticalNotification(
+                                "Fim do Descanso! 🎯", 
+                                "Hora de voltar ao combate de estudos!"
+                            );
+                            
+                            // Trigger syllabus modal
+                            setTimeout(() => {
+                                showSyllabusSyncModal(s.nome, ciclo.concurso);
+                            }, 500);
+                        } else {
+                            if (currentPhase !== 'break') {
+                                elapsedSessionSeconds += state.timerSeconds;
+                                saveStudyProgress();
+                            }
+                            
+                            showToast('Sessão de estudos concluída enquanto você estava fora! ✅');
+                            playTacticalChime();
+                            sendTacticalNotification(
+                                "Sessão Concluída! 🎖️", 
+                                `Você completou a disciplina de ${s.nome}!`
+                            );
+                            
+                            // Trigger syllabus modal
+                            setTimeout(() => {
+                                showSyllabusSyncModal(s.nome, ciclo.concurso);
+                            }, 500);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Clean localStorage state since we successfully restored it!
+        localStorage.removeItem('activeTimerState');
+    } catch (e) {
+        console.warn('Erro ao restaurar cronômetro em segundo plano:', e.message);
+    }
+}
+
+function resumeTimerTick() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerRunning = true;
+    
+    // We get the button if we are inside the cycles exec view to show active state
+    const btn = document.getElementById('btnIniciarTimer');
+    if (btn) btn.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+    
+    timerInterval = setInterval(() => {
+        if (timerSeconds > 0) {
+            timerSeconds--;
+            if (currentPhase !== 'break') {
+                elapsedSessionSeconds++;
+                if (elapsedSessionSeconds >= 60) {
+                    saveStudyProgress();
+                }
+            }
+            updateTimerDisplay();
+        } else {
+            if (currentPhase !== 'break') {
+                saveStudyProgress();
+                elapsedSessionSeconds = 0;
+            }
+            clearInterval(timerInterval); timerRunning = false;
+            
+            const btnStart = document.getElementById('btnIniciarTimer');
+            if (btnStart) btnStart.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
+
+            if (currentPhase === 'break') {
+                endTacticalBreak();
+            } else if (divisionEnabled && currentPhase === 'revision') {
+                currentPhase = 'study';
+                const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
+                const s = items[currentSubjectIndex];
+                const totalMin = s?.duracao || s?.totalMin || 120;
+                revisionMinutes = Math.round(totalMin * 0.33);
+                studyMinutes = totalMin - revisionMinutes;
+                
+                timerSeconds = studyMinutes * 60;
+                
+                const badge = document.getElementById('wheelBadge');
+                if (badge) {
+                    badge.textContent = 'Conteúdo novo';
+                    badge.style.background = 'var(--accent-green)';
+                }
+                updateTimerDisplay();
+                
+                playTacticalChime();
+                sendTacticalNotification(
+                    "Revisão Concluída! 🎖️", 
+                    "Iniciando fase de Conteúdo Novo."
+                );
+                showToast('Revisão concluída! Agora, conteúdo novo.');
+            } else {
+                const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
+                const s = items[currentSubjectIndex];
+                handleSubjectCycleCompletion(s, items);
+            }
+        }
+    }, 1000);
+}
+
+// ===== CYCLE COMPLETION & SYLLABUS SYNC =====
+function handleSubjectCycleCompletion(s, items) {
+    showToast('Sessão concluída! ✅');
+    const badge = document.getElementById('wheelBadge');
+    if (badge) badge.style.display = 'none';
+
+    if (currentExecCiclo) {
+        if (currentExecCiclo.horasEstudadasMin === undefined) {
+            currentExecCiclo.horasEstudadasMin = 0;
+        }
+        const totalMin = s.duracao || s.totalMin || 120;
+        currentExecCiclo.horasEstudadasMin += totalMin;
+        
+        // Add study log entry to history
+        if (typeof historicoEstudos !== 'undefined') {
+            const logEntry = {
+                id: Date.now(),
+                cicloNome: currentExecCiclo.nome,
+                materiaNome: s.nome,
+                duracaoMin: totalMin,
+                data: new Date().toISOString(),
+                fase: divisionEnabled ? 'Revisão + Estudo' : 'Geral'
+            };
+            historicoEstudos.push(logEntry);
+        }
+        
+        const proposedMin = currentExecCiclo.duracaoMin || 
+            (currentExecCiclo.sequence ? currentExecCiclo.sequence.reduce((acc, curr) => acc + (curr.duracao || 0), 0) : 0);
+        
+        if (currentExecCiclo.horasEstudadasMin >= proposedMin) {
+            currentExecCiclo.ciclosRealizados++;
+            currentExecCiclo.horasEstudadasMin = 0;
+            items.forEach(item => {
+                item.tempoRestanteMin = item.duracao || item.totalMin || 120;
+            });
+            showToast('🎖️ PARABÉNS! Você concluído uma rodada inteira do ciclo!');
+        }
+        saveAll();
+    }
+    
+    playTacticalChime();
+    sendTacticalNotification(
+        "Sessão Concluída! 🎖️", 
+        `Você completou a disciplina de ${s.nome} no ciclo!`
+    );
+
+    // Route through Pomodoro if enabled!
+    if (pomodoroEnabled) {
+        startTacticalBreak(s.nome, currentExecCiclo ? currentExecCiclo.concurso : null);
+    } else {
+        // Show the Syllabus Sync Modal directly!
+        showSyllabusSyncModal(s.nome, currentExecCiclo ? currentExecCiclo.concurso : null);
+    }
+}
+
+function showSyllabusSyncModal(subjectName, contestName) {
+    const modal = document.getElementById('syllabusSyncModal');
+    if (!modal) return;
+    
+    const materiaSpan = document.getElementById('syncMateriaName');
+    if (materiaSpan) {
+        materiaSpan.textContent = subjectName;
+    }
+    
+    modal.classList.add('active');
+    
+    const btnConfirm = document.getElementById('btnConfirmSyllabusSync');
+    const btnCancel = document.getElementById('btnCancelSyllabusSync');
+    const btnClose = document.getElementById('syllabusSyncClose');
+    
+    // Clear and bind confirm action
+    const onConfirm = () => {
+        modal.classList.remove('active');
+        if (typeof navigateToSyllabusSubject === 'function') {
+            navigateToSyllabusSubject(subjectName, contestName);
+        }
+    };
+    
+    // Clear and bind dismiss action
+    const onDismiss = () => {
+        modal.classList.remove('active');
+        const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
+        if (currentSubjectIndex < items.length - 1) {
+            selectSubject(currentSubjectIndex + 1);
+        }
+    };
+    
+    // Clean clone nodes to replace event listeners perfectly
+    const newBtnConfirm = btnConfirm.cloneNode(true);
+    const newBtnCancel = btnCancel.cloneNode(true);
+    const newBtnClose = btnClose.cloneNode(true);
+    
+    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    btnClose.parentNode.replaceChild(newBtnClose, btnClose);
+    
+    newBtnConfirm.addEventListener('click', onConfirm);
+    newBtnCancel.addEventListener('click', onDismiss);
+    newBtnClose.addEventListener('click', onDismiss);
+}
+
+// ===== POMODORO BREAK ENGINE =====
+function startTacticalBreak(subjectName, contestName) {
+    lastCompletedSubject = subjectName;
+    lastCompletedContest = contestName;
+    
+    currentPhase = 'break';
+    timerSeconds = pomodoroBreakMin * 60;
+    
+    const badge = document.getElementById('wheelBadge');
+    if (badge) {
+        badge.style.display = 'inline-block';
+        badge.textContent = 'Descanso Tático';
+        badge.style.background = '#4a8b57'; // tactical green background
+    }
+    
+    document.getElementById('wheelSubject').textContent = 'Descansa!';
+    document.getElementById('execSubjectName').textContent = 'Descanso Tático - Recuperação de Foco';
+    
+    const suggestionEl = document.querySelector('.mentor-suggestion p');
+    if (suggestionEl) {
+        suggestionEl.textContent = '🎖️ Descanso Tático Iniciado! Relaxe, beba água e faça alguns alongamentos para recuperar sua energia. Seu foco será recarregado em instantes para o próximo combate.';
+    }
+    
+    updateTimerDisplay();
+    
+    // Play chime sound and display notification
+    playTacticalChime();
+    sendTacticalNotification(
+        "Descanso Tático Ativado! 🔋", 
+        `Tempo para recarregar as energias por ${pomodoroBreakMin} minutos.`
+    );
+    showToast(`Descanso tático iniciado: ${pomodoroBreakMin} minutos.`);
+    
+    // Auto-start the timer for the break countdown!
+    if (!timerRunning) {
+        timerRunning = true;
+        document.getElementById('btnIniciarTimer').innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+        timerInterval = setInterval(() => {
+            if (timerSeconds > 0) {
+                timerSeconds--;
+                updateTimerDisplay();
+            } else {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                document.getElementById('btnIniciarTimer').innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
+                
+                // End break and show the Syllabus Sync Modal
+                endTacticalBreak();
+            }
+        }, 1000);
+    }
+}
+
+function endTacticalBreak() {
+    currentPhase = 'study';
+    
+    playTacticalChime();
+    sendTacticalNotification(
+        "Fim do Descanso! 🎯", 
+        "Hora de voltar ao combate de estudos!"
+    );
+    showToast("Descanso concluído! Voltando ao foco.");
+    
+    // Reset Suggestion back to general Bisu suggestion for next subject
+    const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
+    const s = items[currentSubjectIndex];
+    if (s) {
+        document.getElementById('wheelSubject').textContent = s.nome.length > 16 ? s.nome.substring(0, 16) + '...' : s.nome;
+        document.getElementById('execSubjectName').textContent = s.nome;
+    }
+    
+    // Trigger syllabus sync modal
+    showSyllabusSyncModal(lastCompletedSubject, lastCompletedContest);
+}
+
+// ===== MODO FOCO INITIALIZATION & SYNC =====
+function initFocusMode() {
+    const btnEntrar = document.getElementById('btnEntrarModoFoco');
+    const btnSair = document.getElementById('btnSairModoFoco');
+    const btnPlayFoco = document.getElementById('btnIniciarTimerFoco');
+    
+    // Toggles and Sliders inside Focus Mode
+    const divisionToggleFoco = document.getElementById('focoDivisionToggle');
+    const divisionSliderFoco = document.getElementById('focoDivisionSlider');
+    const btnConfirmDivisionFoco = document.getElementById('btnConfirmDivisionFoco');
+    
+    const pomodoroToggleFoco = document.getElementById('focoPomodoroToggle');
+    const pomodoroSliderFoco = document.getElementById('focoPomodoroSlider');
+    
+    // Elements to Sync
+    const mainDivisionToggle = document.getElementById('divisionToggle');
+    const mainDivisionSlider = document.getElementById('divisionSlider');
+    const mainConfirmDivision = document.getElementById('btnConfirmDivision');
+    
+    const mainPomodoroToggle = document.getElementById('pomodoroToggle');
+    const mainPomodoroSlider = document.getElementById('pomodoroSlider');
+    
+    // Entrar no Modo Foco
+    if (btnEntrar) {
+        btnEntrar.addEventListener('click', () => {
+            // 1. Activate Focus body class for distraction-free view
+            document.body.classList.add('focus-mode-active');
+            
+            // 2. Set Active page view
+            showCiclosView('ciclos-foco-view');
+            
+            // 3. Sincronizar Informações de Nome e Horas
+            const subNameMain = document.getElementById('execSubjectName');
+            const subNameFoco = document.getElementById('focoSubjectName');
+            if (subNameMain && subNameFoco) {
+                subNameFoco.textContent = subNameMain.textContent;
+            }
+            
+            // Sync Daily Hours Meta
+            const hoursMain = document.getElementById('execTodayHoursText');
+            const hoursFoco = document.getElementById('focoTodayHoursText');
+            if (hoursMain && hoursFoco) {
+                hoursFoco.textContent = hoursMain.textContent;
+            }
+            
+            // Sync division values
+            if (mainDivisionToggle && divisionToggleFoco) {
+                divisionToggleFoco.checked = mainDivisionToggle.checked;
+                document.getElementById('focoDivisionContent').style.display = mainDivisionToggle.checked ? 'block' : 'none';
+                document.getElementById('focoDivisionDisabledMsg').style.display = mainDivisionToggle.checked ? 'none' : 'block';
+            }
+            
+            if (mainDivisionSlider && divisionSliderFoco) {
+                divisionSliderFoco.value = mainDivisionSlider.value;
+                document.getElementById('focoDivRevisaoTime').textContent = document.getElementById('divRevisaoTime').textContent;
+                document.getElementById('focoDivConteudoTime').textContent = document.getElementById('divConteudoTime').textContent;
+            }
+            
+            // Sync Pomodoro values
+            if (mainPomodoroToggle && pomodoroToggleFoco) {
+                pomodoroToggleFoco.checked = mainPomodoroToggle.checked;
+                document.getElementById('focoPomodoroContent').style.display = mainPomodoroToggle.checked ? 'block' : 'none';
+                document.getElementById('focoPomodoroDisabledMsg').style.display = mainPomodoroToggle.checked ? 'none' : 'block';
+            }
+            
+            if (mainPomodoroSlider && pomodoroSliderFoco) {
+                pomodoroSliderFoco.value = mainPomodoroSlider.value;
+                document.getElementById('focoPomodoroBreakMinutesText').textContent = document.getElementById('pomodoroBreakMinutesText').textContent;
+            }
+            
+            // Sync clock count and buttons
+            updateTimerDisplay();
+        });
+    }
+    
+    // Sair do Modo Foco
+    if (btnSair) {
+        btnSair.addEventListener('click', () => {
+            document.body.classList.remove('focus-mode-active');
+            showCiclosView('ciclos-exec-view');
+        });
+    }
+    
+    // Iniciar/Pausar do Modo Foco
+    if (btnPlayFoco) {
+        btnPlayFoco.addEventListener('click', () => {
+            toggleStudyTimer();
+        });
+    }
+    
+    // Sync Division Toggle
+    if (divisionToggleFoco) {
+        divisionToggleFoco.addEventListener('change', function() {
+            if (mainDivisionToggle) {
+                mainDivisionToggle.checked = this.checked;
+                mainDivisionToggle.dispatchEvent(new Event('change'));
+            }
+            document.getElementById('focoDivisionContent').style.display = this.checked ? 'block' : 'none';
+            document.getElementById('focoDivisionDisabledMsg').style.display = this.checked ? 'none' : 'block';
+            
+            // Sync text display values
+            document.getElementById('focoDivRevisaoTime').textContent = document.getElementById('divRevisaoTime').textContent;
+            document.getElementById('focoDivConteudoTime').textContent = document.getElementById('divConteudoTime').textContent;
+            if (divisionSliderFoco && mainDivisionSlider) {
+                divisionSliderFoco.value = mainDivisionSlider.value;
+            }
+        });
+    }
+    
+    // Sync Division Slider
+    if (divisionSliderFoco) {
+        divisionSliderFoco.addEventListener('input', function() {
+            if (mainDivisionSlider) {
+                mainDivisionSlider.value = this.value;
+                mainDivisionSlider.dispatchEvent(new Event('input'));
+            }
+            document.getElementById('focoDivRevisaoTime').textContent = document.getElementById('divRevisaoTime').textContent;
+            document.getElementById('focoDivConteudoTime').textContent = document.getElementById('divConteudoTime').textContent;
+        });
+    }
+    
+    // Sync Division Confirmation Button
+    if (btnConfirmDivisionFoco) {
+        btnConfirmDivisionFoco.addEventListener('click', () => {
+            confirmStudyDivision();
+            showToast('🎖️ Divisão de tempo confirmada e programada!');
+        });
+    }
+    
+    // Sync Pomodoro Toggle
+    if (pomodoroToggleFoco) {
+        pomodoroToggleFoco.addEventListener('change', function() {
+            if (mainPomodoroToggle) {
+                mainPomodoroToggle.checked = this.checked;
+                mainPomodoroToggle.dispatchEvent(new Event('change'));
+            }
+            document.getElementById('focoPomodoroContent').style.display = this.checked ? 'block' : 'none';
+            document.getElementById('focoPomodoroDisabledMsg').style.display = this.checked ? 'none' : 'block';
+            if (pomodoroSliderFoco && mainPomodoroSlider) {
+                pomodoroSliderFoco.value = mainPomodoroSlider.value;
+            }
+            document.getElementById('focoPomodoroBreakMinutesText').textContent = document.getElementById('pomodoroBreakMinutesText').textContent;
+        });
+    }
+    
+    // Sync Pomodoro Slider
+    if (pomodoroSliderFoco) {
+        pomodoroSliderFoco.addEventListener('input', function() {
+            if (mainPomodoroSlider) {
+                mainPomodoroSlider.value = this.value;
+                mainPomodoroSlider.dispatchEvent(new Event('input'));
+            }
+            document.getElementById('focoPomodoroBreakMinutesText').textContent = document.getElementById('pomodoroBreakMinutesText').textContent;
+        });
+    }
+}
+
+// Call initFocusMode on load
+setTimeout(initFocusMode, 600);
 

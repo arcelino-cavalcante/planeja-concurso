@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Preview Bandeirinhas – QG do Combatente</title>
+<style>
+  body {
+    background: #0d0f1a;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    padding: 40px;
+    justify-content: center;
+  }
+  .card {
+    background: #141726;
+    border: 1px solid #2a2f50;
+    border-radius: 14px;
+    padding: 20px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 100px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  .card .label { color: #eee; font-size: 0.78rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card .sub   { color: #888; font-size: 0.68rem; text-align: center; }
+</style>
+</head>
+<body>
+<script>
+const PATENTES = [
+  { nome:"Recruta",           estrelas:1,  labelCor:"#c08a50" },
+  { nome:"Cabo",              estrelas:2,  labelCor:"#b0c4de" },
+  { nome:"Sargento",          estrelas:3,  labelCor:"#ffd700" },
+  { nome:"Subtenente",        estrelas:4,  labelCor:"#6495ed" },
+  { nome:"Tenente",           estrelas:5,  labelCor:"#48d1cc" },
+  { nome:"Capitão",           estrelas:6,  labelCor:"#ff7f50" },
+  { nome:"Major",             estrelas:7,  labelCor:"#ee82ee" },
+  { nome:"Tenente-Coronel",   estrelas:8,  labelCor:"#7b68ee" },
+  { nome:"Coronel",           estrelas:9,  labelCor:"#dc143c" },
+  { nome:"General de Divisão",estrelas:10, labelCor:"#00ff7f" }
+];
+
+function starPath(cx, cy, r) {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
+    const rad   = i % 2 === 0 ? r : r * 0.42;
+    pts.push(`${(cx + Math.cos(angle) * rad).toFixed(2)},${(cy + Math.sin(angle) * rad).toFixed(2)}`);
+  }
+  return `M${pts.join('L')}Z`;
+}
+
+function renderPatentBadge(p, size = 72, greyed = false) {
+  const c     = greyed ? '#484848' : p.labelCor;
+  const cFlag = greyed ? '#333'    : `${p.labelCor}55`;
+  const glow  = greyed ? 'none'    : `drop-shadow(0 0 7px ${p.labelCor}cc)`;
+  const n     = Math.max(1, Math.min(10, p.estrelas || 1));
+  const starR = n <= 3 ? 5.5 : n <= 6 ? 4.5 : 3.8;
+
+  let rows = [];
+  if (n <= 4) {
+    rows = [Array.from({length: n})];
+  } else if (n <= 8) {
+    const r1 = Math.ceil(n / 2), r2 = n - r1;
+    rows = [Array.from({length: r1}), Array.from({length: r2})];
+  } else {
+    const r1 = Math.ceil(n / 3), r2 = Math.ceil((n - r1) / 2), r3 = n - r1 - r2;
+    rows = [Array.from({length: r1}), Array.from({length: r2}), Array.from({length: r3})];
+  }
+
+  const rowCount = rows.length;
+  const starYs = rowCount === 1 ? [28] : rowCount === 2 ? [20, 36] : [16, 28, 40];
+  const poleX = 8, flagTipX = 56;
+
+  let starPaths = '';
+  rows.forEach((row, ri) => {
+    const ry = starYs[ri];
+    const count = row.length;
+    const triW = (flagTipX - poleX) * Math.max(0.3, 1 - Math.abs(ry - 28) / 22);
+    const spacing = Math.min((triW * 0.75) / Math.max(count, 1), starR * 2 + 2);
+    const totalW = spacing * (count - 1);
+    const startX = poleX + (triW - totalW) / 2 + spacing / 2;
+    for (let i = 0; i < count; i++) {
+      starPaths += `<path d="${starPath(startX + i * spacing, ry, starR)}" fill="${c}"/>`;
+    }
+  });
+
+  const w = size, h = Math.round(size * 72 / 64);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 64 72" fill="none"
+    xmlns="http://www.w3.org/2000/svg" style="filter:${glow};display:block">
+    <line x1="8" y1="4" x2="8" y2="68" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M8,8 L56,28 L8,48 Z" fill="${cFlag}" stroke="${c}" stroke-width="1.5" stroke-linejoin="round"/>
+    ${starPaths}
+    <circle cx="8" cy="4" r="3" fill="${c}"/>
+  </svg>`;
+}
+
+// Render cards
+PATENTES.forEach((p, i) => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.borderColor = p.labelCor + '44';
+  card.style.boxShadow = `0 0 12px ${p.labelCor}22`;
+  card.innerHTML = `
+    ${renderPatentBadge(p, 80)}
+    <div class="label" style="color:${p.labelCor}">${p.nome}</div>
+    <div class="sub">${p.estrelas} ⭐ &nbsp;|&nbsp; Nível ${i+1}</div>
+  `;
+  document.body.appendChild(card);
+});
+
+// Also show greyed out
+const sep = document.createElement('div');
+sep.style.cssText = 'width:100%;border-top:1px solid #2a2f50;margin:12px 0;flex-basis:100%;color:#555;text-align:center;font-size:0.75rem;font-family:sans-serif;padding:8px';
+sep.textContent = '▼ Bloqueadas (greyed)';
+document.body.appendChild(sep);
+
+PATENTES.forEach(p => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    ${renderPatentBadge(p, 52, true)}
+    <div class="label" style="color:#555">${p.nome}</div>
+  `;
+  document.body.appendChild(card);
+});
+</script>
+</body>
+</html>

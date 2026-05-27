@@ -1,0 +1,75 @@
+// ================================================================
+// PLANEJA CONCURSO — Firestore Security Rules v2.0
+// ================================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ▶ Admin: email na lista branca
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['admin@gmail.com'];
+    }
+
+    // ▶ Aluno: autenticado, dono dos próprios dados
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // ▶ Dados com tamanho seguro
+    function validPayload() {
+      return request.resource.data.keys().size() <= 50;
+    }
+
+    // ─── mensagens ──────────────────────────────────────────
+    match /mensagens/{docId} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin() && validPayload();
+      allow delete: if isAdmin();
+    }
+
+    // ─── avisos ─────────────────────────────────────────────
+    match /avisos/{docId} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin() && validPayload();
+      allow delete: if isAdmin();
+    }
+
+    // ─── feedbacks ──────────────────────────────────────────
+    match /feedbacks/{docId} {
+      allow read: if isAdmin() || resource.data.userUid == request.auth.uid;
+      allow create: if request.auth != null && validPayload()
+        && request.resource.data.userUid == request.auth.uid
+        && request.resource.data.tipo in ['bug', 'sugestao']
+        && request.resource.data.status == 'pendente';
+      allow update: if isAdmin() || resource.data.userUid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // ─── bisus ──────────────────────────────────────────────
+    match /bisus/{docId} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin() && validPayload();
+      allow delete: if isAdmin();
+    }
+
+    // ─── concursos_oficiais ─────────────────────────────────
+    match /concursos_oficiais/{docId} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin() && validPayload();
+      allow delete: if isAdmin();
+    }
+
+    // ─── users/{uid} ─────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow create, update: if isOwner(uid) && validPayload();
+      allow delete: if isAdmin();
+
+      match /dados/{key} {
+        allow read: if isAdmin() || isOwner(uid);
+        allow create, update, delete: if isOwner(uid) && validPayload();
+      }
+    }
+  }
+}

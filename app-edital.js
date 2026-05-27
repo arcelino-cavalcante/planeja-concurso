@@ -240,5 +240,134 @@ function openEditalView(edital) {
     showEditalView('edital-view-view');
 }
 
+// ===== IMPORT FROM CONCURSO =====
+document.getElementById('btnImportarEditalConcurso')?.addEventListener('click', () => {
+    const selector = document.getElementById('editalConcursoSelector');
+    const grid = document.getElementById('editalConcursoGrid');
+    const noConc = document.getElementById('editalNoConcursoMsg');
+    
+    // Toggle visibility
+    if (selector.style.display !== 'none') {
+        selector.style.display = 'none';
+        return;
+    }
+    
+    selector.style.display = 'block';
+    grid.innerHTML = '';
+    noConc.style.display = 'none';
+    
+    if (!concursos || !concursos.length) {
+        noConc.style.display = 'block';
+        return;
+    }
+    
+    concursos.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'concurso-card';
+        card.dataset.id = c.id;
+        card.innerHTML = `<div class="concurso-check"><i class="bi bi-check-lg"></i></div>
+            <div class="concurso-icon"><i class="bi bi-trophy"></i></div>
+            <span>${c.nome}</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">${c.disciplinas.length} matérias</span>`;
+        card.addEventListener('click', () => {
+            // Select animation
+            grid.querySelectorAll('.concurso-card').forEach(x => x.classList.remove('selected'));
+            card.classList.add('selected');
+            
+            // Import after brief delay for visual feedback
+            setTimeout(() => {
+                importEditalFromConcurso(c);
+                selector.style.display = 'none';
+            }, 300);
+        });
+        grid.appendChild(card);
+    });
+});
+
+function importEditalFromConcurso(conc) {
+    currentEditalId = null;
+    document.getElementById('editalNome').value = conc.nome;
+    
+    // Create matérias from concurso disciplinas, each with an empty tópico placeholder
+    currentEditalMaterias = conc.disciplinas.map(d => ({
+        nome: d.nome,
+        topicos: [{ nome: 'Adicionar tópico...', checked: false }]
+    }));
+    
+    renderEditalTree();
+    showEditalView('edital-edit-view');
+    showToast(`Matérias de "${conc.nome}" importadas! Adicione os tópicos de cada matéria.`);
+}
+
+// ===== NAVIGATION & SYNC HELPER =====
+function navigateToSyllabusSubject(subjectName, contestName) {
+    loadEditais(); // refresh editais from DB
+    if (!editais || editais.length === 0) {
+        showToast('Nenhum edital cadastrado no sistema! Cadastre um primeiro.');
+        return;
+    }
+    
+    // Find matching edital
+    let matchedEdital = null;
+    if (contestName) {
+        const query = contestName.toLowerCase().trim();
+        // Look for matching name
+        matchedEdital = editais.find(e => e.nome.toLowerCase().includes(query) || query.includes(e.nome.toLowerCase()));
+    }
+    
+    // Fallback: first edital
+    if (!matchedEdital) {
+        matchedEdital = editais[0];
+    }
+    
+    if (!matchedEdital) {
+        showToast('Edital não localizado.');
+        return;
+    }
+    
+    // 1. First trigger navigation to the "edital" page
+    if (typeof navigateToPage === 'function') {
+        navigateToPage('edital');
+    }
+    
+    // 2. Open the specific edital (this overrides the default list-view and renders the tree)
+    openEditalView(matchedEdital);
+    
+    // 3. Scroll to and highlight the subject element
+    setTimeout(() => {
+        const blocks = document.querySelectorAll('.edital-view-materia');
+        let targetEl = null;
+        
+        blocks.forEach(el => {
+            const h3 = el.querySelector('.edital-view-materia-header h3');
+            if (h3) {
+                const text = h3.textContent.trim().toLowerCase();
+                const target = subjectName.toLowerCase().trim();
+                if (text.includes(target) || target.includes(text)) {
+                    targetEl = el;
+                }
+            }
+        });
+        
+        if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Apply straight-edge tactical border highlight and pulse shadow
+            targetEl.style.transition = 'all 0.3s ease';
+            targetEl.style.outline = '3px solid var(--accent-yellow)';
+            targetEl.style.boxShadow = '0 0 20px rgba(255, 193, 7, 0.5)';
+            targetEl.style.borderRadius = '0'; // keep military straight-line
+            
+            // Retain highlight for 3 seconds
+            setTimeout(() => {
+                targetEl.style.outline = 'none';
+                targetEl.style.boxShadow = 'none';
+            }, 3000);
+        } else {
+            showToast(`Matéria "${subjectName}" não localizada no edital.`);
+        }
+    }, 250);
+}
+
 // ===== INIT =====
 loadEditais();
