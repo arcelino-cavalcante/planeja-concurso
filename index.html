@@ -135,12 +135,7 @@
                         <span>Edital Verticalizado</span>
                     </a>
                 </li>
-                <li class="nav-item" data-page="qg">
-                    <a href="#" class="nav-link-custom">
-                        <i class="bi bi-shield-shaded"></i>
-                        <span>QG do Combatente</span>
-                    </a>
-                </li>
+
                 <li class="nav-item" data-page="bisus">
                     <a href="#" class="nav-link-custom">
                         <i class="bi bi-lightbulb"></i>
@@ -369,6 +364,14 @@
                         </h3>
                         <div id="historicoListContainer" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;padding-right:4px;">
                             <!-- Will be rendered by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Total Horas por Concurso Card -->
+                    <div class="card-mentor total-hours-card" id="totalHoursConcursoCard">
+                        <h3 class="section-title" style="margin-bottom:12px;"><i class="bi bi-award-fill"></i> Horas Totais por Concurso</h3>
+                        <div id="totalHoursConcursoList" style="display:flex;flex-direction:column;gap:8px;">
+                            <!-- Dynamically rendered -->
                         </div>
                     </div>
 
@@ -977,42 +980,6 @@
             </div>
         </section>
 
-        <!-- ========== PAGE: QG DO COMBATENTE ========== -->
-        <section class="page-content" id="page-qg">
-            <div class="page-header-custom">
-                <div>
-                    <a href="#" class="back-link" id="backToHomeFromQg">
-                        <i class="bi bi-arrow-left"></i> Voltar para home
-                    </a>
-                    <h1 class="page-title">Quartel-General (QG) do Combatente</h1>
-                </div>
-            </div>
-
-            <div class="qg-layout">
-                <!-- LEFT: Soldier Profile & Patent Timeline -->
-                <div class="qg-left-col">
-                    <!-- Profile Header Card -->
-                    <div class="card-mentor qg-profile-card">
-                        <div class="qg-profile-header">
-
-                            <!-- Photo uploader -->
-                            <div class="qg-avatar-wrapper" id="qgAvatarWrapper" title="Clique para enviar sua foto">
-                                <img id="qgAvatarImg" class="qg-avatar-img" src="" alt="Foto do perfil" style="display:none">
-                                <div id="qgAvatarPlaceholder" class="qg-avatar-placeholder">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
-                                <div class="qg-avatar-overlay">
-                                    <i class="bi bi-camera-fill"></i>
-                                </div>
-                                <input type="file" id="qgAvatarInput" accept="image/*" style="display:none">
-                            </div>
-
-                            <h2 id="qgUserPatentName" class="qg-profile-patent-name">RECRUTA</h2>
-                            <p class="qg-profile-label">Sua Patente Atual</p>
-                        </div>
-
-                        <div class="qg-profile-stats">
-                            <div class="qg-stat-item">
                                 <i class="bi bi-clock-fill"></i>
                                 <div>
                                     <span id="qgTotalHours" class="qg-stat-value">0.0</span>
@@ -1851,13 +1818,13 @@
     <script src="app-simulados.js"></script>
     <script src="app-bisus.js"></script>
     <script src="app-edital.js"></script>
-    <script src="app-qg.js"></script>
+
     <script src="app-admin.js"></script>
     <!-- Service Worker Registration (PWA) -->
     <script>
         if ('serviceWorker' in navigator) {
             // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
-            const APP_VERSION = '1.4.7';
+            const APP_VERSION = '1.4.8';
             let refreshing = false;
             let newWorkerWaiting = null;
 
