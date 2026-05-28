@@ -78,12 +78,17 @@ document.addEventListener('visibilitychange', () => {
 
 // ===== HYBRID DB: localStorage (instant) + Firestore (debounced, retry) =====
 const DB = {
-    save(key, data) {
+    save(key, data, customDebounce = DEBOUNCE_MS) {
         if (!currentUserUID) return;
         localStorage.setItem(`mentor_${currentUserUID}_${key}`, JSON.stringify(data));
         _writeQueue[key] = data;
         if (_writeTimers[key]) clearTimeout(_writeTimers[key]);
-        _writeTimers[key] = setTimeout(() => _flushWrite(key), DEBOUNCE_MS);
+        
+        if (customDebounce === 0) {
+            _flushWrite(key);
+        } else {
+            _writeTimers[key] = setTimeout(() => _flushWrite(key), customDebounce);
+        }
     },
 
     load(key, fallback = []) {

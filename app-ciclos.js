@@ -835,7 +835,7 @@ function toggleStudyTimer() {
         if (btnMain) btnMain.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
         saveStudyProgress();
         if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
-        if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
+        if (typeof persistActiveTimerState === 'function') persistActiveTimerState(true);
     } else {
         if ("Notification" in window && Notification.permission === "default") {
             Notification.requestPermission();
@@ -843,7 +843,7 @@ function toggleStudyTimer() {
         timerRunning = true;
         if (btnMain) btnMain.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
         if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
-        if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
+        if (typeof persistActiveTimerState === 'function') persistActiveTimerState(true);
         timerInterval = setInterval(() => {
             if (timerSeconds > 0) {
                 timerSeconds--;
@@ -862,7 +862,7 @@ function toggleStudyTimer() {
                 clearInterval(timerInterval); timerRunning = false;
                 if (btnMain) btnMain.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
                 if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
-                if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
+                if (typeof persistActiveTimerState === 'function') persistActiveTimerState(true);
                 if (currentPhase === 'break') {
                     endTacticalBreak();
                 } else if (divisionEnabled && currentPhase === 'revision') {
@@ -1125,7 +1125,7 @@ function sendTacticalNotification(title, body) {
 }
 
 // ===== PERSIST ACTIVE TIMER STATE TO DATABASE =====
-function persistActiveTimerState() {
+function persistActiveTimerState(instant = false) {
     if (currentExecCiclo) {
         const state = {
             cycleId: currentExecCiclo.id,
@@ -1137,7 +1137,9 @@ function persistActiveTimerState() {
             elapsedSessionSeconds: elapsedSessionSeconds,
             closeTimestamp: Date.now()
         };
-        DB.save('activeTimerState', state);
+        // During study (ticks), save only every 60 seconds to save Firebase Quota.
+        // On Pause/Stop (instant = true), flush immediately.
+        DB.save('activeTimerState', state, instant ? 0 : 60000);
     } else {
         DB.remove('activeTimerState');
     }
@@ -1145,7 +1147,7 @@ function persistActiveTimerState() {
 
 window.addEventListener('beforeunload', () => {
     saveStudyProgress();
-    persistActiveTimerState();
+    persistActiveTimerState(true);
 });
 
 // ===== RESTORE ACTIVE TIMER STATE ON STARTUP =====
@@ -1249,7 +1251,7 @@ function resumeTimerTick() {
     // We get the button if we are inside the cycles exec view to show active state
     const btn = document.getElementById('btnIniciarTimer');
     if (btn) btn.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
-    if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
+    if (typeof persistActiveTimerState === 'function') persistActiveTimerState(true);
     
     timerInterval = setInterval(() => {
         if (timerSeconds > 0) {
@@ -1270,7 +1272,7 @@ function resumeTimerTick() {
             
             const btnStart = document.getElementById('btnIniciarTimer');
             if (btnStart) btnStart.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
-            if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
+            if (typeof persistActiveTimerState === 'function') persistActiveTimerState(true);
 
             if (currentPhase === 'break') {
                 endTacticalBreak();
