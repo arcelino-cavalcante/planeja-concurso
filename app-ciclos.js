@@ -835,6 +835,7 @@ function toggleStudyTimer() {
         if (btnMain) btnMain.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
         saveStudyProgress();
         if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
+        if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
     } else {
         if ("Notification" in window && Notification.permission === "default") {
             Notification.requestPermission();
@@ -842,6 +843,7 @@ function toggleStudyTimer() {
         timerRunning = true;
         if (btnMain) btnMain.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
         if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
+        if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
         timerInterval = setInterval(() => {
             if (timerSeconds > 0) {
                 timerSeconds--;
@@ -860,6 +862,7 @@ function toggleStudyTimer() {
                 clearInterval(timerInterval); timerRunning = false;
                 if (btnMain) btnMain.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
                 if (typeof syncFocoTimerControls === 'function') syncFocoTimerControls();
+                if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
                 if (currentPhase === 'break') {
                     endTacticalBreak();
                 } else if (divisionEnabled && currentPhase === 'revision') {
@@ -1246,6 +1249,7 @@ function resumeTimerTick() {
     // We get the button if we are inside the cycles exec view to show active state
     const btn = document.getElementById('btnIniciarTimer');
     if (btn) btn.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+    if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
     
     timerInterval = setInterval(() => {
         if (timerSeconds > 0) {
@@ -1266,6 +1270,7 @@ function resumeTimerTick() {
             
             const btnStart = document.getElementById('btnIniciarTimer');
             if (btnStart) btnStart.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
+            if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
 
             if (currentPhase === 'break') {
                 endTacticalBreak();
