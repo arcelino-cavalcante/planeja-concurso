@@ -980,73 +980,6 @@
             </div>
         </section>
 
-                                <i class="bi bi-clock-fill"></i>
-                                <div>
-                                    <span id="qgTotalHours" class="qg-stat-value">0.0</span>
-                                    <span class="qg-stat-unit">horas acumuladas</span>
-                                </div>
-                            </div>
-                            <div class="qg-stat-item">
-                                <i class="bi bi-flag-fill"></i>
-                                <div>
-                                    <span id="qgPatentsUnlocked" class="qg-stat-value">1</span>
-                                    <span class="qg-stat-unit">patentes desbloqueadas</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Next patent progress -->
-                        <div class="qg-next-progress" id="qgNextProgress">
-                            <div class="qg-next-header">
-                                <span class="qg-next-label">Próxima Promoção</span>
-                                <span id="qgNextPatentName" class="qg-next-name">Cabo</span>
-                            </div>
-                            <div class="qg-progress-bar">
-                                <div id="qgPatentProgressFill" class="qg-progress-fill" style="width: 0%;"></div>
-                            </div>
-                            <div class="qg-next-footer">
-                                <span id="qgCurrentHoursText">0h</span>
-                                <span id="qgMissingHoursText">Faltam 10h</span>
-                                <span id="qgTargetHoursText">10h</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Patent Timeline -->
-                    <div class="card-mentor qg-patent-timeline-card">
-                        <h3 class="qg-section-title">
-                            <i class="bi bi-bar-chart-steps"></i> Linha de Promoções
-                        </h3>
-                        <div class="qg-patent-timeline" id="qgPatentsList">
-                            <!-- Dynamically loaded -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- RIGHT: Leaderboard -->
-                <div class="qg-right-col">
-                    <div class="card-mentor qg-leaderboard-card">
-                        <div class="qg-leaderboard-header">
-                            <h2 class="qg-section-title">
-                                <i class="bi bi-trophy-fill"></i> Ranking de Horas
-                            </h2>
-                            <span class="qg-online-badge">Online</span>
-                        </div>
-
-                        <!-- Podium Top 3 -->
-                        <div class="qg-podium" id="qgPodium">
-                            <!-- Dynamically loaded -->
-                        </div>
-
-                        <!-- Remaining leaderboard -->
-                        <div class="qg-leaderboard-list" id="qgLeaderboardList">
-                            <!-- Dynamically loaded -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- ========== PAGE: EDITAL VERTICALIZADO ========== -->
         <section class="page-content" id="page-edital">
             <div class="page-header-custom">
@@ -1824,7 +1757,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
-            const APP_VERSION = '1.4.8';
+            const APP_VERSION = '1.4.9';
             let refreshing = false;
             let newWorkerWaiting = null;
 
