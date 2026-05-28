@@ -1068,7 +1068,7 @@ function autoAdjustNiveis(materias) {
 // ===== INIT =====
 renderConcursosList();
 renderCiclosList();
-setTimeout(restoreActiveTimerState, 500);
+
 
 // ===== AUDIO ALERTS (Web Audio API Synthesized) =====
 function playTacticalChime() {
