@@ -96,7 +96,7 @@ cd "$BASE_DIR"
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
   echo -e "  ${YELLOW}⚠️  Não é um repositório git — pulando commit.${RESET}"
 else
-  git add sw.js index.html
+  git add .
   git commit -m "🚀 release: v$NEW — $(date '+%Y-%m-%d %H:%M')"
   echo -e "  ${GREEN}✅ Commit criado: 🚀 release: v$NEW${RESET}"
 

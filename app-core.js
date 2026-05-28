@@ -11,6 +11,7 @@ let currentActivities = [];
 let editingActivityIndex = -1;
 let editingCellDay = -1;
 let contextMenuRotina = null;
+let editingRoutineId = null;
 
 function saveAll() { 
     DB.save('rotinas', rotinas); 
@@ -19,7 +20,7 @@ function saveAll() {
     DB.save('historicoEstudos', historicoEstudos);
     if (typeof updateDashboard === 'function') updateDashboard(); 
 }
-function getActiveRotina() { return rotinas.find(r => r.status === 'ativa'); }
+function getActiveRotina() { return rotinas && rotinas.length > 0 ? rotinas[0] : null; }
 
 function formatHours(minutes) {
     const h = Math.floor(minutes / 60);
@@ -43,8 +44,9 @@ function updateDashboard() {
     let todayStudyMin = 0;
     
     if (activeRotina && activeRotina.atividades) {
+        const uiDay = today === 0 ? 6 : today - 1; // Convert JS day to UI day
         activeRotina.atividades.forEach(act => {
-            if (act.isStudy && act.days.includes(today)) {
+            if (act.isStudy && act.days.includes(uiDay)) {
                 const sh = parseInt(act.startTime.split(':')[0]), sm = parseInt(act.startTime.split(':')[1]);
                 const eh = parseInt(act.endTime.split(':')[0]), em = parseInt(act.endTime.split(':')[1]);
                 todayStudyMin += (eh*60+em) - (sh*60+sm);
@@ -286,6 +288,37 @@ function updateDashboard() {
             }).join('');
         }
     }
+
+    // 6. Update Total Hours per Concurso
+    const totalHoursListEl = document.getElementById('totalHoursConcursoList');
+    if (totalHoursListEl) {
+        if (!historicoEstudos || historicoEstudos.length === 0) {
+            totalHoursListEl.innerHTML = '<span style="color:var(--text-muted);font-size:0.9rem;">Nenhum combate registrado ainda.</span>';
+        } else {
+            const hoursByCiclo = {};
+            historicoEstudos.forEach(log => {
+                const name = log.cicloNome || 'Sem Concurso Vinculado';
+                if (!hoursByCiclo[name]) hoursByCiclo[name] = 0;
+                hoursByCiclo[name] += log.duracaoMin;
+            });
+            
+            let html = '';
+            for (const [name, min] of Object.entries(hoursByCiclo)) {
+                const displayName = name.replace('Ciclo - ', ''); // Limpa o "Ciclo - " pra deixar mais focado
+                const h = Math.floor(min / 60);
+                const m = min % 60;
+                const durFmt = h > 0 ? `${h}h ${m > 0 ? m + 'm' : ''}` : `${m}m`;
+                
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.03); border-radius:6px; border-left:3px solid var(--primary-color);">
+                        <span style="font-weight:700; font-family:var(--font-heading); font-size:1.0rem; letter-spacing:0.5px; text-transform:uppercase;">${displayName}</span>
+                        <span style="color:var(--accent-yellow); font-weight:700; font-size:1.0rem;">${durFmt}</span>
+                    </div>
+                `;
+            }
+            totalHoursListEl.innerHTML = html;
+        }
+    }
 }
 
 function getStudyHours() {
@@ -327,9 +360,26 @@ function navigateToPage(page) {
         item.classList.add('active');
         pages.forEach(p => p.classList.remove('active'));
         document.getElementById('page-' + page).classList.add('active');
-        if (page === 'rotinas') { document.getElementById('rotinas-list-view').classList.remove('d-none'); document.getElementById('rotinas-calendar-view').classList.add('d-none'); }
+        if (page === 'rotinas') { 
+            if (!rotinas || rotinas.length === 0) {
+                rotinas = [{ id: Date.now(), nome: 'Minha Rotina', status: 'ativa', atividades: [] }];
+                saveAll();
+            }
+            // Ensure first is always active
+            rotinas.forEach((r, i) => r.status = (i === 0) ? 'ativa' : 'desativada');
+            editingRoutineId = rotinas[0].id;
+            openCalendarView(rotinas[0].nome, rotinas[0].atividades);
+            document.getElementById('rotinas-list-view').classList.add('d-none');
+            document.getElementById('rotinas-calendar-view').classList.remove('d-none');
+        }
         if (page === 'concursos') { showConcursosView('concursos-list-view'); renderConcursosList(); }
-        if (page === 'ciclos') { showCiclosView('ciclos-list-view'); renderCiclosList(); }
+        if (page === 'ciclos') { 
+            if (ciclos && ciclos.length > 0) {
+                if (typeof openExecView === 'function') openExecView(ciclos[0]);
+            } else {
+                if (typeof openCicloWizard === 'function') openCicloWizard(); 
+            }
+        }
         if (page === 'simulados') { showSimuladosView('simulados-list-view'); renderSimuladosList(); }
         if (page === 'edital') { showEditalView('edital-list-view'); }
         if (page === 'qg') { if (typeof updateQgView === 'function') updateQgView(); }
@@ -490,7 +540,7 @@ document.querySelectorAll('.context-item').forEach(item => {
         if (!contextMenuRotina) return;
         const action = item.dataset.action;
         if (action === 'ativar') { rotinas.forEach(r => r.status = 'desativada'); contextMenuRotina.status = 'ativa'; showToast('Rotina ativada!'); }
-        else if (action === 'editar') { openCalendarView(contextMenuRotina.nome, contextMenuRotina.atividades); }
+        else if (action === 'editar') { editingRoutineId = contextMenuRotina.id; openCalendarView(contextMenuRotina.nome, contextMenuRotina.atividades); }
         else if (action === 'duplicar') { rotinas.push({ ...contextMenuRotina, id: Date.now(), nome: contextMenuRotina.nome + ' (cópia)', status: 'desativada', atividades: [...contextMenuRotina.atividades] }); showToast('Rotina duplicada!'); }
         else if (action === 'excluir') { rotinas = rotinas.filter(r => r.id !== contextMenuRotina.id); showToast('Rotina excluída!'); }
         saveAll(); renderRotinas(); contextMenu.classList.remove('active'); contextMenuRotina = null;
@@ -498,8 +548,11 @@ document.querySelectorAll('.context-item').forEach(item => {
 });
 document.addEventListener('click', () => contextMenu.classList.remove('active'));
 
-document.getElementById('btnNovaRotina').addEventListener('click', () => { currentActivities = []; openCalendarView('', []); });
-document.getElementById('backToRotinas').addEventListener('click', (e) => { e.preventDefault(); rotinasListView.classList.remove('d-none'); rotinasCalendarView.classList.add('d-none'); });
+document.getElementById('btnNovaRotina').addEventListener('click', () => { editingRoutineId = null; currentActivities = []; openCalendarView('', []); });
+const backToRotinasBtn = document.getElementById('backToRotinas');
+if (backToRotinasBtn) {
+    backToRotinasBtn.addEventListener('click', (e) => { e.preventDefault(); editingRoutineId = null; rotinasListView.classList.remove('d-none'); rotinasCalendarView.classList.add('d-none'); });
+}
 
 function openCalendarView(name, activities) {
     document.getElementById('routineNameInput').value = name || '';
@@ -594,11 +647,27 @@ document.getElementById('btnRemoveActivity').addEventListener('click', () => {
 });
 
 document.getElementById('btnSalvarRotina').addEventListener('click', () => {
+    if (rotinasCalendarView.classList.contains('d-none')) return;
     const name = document.getElementById('routineNameInput').value || 'Nova Rotina';
-    rotinas.push({ id: Date.now(), nome: name, status: 'desativada', atividades: [...currentActivities] });
-    saveAll(); renderRotinas();
-    rotinasListView.classList.remove('d-none'); rotinasCalendarView.classList.add('d-none');
-    showToast('Rotina salva com sucesso!');
+     if (editingRoutineId) {
+        const idx = rotinas.findIndex(r => r.id === editingRoutineId);
+        if (idx >= 0) {
+            rotinas[idx].nome = name;
+            rotinas[idx].atividades = [...currentActivities];
+            rotinas[idx].status = 'ativa'; // force active
+        }
+    } else {
+        rotinas.push({ id: Date.now(), nome: name, status: 'ativa', atividades: [...currentActivities] });
+        editingRoutineId = rotinas[rotinas.length - 1].id;
+    }
+    saveAll(); 
+    
+    // Auto recalculate cycle
+    if (typeof recalcActiveCycleHoras === 'function') {
+        recalcActiveCycleHoras();
+    }
+    
+    showToast('Sua rotina foi salva e aplicada ao ciclo!');
 });
 
 // ===== INIT ROTINAS =====

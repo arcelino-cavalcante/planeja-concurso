@@ -21,10 +21,13 @@ let isAdmin = false;
 const ADMIN_EMAILS = ['admin@gmail.com'];
 
 // Enable offline persistence
-firestore.enablePersistence().catch(err => {
-    if (err.code === 'failed-precondition') console.warn('Firestore: outra aba já ativa');
-    else if (err.code === 'unimplemented') console.warn('Firestore: navegador não suporta offline');
-});
+try {
+    firestore.settings({
+        localCache: firebase.firestore.persistentLocalCache({tabManager: firebase.firestore.persistentMultipleTabManager()})
+    });
+} catch (err) {
+    console.warn('Firestore offline persistence warning:', err);
+}
 
 // ===== Debounced Firestore write queue (PRO — minimiza writes) =====
 const _writeQueue = {};
@@ -101,7 +104,7 @@ const DB = {
 
     clearAll() {
         if (!currentUserUID) return;
-        const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'lastNpcTick', 'npcsLeaderboard'];
+        const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'activeTimerState'];
         keys.forEach(key => {
             localStorage.removeItem(`mentor_${currentUserUID}_${key}`);
             localStorage.removeItem(`mentor_${currentUserUID}_${key}_ts`);
@@ -147,7 +150,7 @@ async function syncFromFirestore() {
 // ===== PUSH localStorage → Firestore (batch — 1 write total) =====
 async function pushLocalToFirestore() {
     if (!currentUserUID) return;
-    const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'lastNpcTick', 'npcsLeaderboard'];
+    const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'activeTimerState'];
     const batch = firestore.batch();
     const now = new Date().toISOString();
     let hasOps = false;
@@ -320,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Normal student flow
-                await pushLocalToFirestore();
                 await syncFromFirestore();
                 refreshAllData();
 

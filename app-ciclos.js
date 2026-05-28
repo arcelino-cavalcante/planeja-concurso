@@ -298,7 +298,13 @@ function openCicloConfigFromConcurso(conc) {
     const horas = getStudyHours() || 20;
     document.getElementById('configCicloNome').value = 'Ciclo - ' + conc.nome;
     document.getElementById('configConcursoNome').textContent = conc.nome;
-    document.getElementById('configHorasInput').value = horas;
+    
+    const horasInput = document.getElementById('configHorasInput');
+    if (horasInput) horasInput.value = horas;
+    
+    const horasDisplay = document.getElementById('configHorasDisplay');
+    if (horasDisplay) horasDisplay.textContent = horas + 'h';
+    
     currentCicloMaterias = conc.disciplinas.map(d => ({ nome: d.nome, peso: d.peso, nivel: 0, ativo: true }));
     // Auto-adjust star levels based on simulado results
     autoAdjustNiveis(currentCicloMaterias);
@@ -310,9 +316,16 @@ function openCicloConfigFromConcurso(conc) {
 function openCicloConfigForEdit(ciclo) {
     editingCicloId = ciclo.id;
     const horas = getStudyHours() || 20;
+    
     document.getElementById('configCicloNome').value = ciclo.nome;
     document.getElementById('configConcursoNome').textContent = ciclo.concurso || '';
-    document.getElementById('configHorasInput').value = parseInt(ciclo.duracao) || horas;
+    
+    const horasInput = document.getElementById('configHorasInput');
+    if (horasInput) horasInput.value = horas;
+    
+    const horasDisplay = document.getElementById('configHorasDisplay');
+    if (horasDisplay) horasDisplay.textContent = horas + 'h';
+    
     // Load subjects with their saved ativo state
     currentCicloMaterias = (ciclo.subjects || []).map(s => ({
         nome: s.nome,
@@ -322,16 +335,18 @@ function openCicloConfigForEdit(ciclo) {
         totalMin: s.totalMin || 0
     }));
     // Recalculate hours
-    const totalH = parseInt(document.getElementById('configHorasInput').value) || horas;
-    renderMateriasConfig(totalH);
+    renderMateriasConfig(horas);
     showCiclosView('ciclos-config-view');
 }
 
 // Recalculate when hours input changes
-document.getElementById('configHorasInput').addEventListener('input', function() {
-    const h = parseInt(this.value) || 1;
-    renderMateriasConfig(h);
-});
+const horasInput = document.getElementById('configHorasInput');
+if (horasInput) {
+    horasInput.addEventListener('input', function() {
+        const h = parseInt(this.value) || 1;
+        renderMateriasConfig(h);
+    });
+}
 
 function renderMateriasConfig(totalHoras) {
     if (!totalHoras) totalHoras = getStudyHours();
@@ -390,9 +405,16 @@ function renderMateriasConfig(totalHoras) {
 
 document.getElementById('btnStartWizard').addEventListener('click', openCicloWizard);
 document.getElementById('btnNovoCiclo').addEventListener('click', openCicloWizard);
-document.getElementById('backToCiclosList').addEventListener('click', (e) => { e.preventDefault(); showCiclosView('ciclos-list-view'); });
-document.getElementById('backToCiclosFromConfig').addEventListener('click', (e) => { e.preventDefault(); showCiclosView('ciclos-list-view'); });
-document.getElementById('backToCiclosFromExec').addEventListener('click', (e) => { 
+const back1 = document.getElementById('backToCiclosList');
+if (back1) back1.addEventListener('click', (e) => { e.preventDefault(); showCiclosView('ciclos-list-view'); });
+const back2 = document.getElementById('backToCiclosFromConfig');
+if (back2) back2.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    if (ciclos && ciclos.length > 0) openExecView(ciclos[0]);
+    else showCiclosView('ciclos-wizard-view'); 
+});
+const back3 = document.getElementById('backToCiclosFromExec');
+if (back3) back3.addEventListener('click', (e) => { 
     e.preventDefault(); 
     saveStudyProgress(); 
     showCiclosView('ciclos-list-view'); 
@@ -442,9 +464,22 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
         ciclos.push(newCiclo);
         showToast('Ciclo gerado com sucesso!');
     }
-    saveAll(); renderCiclosList(); 
-    showCiclosView('ciclos-list-view');
+    saveAll();
+    openExecView(ciclos[0]);
 });
+
+// Delete Single Cycle Handler
+const btnDeleteCiclo = document.getElementById('btnDeleteCiclo');
+if (btnDeleteCiclo) {
+    btnDeleteCiclo.addEventListener('click', () => {
+        if (confirm('Tem certeza que deseja apagar o seu ciclo atual? Isso limpará seu progresso de estudo desse concurso!')) {
+            ciclos = [];
+            saveAll();
+            showToast('Ciclo excluído. Você pode criar um novo.');
+            openCicloWizard();
+        }
+    });
+}
 
 function renderCiclosList() {
     const container = document.getElementById('ciclosListCards');
@@ -790,6 +825,7 @@ function updateTimerDisplay() {
     const focoTimer = document.getElementById('focoWheelTimer');
     if (focoTimer) focoTimer.textContent = timeStr;
     syncFocoTimerControls();
+    if (typeof persistActiveTimerState === 'function') persistActiveTimerState();
 }
 
 function toggleStudyTimer() {
@@ -1085,12 +1121,8 @@ function sendTacticalNotification(title, body) {
     }
 }
 
-// ===== SAVE PROGRESS ON TAB CLOSE / REFRESH =====
-window.addEventListener('beforeunload', () => {
-    // 1. Commit elapsed minutes first
-    saveStudyProgress();
-    
-    // 2. Save active running state of the timer
+// ===== PERSIST ACTIVE TIMER STATE TO DATABASE =====
+function persistActiveTimerState() {
     if (currentExecCiclo) {
         const state = {
             cycleId: currentExecCiclo.id,
@@ -1102,19 +1134,22 @@ window.addEventListener('beforeunload', () => {
             elapsedSessionSeconds: elapsedSessionSeconds,
             closeTimestamp: Date.now()
         };
-        localStorage.setItem('activeTimerState', JSON.stringify(state));
+        DB.save('activeTimerState', state);
     } else {
-        localStorage.removeItem('activeTimerState');
+        DB.remove('activeTimerState');
     }
+}
+
+window.addEventListener('beforeunload', () => {
+    saveStudyProgress();
+    persistActiveTimerState();
 });
 
 // ===== RESTORE ACTIVE TIMER STATE ON STARTUP =====
 function restoreActiveTimerState() {
-    const raw = localStorage.getItem('activeTimerState');
-    if (!raw) return;
+    const state = DB.load('activeTimerState', null);
+    if (!state || !state.cycleId) return;
     try {
-        const state = JSON.parse(raw);
-        if (!state || !state.cycleId) return;
         
         const ciclo = ciclos.find(c => c.id === state.cycleId);
         if (!ciclo) return;
@@ -1601,4 +1636,70 @@ function initFocusMode() {
 
 // Call initFocusMode on load
 setTimeout(initFocusMode, 600);
+
+// ===== AUTO-RECALCULATE CYCLE =====
+function recalcActiveCycleHoras() {
+    if (!ciclos || ciclos.length === 0) return;
+
+    let updatedAny = false;
+    const globalHoras = getStudyHours();
+
+    ciclos.forEach((ciclo, idx) => {
+        const subjectsList = ciclo.subjects || [];
+        if (subjectsList.length === 0) return;
+
+        // Fetch global hours directly
+        if (globalHoras <= 0) return;
+
+        // Use current cycle subjects to recalculate
+        const materiasParaCalc = subjectsList.map(s => ({
+            nome: s.nome,
+            peso: s.peso || 1,
+            nivel: s.nivel || 0,
+            ativo: s.ativo !== false
+        }));
+
+        // Recalculate hours
+        const niveis = materiasParaCalc.map(m => m.nivel);
+        const horasArr = calcHorasPorMateria(materiasParaCalc, globalHoras, niveis);
+        materiasParaCalc.forEach((m, i) => {
+            m.totalMin = horasArr[i];
+        });
+
+        // Re-generate sequence
+        const sequence = generateCycleSequence(materiasParaCalc);
+        sequence.forEach(item => {
+            item.tempoRestanteMin = item.duracao;
+        });
+        const totalSeqMin = sequence.reduce((s, x) => s + x.duracao, 0);
+
+        const newSubjects = materiasParaCalc.map(m => ({
+            nome: m.nome, sessao: formatMin(m.totalMin),
+            tempoRestante: formatMin(m.totalMin), peso: m.peso,
+            totalMin: m.totalMin, ativo: m.ativo !== false, nivel: m.nivel || 0
+        }));
+
+        // Update cycle
+        ciclos[idx].subjects = newSubjects;
+        ciclos[idx].sequence = sequence;
+        ciclos[idx].duracaoMin = totalSeqMin;
+        ciclos[idx].duracao = formatMin(totalSeqMin);
+        
+        // Update currentExecCiclo reference if it's the active one
+        if (currentExecCiclo && currentExecCiclo.id === ciclo.id) {
+            currentExecCiclo = ciclos[idx];
+            // Re-render UI if exec view is active
+            if (!document.getElementById('ciclos-exec-view').classList.contains('d-none')) {
+                renderExecSubjects(currentExecCiclo.sequence || []);
+            }
+        }
+        updatedAny = true;
+    });
+
+    if (updatedAny) {
+        saveAll();
+        if (typeof renderCiclosList === 'function') renderCiclosList();
+        showToast(`⏳ Ciclos reajustados para ${globalHoras}h semanais!`);
+    }
+}
 
