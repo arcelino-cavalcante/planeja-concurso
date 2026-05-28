@@ -972,11 +972,73 @@
                         <i class="bi bi-arrow-left"></i> Voltar para home
                     </a>
                     <h1 class="page-title">Tutorial</h1>
+            <p style="color:var(--text-secondary);margin-top:4px;">Siga este passo a passo para configurar e aproveitar o Mentor ao máximo.</p>
                 </div>
             </div>
-            <div class="empty-state">
-                <i class="bi bi-play-circle"></i>
-                <p>Os tutoriais aparecerão aqui.</p>
+
+            <div class="tutorial-container" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; padding-bottom: 40px;">
+                <!-- Passo 1: Rotina -->
+                <div class="card-mentor" style="border-left: 4px solid var(--accent-blue);">
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(43, 110, 243, 0.1); color: var(--accent-blue); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
+                            <b>1</b>
+                        </div>
+                        <div>
+                            <h3 style="margin-bottom: 8px; font-weight: 600;"><i class="bi bi-calendar-week"></i> Minha Rotina de Estudos</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
+                                O primeiro passo é dizer ao Mentor <b>quantas horas</b> você tem disponíveis por dia da semana para estudar. Isso define a base matemática que o sistema usará para gerar seus ciclos automaticamente. Vá no menu <b>"Minha Rotina"</b> e distribua suas horas de domingo a sábado.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Passo 2: Concurso -->
+                <div class="card-mentor" style="border-left: 4px solid var(--accent-yellow);">
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(230, 172, 0, 0.1); color: var(--accent-yellow); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
+                            <b>2</b>
+                        </div>
+                        <div>
+                            <h3 style="margin-bottom: 8px; font-weight: 600;"><i class="bi bi-award"></i> Meus Concursos</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
+                                Com a rotina pronta, você deve cadastrar qual é a sua guerra! Acesse <b>"Meus Concursos"</b>, clique em cadastrar e crie o seu concurso alvo. Você poderá inclusive adicionar as disciplinas específicas que vêm cobradas no edital para ele.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Passo 3: Ciclos -->
+                <div class="card-mentor" style="border-left: 4px solid var(--accent-green);">
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(46, 204, 113, 0.1); color: var(--accent-green); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
+                            <b>3</b>
+                        </div>
+                        <div>
+                            <h3 style="margin-bottom: 8px; font-weight: 600;"><i class="bi bi-arrow-repeat"></i> Ciclos de Estudo</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
+                                Agora sim a magia acontece. Em <b>"Ciclos de Estudo"</b> você vai selecionar seu concurso e clicar para criar o ciclo. O Mentor pegará suas matérias e o tempo total da sua <b>Rotina</b>, e fará a divisão milimétrica do seu cronômetro de estudos. Aqui é o lugar que você passa a maior parte do tempo, dando o play e controlando seus blocos diários de foco.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Passo 4: Simulados e Edital -->
+                <div class="card-mentor" style="border-left: 4px solid var(--accent-red);">
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(231, 76, 60, 0.1); color: var(--accent-red); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
+                            <b>4</b>
+                        </div>
+                        <div>
+                            <h3 style="margin-bottom: 8px; font-weight: 600;"><i class="bi bi-file-earmark-bar-graph"></i> Simulados e Edital</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
+                                Como um concurseiro de elite, o progresso real vem da medição. <br><br>
+                                • Em <b>"Meus Simulados"</b>, após cada prova você anota sua nota, seus acertos e mapeia suas lacunas de aprendizado.<br>
+                                • Em <b>"Edital Verticalizado"</b>, você vai marcando aula por aula, assunto por assunto que já venceu, rumo aos 100% do edital (para acessar, cadastre e abra os itens do seu concurso).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -1757,7 +1819,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
-            const APP_VERSION = '1.5.3';
+            const APP_VERSION = '1.5.4';
             let refreshing = false;
             let newWorkerWaiting = null;
 
