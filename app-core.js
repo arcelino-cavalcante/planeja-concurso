@@ -397,7 +397,6 @@ function navigateToPage(page) {
 navItems.forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
-        if (isAdmin) return;
         navigateToPage(item.dataset.page);
     });
 });
@@ -449,7 +448,7 @@ function refreshConfigPage() {
     if (emailEl) emailEl.textContent = auth.currentUser?.email || '—';
     // Tipo de conta
     const tipoEl = document.getElementById('configTipoConta');
-    if (tipoEl) tipoEl.textContent = isAdmin ? 'Administrador' : 'Aluno (Google)';
+    if (tipoEl) tipoEl.textContent = 'Aluno (Google)';
     // Stats
     document.getElementById('configCountRotinas').textContent = rotinas.length;
     document.getElementById('configCountConcursos').textContent = concursos.length;
@@ -493,7 +492,6 @@ document.getElementById('btnResetarSistema').addEventListener('click', () => {
 document.querySelectorAll('[id^="backToHome"]').forEach(link => {
     link.addEventListener('click', (e) => {
         e.preventDefault();
-        if (isAdmin) return;
         navItems.forEach(n => n.classList.remove('active'));
         document.querySelector('[data-page="inicio"]').classList.add('active');
         pages.forEach(p => p.classList.remove('active'));
@@ -502,9 +500,7 @@ document.querySelectorAll('[id^="backToHome"]').forEach(link => {
 });
 
 if (menuToggle) menuToggle.addEventListener('click', () => {
-    const activeSidebar = document.getElementById('sidebarAdmin').style.display !== 'none'
-        ? document.getElementById('sidebarAdmin') : sidebar;
-    activeSidebar.classList.toggle('open');
+    sidebar.classList.toggle('open');
     sidebarOverlay.classList.toggle('active');
 });
 sidebarOverlay.addEventListener('click', closeSidebar);
@@ -674,180 +670,7 @@ document.getElementById('btnSalvarRotina').addEventListener('click', () => {
 renderRotinas();
 buildScheduleGrid();
 
-// ===== DASHBOARD: MENSAGEM DO MENTOR & AVISOS =====
-async function loadMentorMessage() {
-    try {
-        const snap = await firestore.collection('mensagens').orderBy('createdAt', 'desc').limit(1).get();
-        const el = document.getElementById('mentorMessage');
-        if (!el) return;
-        if (!snap.empty) {
-            const msg = snap.docs[0].data().mensagem;
-            el.innerHTML = `<p style="font-style:italic;color:var(--text-secondary);margin:0;">"${msg}"</p>`;
-        } else {
-            el.innerHTML = '<p>Nenhuma mensagem do mentor para hoje.</p>';
-        }
-    } catch (e) {
-        console.warn('Erro ao carregar mensagem do mentor:', e.message);
-    }
-}
 
-async function loadAvisos() {
-    try {
-        const snap = await firestore.collection('avisos').orderBy('createdAt', 'desc').limit(3).get();
-        const container = document.getElementById('avisosList');
-        const card = document.getElementById('avisosCard');
-        if (!container || !card) return;
-        if (snap.empty) {
-            card.style.display = 'none';
-            return;
-        }
-        card.style.display = 'block';
-        container.innerHTML = snap.docs.map(doc => {
-            const a = doc.data();
-            const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString('pt-BR') : '';
-            return `<div class="aviso-item" style="padding:10px 14px;background:var(--bg-secondary);border-radius:var(--radius);margin-bottom:8px;border-left:3px solid var(--accent-green-light);">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                    <strong style="color:var(--text-primary);font-size:0.9rem;font-family:var(--font-heading);text-transform:uppercase;letter-spacing:0.5px;">${a.titulo}</strong>
-                    <span style="font-size:0.7rem;color:var(--text-muted);">${date}</span>
-                </div>
-                <p style="color:var(--text-secondary);font-size:0.85rem;margin:0;line-height:1.4;">${a.mensagem}</p>
-            </div>`;
-        }).join('');
-    } catch (e) {
-        console.warn('Erro ao carregar avisos:', e.message);
-    }
-}
-
-// Load dashboard extras when home page becomes active
-const inicioObserver = new MutationObserver(() => {
-    if (document.getElementById('page-inicio')?.classList.contains('active')) {
-        loadMentorMessage();
-        loadAvisos();
-        if (typeof updateDashboard === 'function') updateDashboard();
-    }
-});
-const paginaInicio = document.getElementById('page-inicio');
-if (paginaInicio) {
-    inicioObserver.observe(paginaInicio, { attributes: true, attributeFilter: ['class'] });
-}
-// Initial load if already active
-if (paginaInicio?.classList.contains('active')) {
-    loadMentorMessage();
-    loadAvisos();
-    if (typeof updateDashboard === 'function') updateDashboard();
-}
-
-// ===== FEEDBACK =====
-const feedbackBugCard = document.getElementById('feedbackBugCard');
-const feedbackSugestaoCard = document.getElementById('feedbackSugestaoCard');
-const feedbackForm = document.getElementById('feedbackForm');
-
-feedbackBugCard?.addEventListener('click', () => openFeedbackForm('bug'));
-feedbackSugestaoCard?.addEventListener('click', () => openFeedbackForm('sugestao'));
-
-function openFeedbackForm(tipo) {
-    feedbackForm.style.display = 'block';
-    document.getElementById('feedbackTipo').value = tipo;
-    if (tipo === 'bug') {
-        document.getElementById('feedbackFormTitle').textContent = 'Reportar Erro / Bug';
-        document.getElementById('feedbackFormSubtitle').textContent = 'Descreva o problema encontrado para que possamos corrigir.';
-        feedbackBugCard.classList.add('active');
-        feedbackSugestaoCard.classList.remove('active');
-    } else {
-        document.getElementById('feedbackFormTitle').textContent = 'Sugerir Melhoria';
-        document.getElementById('feedbackFormSubtitle').textContent = 'Compartilhe sua ideia para tornar a plataforma melhor.';
-        feedbackSugestaoCard.classList.add('active');
-        feedbackBugCard.classList.remove('active');
-    }
-    document.getElementById('feedbackTitulo').value = '';
-    document.getElementById('feedbackDescricao').value = '';
-}
-
-document.getElementById('btnCancelarFeedback')?.addEventListener('click', () => {
-    feedbackForm.style.display = 'none';
-    feedbackBugCard.classList.remove('active');
-    feedbackSugestaoCard.classList.remove('active');
-});
-
-document.getElementById('btnEnviarFeedback')?.addEventListener('click', async () => {
-    const tipo = document.getElementById('feedbackTipo').value;
-    const titulo = document.getElementById('feedbackTitulo').value.trim();
-    const descricao = document.getElementById('feedbackDescricao').value.trim();
-    if (!titulo || !descricao) return showToast('Preencha título e descrição.');
-    try {
-        await firestore.collection('feedbacks').add({
-            tipo,
-            titulo,
-            descricao,
-            status: 'pendente',
-            userEmail: auth.currentUser?.email || '',
-            userNome: userProfile.nome || auth.currentUser?.displayName || 'Aluno',
-            userUid: auth.currentUser?.uid || '',
-            createdAt: new Date().toISOString()
-        });
-        showToast('Feedback enviado! Obrigado por contribuir.');
-        feedbackForm.style.display = 'none';
-        feedbackBugCard.classList.remove('active');
-        feedbackSugestaoCard.classList.remove('active');
-        loadMeusFeedbacks();
-    } catch (e) {
-        showToast('Erro ao enviar feedback.');
-    }
-});
-
-async function loadMeusFeedbacks() {
-    if (!auth.currentUser) return;
-    try {
-        const snap = await firestore.collection('feedbacks')
-            .where('userUid', '==', auth.currentUser.uid)
-            .orderBy('createdAt', 'desc')
-            .limit(10)
-            .get({ source: 'server' });
-        const container = document.getElementById('meusFeedbacksList');
-        if (!container) return;
-        if (snap.empty) {
-            container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Nenhum feedback enviado ainda.</div>';
-            return;
-        }
-        container.innerHTML = snap.docs.map(doc => {
-            const f = doc.data();
-            const tipoClass = f.tipo === 'bug' ? 'bug' : 'sugestao';
-            const statusClass = f.status === 'resolvido' ? 'resolvido' : 'pendente';
-            const statusText = f.status === 'resolvido' ? 'Resolvido' : 'Pendente';
-            return `
-                <div class="feedback-item">
-                    <div class="feedback-item-header">
-                        <div class="feedback-item-title">
-                            <span class="feedback-tipo-icon ${tipoClass}">
-                                <i class="bi ${f.tipo === 'bug' ? 'bi-bug-fill' : 'bi-lightbulb-fill'}"></i>
-                            </span>
-                            <strong>${f.titulo}</strong>
-                        </div>
-                        <span class="feedback-status ${statusClass}">${statusText}</span>
-                    </div>
-                    <p class="feedback-item-desc">${f.descricao}</p>
-                    <span class="feedback-item-date">${new Date(f.createdAt).toLocaleDateString('pt-BR')}</span>
-                </div>
-            `;
-        }).join('');
-    } catch (e) {
-        console.warn('Erro ao carregar feedbacks:', e.message);
-    }
-}
-
-// Carrega feedbacks quando abre a página
-const feedbackObserver = new MutationObserver(() => {
-    if (document.getElementById('page-feedback')?.classList.contains('active')) {
-        loadMeusFeedbacks();
-    }
-});
-const paginaFeedback = document.getElementById('page-feedback');
-if (paginaFeedback) {
-    feedbackObserver.observe(paginaFeedback, { attributes: true, attributeFilter: ['class'] });
-}
-if (paginaFeedback?.classList.contains('active')) {
-    loadMeusFeedbacks();
-}
 
 // ===== INIT STUDY HISTORY CONTROLS =====
 document.addEventListener('DOMContentLoaded', () => {

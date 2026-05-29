@@ -15,10 +15,6 @@ const storage = firebase.storage();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 let currentUserUID = null;
-let isAdmin = false;
-
-// Admin emails — only these can access the admin panel via Email/Password login
-const ADMIN_EMAILS = ['admin@gmail.com'];
 
 // Enable offline persistence
 try {
@@ -222,29 +218,7 @@ function refreshAllData() {
 document.addEventListener('DOMContentLoaded', () => {
     const loginOverlay = document.getElementById('loginOverlay');
     const loadingOverlay = document.getElementById('loadingOverlay');
-    const blockedOverlay = document.getElementById('blockedOverlay');
     const loginAlunoView = document.getElementById('loginAlunoView');
-    const loginAdminView = document.getElementById('loginAdminView');
-    
-    // Check if URL has #admin initially or changes
-    function checkAdminHash() {
-        if (window.location.hash === '#admin') {
-            loginAlunoView.style.display = 'none';
-            loginAdminView.style.display = 'block';
-        } else {
-            loginAlunoView.style.display = 'block';
-            loginAdminView.style.display = 'none';
-        }
-    }
-    
-    checkAdminHash();
-    window.addEventListener('hashchange', checkAdminHash);
-
-    // Manual toggle via link clicks
-    document.getElementById('linkToAluno')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.location.hash = '';
-    });
 
     // Google Login (Student)
     document.getElementById('btnGoogleLogin')?.addEventListener('click', () => {
@@ -253,114 +227,56 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Email/Password Login (Admin)
-    document.getElementById('btnAdminLogin')?.addEventListener('click', () => {
-        const email = document.getElementById('adminEmail').value;
-        const password = document.getElementById('adminSenha').value;
-        if (!email || !password) return alert('Preencha os dados');
-        auth.signInWithEmailAndPassword(email, password).catch(err => {
-            alert('Erro no login admin: ' + err.message);
-        });
-    });
 
     // Logout via student sidebar
     document.querySelector('#sidebar .user-logout')?.addEventListener('click', () => {
         auth.signOut().then(() => window.location.reload());
     });
 
-    // Logout from blocked screen
-    document.getElementById('btnLogoutBlocked')?.addEventListener('click', () => {
-        auth.signOut().then(() => window.location.reload());
-    });
 
     // Auth State Observer
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             currentUserUID = user.uid;
 
-            // Detect admin: Email/Password login + email matches admin list
-            const providerId = user.providerData && user.providerData[0] ? user.providerData[0].providerId : '';
-            const isPasswordAuth = providerId === 'password';
-            const isAdminEmail = user.email && ADMIN_EMAILS.some(e => e.toLowerCase().trim() === user.email.toLowerCase().trim());
-            isAdmin = isPasswordAuth && isAdminEmail;
-            console.log('✅ User logged in:', user.email, '| Provider:', providerId, '| isAdmin:', isAdmin);
+            console.log('✅ User logged in:', user.email);
             
             if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
-            if (isAdmin) {
-                // ===== ADMIN FLOW =====
-                console.log('🛡️ Admin detected, setting up admin UI...');
-                if (typeof setupAdminUI === 'function') {
-                    setupAdminUI();
-                    console.log('✅ setupAdminUI() called successfully');
-                } else {
-                    console.error('❌ setupAdminUI function not found! Check if app-admin.js loaded correctly.');
-                }
-                // Hide login overlay AFTER admin UI is set up
-                loginOverlay.style.display = 'none';
-                if (loadingOverlay) {
-                    loadingOverlay.classList.add('fade-out');
-                    setTimeout(() => loadingOverlay.remove(), 600);
-                }
+            // ===== STUDENT FLOW =====
+            console.log('👤 Student detected, setting up student UI...');
+            // Hide login overlay for student
+            loginOverlay.style.display = 'none';
+            
+            // Save user profile
+            if (typeof saveUserProfile === 'function') {
+                await saveUserProfile(user);
+            }
 
-            } else {
-                // ===== STUDENT FLOW =====
-                console.log('👤 Student detected, setting up student UI...');
-                // Hide login overlay for student too
-                loginOverlay.style.display = 'none';
-                
-                // Save user profile for admin visibility
-                if (typeof saveUserProfile === 'function') {
-                    await saveUserProfile(user);
-                }
+            // Normal student flow
+            await syncFromFirestore();
+            refreshAllData();
 
-                // Check if user access is blocked
-                if (typeof checkUserAccess === 'function') {
-                    const hasAccess = await checkUserAccess(user.uid);
-                    if (!hasAccess) {
-                        // Show blocked overlay
-                        if (loadingOverlay) {
-                            loadingOverlay.classList.add('fade-out');
-                            setTimeout(() => loadingOverlay.remove(), 600);
-                        }
-                        if (blockedOverlay) blockedOverlay.style.display = 'flex';
-                        return; // Stop here, don't load app
-                    }
+            // Check if onboarding preconfiguration is needed
+            if (!userProfile.soldierConfigured) {
+                if (typeof showSoldierOnboardingModal === 'function') {
+                    showSoldierOnboardingModal(user);
                 }
+            }
 
-                // Normal student flow
-                await syncFromFirestore();
-                refreshAllData();
-
-                // Check if onboarding preconfiguration is needed
-                if (!userProfile.soldierConfigured) {
-                    if (typeof showSoldierOnboardingModal === 'function') {
-                        showSoldierOnboardingModal(user);
-                    }
-                }
-
-                // Setup student UI permissions for Bisus
-                if (document.getElementById('btnNovoBisu')) {
-                    document.getElementById('btnNovoBisu').style.display = 'none';
-                }
-
-                if (loadingOverlay) {
-                    loadingOverlay.classList.add('fade-out');
-                    setTimeout(() => loadingOverlay.remove(), 600);
-                }
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('fade-out');
+                setTimeout(() => loadingOverlay.remove(), 600);
             }
         } else {
             currentUserUID = null;
-            isAdmin = false;
             loginOverlay.style.display = 'flex';
-            if (blockedOverlay) blockedOverlay.style.display = 'none';
             if (loadingOverlay) loadingOverlay.style.display = 'none';
         }
     });
 
     // ===== THEME TOGGLE (Light/Dark) =====
     const themeToggleStudent = document.getElementById('themeToggleStudent');
-    const themeToggleAdmin = document.getElementById('themeToggleAdmin');
 
     function getCurrentTheme() {
         return localStorage.getItem('planeja-concurso-theme') || 'dark';
@@ -387,10 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Bind toggle buttons
     themeToggleStudent?.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleTheme();
-    });
-    themeToggleAdmin?.addEventListener('click', (e) => {
         e.preventDefault();
         toggleTheme();
     });
