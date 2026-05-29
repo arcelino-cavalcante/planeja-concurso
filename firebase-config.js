@@ -208,9 +208,7 @@ function refreshAllData() {
     if (typeof updateUserProfileDisplay === 'function') updateUserProfileDisplay();
     
     // Load dashboard extras
-    if (typeof loadMentorMessage === 'function') loadMentorMessage();
     if (typeof restoreActiveTimerState === 'function') restoreActiveTimerState();
-    if (typeof loadAvisos === 'function') loadAvisos();
     if (typeof updateDashboard === 'function') updateDashboard();
 }
 

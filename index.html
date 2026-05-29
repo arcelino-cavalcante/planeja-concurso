@@ -223,9 +223,6 @@
                             <span class="welcome-label">Bem-vindo</span>
                             <span class="welcome-name" id="dashboardUserName">Aluno</span>
                         </div>
-                        <div class="welcome-message" id="mentorMessage" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);">
-                            <p style="color:var(--text-secondary);font-size:0.85rem;">Nenhuma mensagem do mentor para hoje.</p>
-                        </div>
                     </div>
 
 
@@ -256,13 +253,28 @@
                         </div>
                     </div>
 
-                    <!-- Média de Horas Card -->
-                    <div class="card-mentor media-card">
-                        <p class="media-title">Média de horas diárias de estudo</p>
-                        <div class="media-content">
-                            <i class="bi bi-display"></i>
-                            <span class="media-hours" id="dashboardMediaHoras">00h00m</span>
-                            <span class="media-badge" id="dashboardMediaPercent">0%</span>
+                    <!-- Heatmap de Consistência Card -->
+                    <div class="card-mentor heatmap-card" id="heatmapCard">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <h3 class="section-title" style="margin-bottom:0;"><i class="bi bi-grid-3x3-gap-fill"></i> Consistência</h3>
+                            <div class="streak-stats">
+                                <span class="streak-badge" id="currentStreakBadge">🔥 0 dias</span>
+                                <span class="streak-badge outline" id="longestStreakBadge">🏆 Recorde: 0</span>
+                            </div>
+                        </div>
+                        <div class="heatmap-scroll-container">
+                            <div class="heatmap-grid" id="heatmapContainer">
+                                <!-- Generated via JS -->
+                            </div>
+                        </div>
+                        <div class="heatmap-legend">
+                            <span>Menos</span>
+                            <div class="heatmap-cell level-0"></div>
+                            <div class="heatmap-cell level-1"></div>
+                            <div class="heatmap-cell level-2"></div>
+                            <div class="heatmap-cell level-3"></div>
+                            <div class="heatmap-cell level-4"></div>
+                            <span>Mais</span>
                         </div>
                     </div>
                 </div>
@@ -557,7 +569,7 @@
                         <!-- Pomodoro / Intervalo Tático Card -->
                         <div class="time-division-card" style="margin-top: 15px;">
                             <div class="division-header">
-                                <span>Intervalo de Foco (Pomodoro)</span>
+                                <span>Intervalo de Foco</span>
                                 <label class="division-check">
                                     <input type="checkbox" id="pomodoroToggle"> Habilitar
                                 </label>

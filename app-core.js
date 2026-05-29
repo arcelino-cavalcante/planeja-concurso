@@ -176,40 +176,10 @@ function updateDashboard() {
         }
     }
     
-    // Update dashboard weekly hours stats (media)
-    const mediaHoursEl = document.getElementById('dashboardMediaHoras');
-    const mediaPercentEl = document.getElementById('dashboardMediaPercent');
-    if (mediaHoursEl) {
-        // Calculate average weekly hours based on active routine
-        let totalWeekMin = 0;
-        if (activeRotina && activeRotina.atividades) {
-            activeRotina.atividades.forEach(act => {
-                if (act.isStudy) {
-                    const sh = parseInt(act.startTime.split(':')[0]), sm = parseInt(act.startTime.split(':')[1]);
-                    const eh = parseInt(act.endTime.split(':')[0]), em = parseInt(act.endTime.split(':')[1]);
-                    totalWeekMin += ((eh*60+em) - (sh*60+sm)) * act.days.length;
-                }
-            });
-        }
-        const dailyAvgMin = Math.round(totalWeekMin / 7);
-        const avgH = Math.floor(dailyAvgMin / 60);
-        const avgM = dailyAvgMin % 60;
-        mediaHoursEl.textContent = `${String(avgH).padStart(2,'0')}h ${String(avgM).padStart(2,'0')}m`;
-        
-        if (mediaPercentEl) {
-            const targetMin = 240; // 4 hours standard
-            const percent = Math.min(100, Math.round((dailyAvgMin / targetMin) * 100));
-            mediaPercentEl.textContent = `${percent}% meta`;
-            if (percent >= 100) {
-                mediaPercentEl.style.background = 'rgba(139,154,58,0.2)';
-                mediaPercentEl.style.color = 'var(--accent-green-light)';
-            } else {
-                mediaPercentEl.style.background = 'rgba(201,184,78,0.2)';
-                mediaPercentEl.style.color = 'var(--accent-yellow)';
-            }
-        }
+    // Render Consistency Heatmap
+    if (typeof historicoEstudos !== 'undefined') {
+        renderHeatmap();
     }
-
     // 4. Update Weekly Performance CSS Bar Chart
     const currentDayIndex = today === 0 ? 6 : today - 1;
     const startOfWeek = new Date(now);
@@ -682,3 +652,80 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+function renderHeatmap() {
+    const container = document.getElementById('heatmapContainer');
+    const badgeCurrent = document.getElementById('currentStreakBadge');
+    const badgeLongest = document.getElementById('longestStreakBadge');
+    if (!container) return;
+
+    const TOTAL_DAYS = 84; // 12 weeks
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    
+    const daysData = [];
+    for (let i = TOTAL_DAYS - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        daysData.push({
+            date: d.getTime(),
+            min: 0,
+            dateObj: d
+        });
+    }
+
+    if (typeof historicoEstudos !== 'undefined' && historicoEstudos) {
+        historicoEstudos.forEach(log => {
+            const logDate = new Date(log.data);
+            logDate.setHours(0,0,0,0);
+            const time = logDate.getTime();
+            const day = daysData.find(d => d.date === time);
+            if (day) {
+                day.min += log.duracaoMin || 0;
+            }
+        });
+    }
+
+    let html = '';
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+
+    daysData.forEach(d => {
+        let level = 0;
+        if (d.min > 0) {
+            if (d.min < 30) level = 1;
+            else if (d.min < 60) level = 2;
+            else if (d.min < 120) level = 3;
+            else level = 4;
+            
+            tempStreak++;
+            if (tempStreak > longestStreak) longestStreak = tempStreak;
+        } else {
+            tempStreak = 0;
+        }
+        
+        const title = `${String(d.dateObj.getDate()).padStart(2,'0')}/${String(d.dateObj.getMonth()+1).padStart(2,'0')} - ${d.min} min`;
+        html += `<div class="heatmap-cell level-${level}" title="${title}"></div>`;
+    });
+
+    let streakCount = 0;
+    for (let i = daysData.length - 1; i >= 0; i--) {
+        if (daysData[i].min > 0) {
+            streakCount++;
+        } else {
+            if (i === daysData.length - 1) continue;
+            else break;
+        }
+    }
+    currentStreak = streakCount;
+
+    container.innerHTML = html;
+    if (badgeCurrent) badgeCurrent.textContent = `🔥 ${currentStreak} dia${currentStreak !== 1 ? 's' : ''}`;
+    if (badgeLongest) badgeLongest.textContent = `🏆 Recorde: ${longestStreak}`;
+    
+    const scrollCont = document.querySelector('.heatmap-scroll-container');
+    if (scrollCont) {
+        scrollCont.scrollLeft = scrollCont.scrollWidth;
+    }
+}
