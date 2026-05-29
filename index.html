@@ -1076,6 +1076,41 @@
                     <span id="updateStatus" style="display:block;margin-top:10px;font-size:0.85rem;"></span>
                 </div>
 
+                <!-- Importação JSON -->
+                <div class="card-mentor config-card">
+                    <div class="config-card-icon" style="background:rgba(201,184,78,0.15);color:var(--accent-yellow);"><i class="bi bi-robot"></i></div>
+                    <h3 class="section-title">Importador IA de Edital</h3>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:12px;">Transforme qualquer edital em PDF/texto num cronograma pronto usando IA (ChatGPT/Gemini). Copie o prompt abaixo e cole o resultado na caixa seguinte.</p>
+                    
+                    <div style="margin-bottom:16px;">
+                        <label class="meta-label">1. Copie este Prompt</label>
+                        <textarea class="input-mentor" readonly style="width:100%;height:100px;font-family:monospace;font-size:0.8rem;resize:none;color:var(--text-muted);" onclick="this.select();">
+Transforme o edital abaixo em um objeto JSON válido, mantendo a seguinte estrutura exata:
+{
+  "nome": "Nome do Concurso",
+  "materias": [
+    {
+      "nome": "Nome da Disciplina",
+      "topicos": [
+        { "nome": "Tópico 1", "checked": false },
+        { "nome": "Tópico 2", "checked": false }
+      ]
+    }
+  ]
+}
+Devolva APENAS o JSON válido, sem markdown ou explicações.
+[COLE SEU EDITAL AQUI]
+                        </textarea>
+                    </div>
+
+                    <div style="margin-bottom:16px;">
+                        <label class="meta-label">2. Cole o JSON retornado</label>
+                        <textarea class="input-mentor" id="jsonEditalInput" placeholder="Cole o código JSON aqui..." style="width:100%;height:120px;font-family:monospace;font-size:0.85rem;resize:vertical;"></textarea>
+                    </div>
+                    
+                    <button class="btn-executar" id="btnImportarEditalJson" style="width:100%;"><i class="bi bi-braces"></i> Importar JSON</button>
+                </div>
+
                 <!-- Zona de Perigo -->
                 <div class="card-mentor config-card config-card-danger">
                     <div class="config-card-icon danger"><i class="bi bi-exclamation-triangle"></i></div>

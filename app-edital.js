@@ -369,5 +369,51 @@ function navigateToSyllabusSubject(subjectName, contestName) {
     }, 250);
 }
 
+// ===== IMPORT JSON EDITAL =====
+const btnImportarEditalJson = document.getElementById('btnImportarEditalJson');
+if (btnImportarEditalJson) {
+    btnImportarEditalJson.addEventListener('click', () => {
+        const input = document.getElementById('jsonEditalInput');
+        const jsonStr = input.value.trim();
+        
+        if (!jsonStr) {
+            if (typeof showToast === 'function') showToast('Cole o JSON gerado pela IA antes de importar.');
+            return;
+        }
+        
+        try {
+            let cleanedStr = jsonStr;
+            if (cleanedStr.startsWith('```')) {
+                cleanedStr = cleanedStr.replace(/```json/gi, '').replace(/```/g, '').trim();
+            }
+            
+            const parsed = JSON.parse(cleanedStr);
+            
+            if (!parsed.nome || !Array.isArray(parsed.materias)) {
+                throw new Error('Formato inválido. O JSON deve conter "nome" e um array de "materias".');
+            }
+            
+            const edital = {
+                id: Date.now(),
+                nome: parsed.nome,
+                materias: parsed.materias,
+                createdAt: new Date().toISOString()
+            };
+            
+            editais.push(edital);
+            DB.save('editais', editais);
+            
+            input.value = '';
+            if (typeof showToast === 'function') showToast('Edital importado com sucesso via IA!');
+            
+            renderEditaisList();
+            
+        } catch (e) {
+            console.error('JSON Import Error:', e);
+            if (typeof showToast === 'function') showToast('Erro ao importar: O texto colado não é um JSON válido.');
+        }
+    });
+}
+
 // ===== INIT =====
 loadEditais();
