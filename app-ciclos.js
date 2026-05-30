@@ -197,9 +197,16 @@ function generateCycleSequence(materias) {
     
     // Step 1: Create sessions for each subject
     const sessionsBySubject = {};
+    const MAX_BLOCK_MINUTES = 120; // Max 2 hours per block
+    
     activeMaterias.forEach((m, i) => {
         const ratio = m.peso / minPeso;
         let count = Math.max(1, Math.round(ratio));
+        
+        // Ensure no block exceeds the maximum time limit
+        const minSessionsNeeded = Math.ceil(m.totalMin / MAX_BLOCK_MINUTES);
+        count = Math.max(count, minSessionsNeeded);
+        
         count = Math.min(count, Math.ceil(m.totalMin / 30)); // at least 30min per session
         
         sessionsBySubject[i] = [];
