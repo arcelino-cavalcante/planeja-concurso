@@ -9,7 +9,7 @@ const PATENTES = [
     { nome: "Capitão",          horas: 180,  estrelas: 6,  desc: "Comandante estrategista de rotinas pesadas de estudo." },
     { nome: "Major",            horas: 300,  estrelas: 7,  desc: "Oficial superior reconhecido por sua inabalável resiliência." },
     { nome: "Tenente-Coronel",  horas: 500,  estrelas: 8,  desc: "Mestre em planejamento avançado de edital e foco extremo." },
-    { nome: "Coronel",          horas: 800,  estrelas: 9,  desc: "Elite absoluta dos estudantes da divisão de concursos." },
+    { nome: "Coronel",          horas: 800,  estrelas: 9,  desc: "Elite absoluta dos combatentes da divisão de concursos." },
     { nome: "General de Divisão",horas: 1200, estrelas: 10, desc: "Lenda definitiva dos concursos públicos com foco inabalável." }
 ];
 
