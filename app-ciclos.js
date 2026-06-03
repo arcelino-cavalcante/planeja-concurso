@@ -757,7 +757,7 @@ function selectSubject(idx) {
         }
         
         if (matchingBisu) {
-            suggestionEl.innerHTML = `<strong>Bisu do Mentor (${matchingBisu.titulo}):</strong> ${matchingBisu.resumo || matchingBisu.conteudo.replace(/<[^>]*>/g, '').substring(0, 150) + '...'}`;
+            suggestionEl.innerHTML = `<strong>Bisu de Ouro (${matchingBisu.titulo}):</strong> ${matchingBisu.resumo || matchingBisu.conteudo.replace(/<[^>]*>/g, '').substring(0, 150) + '...'}`;
         } else {
             const fallbackSuggestions = [
                 "Para esta disciplina, use o Método da Recapitulação Ativa: após estudar um tópico, feche o material e tente explicar o conteúdo em voz alta com suas próprias palavras.",
