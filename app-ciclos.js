@@ -204,9 +204,16 @@ function generateCycleSequence(materias) {
         let remaining = m.totalMin;
         
         // Prioriza sempre blocos de 2 horas (120 min)
-        // O tempo que sobrar formará blocos menores (ex: 90 min, 60 min ou 30 min)
+        // O tempo que sobrar formará blocos menores (ex: 90 min, 60 min)
         while (remaining > 0) {
             let dur = Math.min(remaining, MAX_BLOCK_MINUTES);
+            
+            // Regra especial: se sobraram exatamente 2h30 (150 min), 
+            // dividimos em 1h30 (90 min) e 1h (60 min) ao invés de 2h e 30 min.
+            if (remaining === 150) {
+                dur = 90;
+            }
+            
             sessionsBySubject[i].push({ nome: m.nome, duracao: dur, idx: i, peso: m.peso });
             remaining -= dur;
         }
