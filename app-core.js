@@ -95,10 +95,10 @@ function updateDashboard() {
     
     if (statusEl) {
         if (todayStudyMin > 0) {
-            statusEl.innerHTML = `<span class="status-dot green"></span> <span class="status-text">EM COMBATE</span>`;
+            statusEl.innerHTML = `<span class="status-dot green"></span> <span class="status-text">ESTUDANDO</span>`;
             statusEl.className = 'tactical-status';
         } else {
-            statusEl.innerHTML = `<span class="status-dot yellow"></span> <span class="status-text">DESCANSO TÁTICO</span>`;
+            statusEl.innerHTML = `<span class="status-dot yellow"></span> <span class="status-text">PAUSA</span>`;
             statusEl.className = 'tactical-status';
         }
     }
@@ -219,14 +219,14 @@ function updateDashboard() {
         }).join('');
     }
 
-    // 5. Update Histórico de Combate (Recent Studies)
+    // 5. Update Histórico de Estudos (Recent Studies)
     const historyContainer = document.getElementById('historicoListContainer');
     if (historyContainer) {
         if (!historicoEstudos || historicoEstudos.length === 0) {
             historyContainer.innerHTML = `
                 <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.9rem;">
                     <i class="bi bi-shield-slash" style="font-size:2rem;display:block;margin-bottom:8px;color:var(--text-muted);"></i>
-                    Sem registros de combate recentes.<br>Complete uma sessão no timer para começar.
+                    Sem registros de estudos recentes.<br>Complete uma sessão no timer para começar.
                 </div>
             `;
         } else {
@@ -263,7 +263,7 @@ function updateDashboard() {
     const totalHoursListEl = document.getElementById('totalHoursConcursoList');
     if (totalHoursListEl) {
         if (!historicoEstudos || historicoEstudos.length === 0) {
-            totalHoursListEl.innerHTML = '<span style="color:var(--text-muted);font-size:0.9rem;">Nenhum combate registrado ainda.</span>';
+            totalHoursListEl.innerHTML = '<span style="color:var(--text-muted);font-size:0.9rem;">Nenhum estudo registrado ainda.</span>';
         } else {
             const hoursByCiclo = {};
             historicoEstudos.forEach(log => {

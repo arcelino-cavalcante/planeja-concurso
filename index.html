@@ -21,7 +21,7 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -153,7 +153,7 @@
             <!-- Banner Tático de Rotina Diária -->
             <div class="tactical-banner" id="dashboardTacticalBanner">
                 <div class="tactical-banner-left">
-                    <div class="tactical-badge">STATUS TÁTICO</div>
+                    <div class="tactical-badge">STATUS DA SESSÃO</div>
                     <div class="tactical-time-info">
                         <span class="tactical-date" id="dashboardCurrentDate">DOMINGO, 24 DE MAIO</span>
                         <span class="tactical-hours" id="dashboardRoutineHoursToday">
@@ -164,7 +164,7 @@
                 <div class="tactical-banner-right">
                     <div class="tactical-status" id="dashboardTacticalStatus">
                         <span class="status-dot green"></span>
-                        <span class="status-text">EM COMBATE</span>
+                        <span class="status-text">ESTUDANDO</span>
                     </div>
                 </div>
             </div>
@@ -508,7 +508,7 @@
                     </div>
 
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <button class="btn-executar" id="btnEntrarModoFoco" style="padding: 8px 16px; font-family:'Barlow Condensed', sans-serif; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; background: var(--accent-yellow); color: #000; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 0;">
+                        <button class="btn-executar" id="btnEntrarModoFoco" style="padding: 8px 16px; font-family:'Inter', sans-serif; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; background: var(--accent-yellow); color: #000; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 0;">
                             <i class="bi bi-bullseye"></i> Modo Foco
                         </button>
                         <button class="btn-nova-rotina" id="btnEditarCiclo">
@@ -606,11 +606,11 @@
                 
                 <!-- Header: Sair do Foco & Meta de Hoje -->
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto;">
-                    <button class="btn-focus-exit" id="btnSairModoFoco" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 18px; border-radius: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                    <button class="btn-focus-exit" id="btnSairModoFoco" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 18px; border-radius: 0; font-family: 'Inter', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
                         <i class="bi bi-fullscreen-exit" style="color: var(--accent-green-light);"></i> Sair do Modo Foco
                     </button>
                     
-                    <div style="display:flex; align-items:center; gap:8px; background:var(--bg-secondary); border:1px solid var(--border-color); padding:8px 18px; border-radius:0; font-family:'Barlow Condensed', sans-serif; font-size:0.9rem; letter-spacing:0.5px; text-transform:uppercase;">
+                    <div style="display:flex; align-items:center; gap:8px; background:var(--bg-secondary); border:1px solid var(--border-color); padding:8px 18px; border-radius:0; font-family:'Inter', sans-serif; font-size:0.9rem; letter-spacing:0.5px; text-transform:uppercase;">
                         <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-green-light); box-shadow:0 0 8px var(--accent-green-light); display:inline-block; animation: pulse-green 2s infinite;"></span>
                         <span style="color:var(--text-secondary);">META DE HOJE: <strong id="focoTodayHoursText" style="color:var(--accent-green-light); font-weight:700;">0h 00m</strong></span>
                     </div>
@@ -623,14 +623,14 @@
                     <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 22px; box-sizing: border-box; min-height: 290px; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
-                                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary);">Divisão do Tempo</span>
+                                <span style="font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary);">Divisão do Tempo</span>
                                 <label style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 700;">
                                     <input type="checkbox" id="focoDivisionToggle" style="accent-color: var(--accent-green-light);"> Habilitar
                                 </label>
                             </div>
                             
                             <div id="focoDivisionContent" style="display: none;">
-                                <div style="display: flex; justify-content: space-between; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.1rem; margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.1rem; margin-bottom: 12px;">
                                     <span id="focoDivRevisaoTime" style="color: var(--accent-blue);">00:40:00</span>
                                     <span id="focoDivConteudoTime" style="color: var(--text-secondary);">01:20:00</span>
                                 </div>
@@ -654,17 +654,17 @@
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                         <div style="text-align: center; margin-bottom: 25px; max-width: 90%;">
                             <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 3px;">ESTUDANDO AGORA</span>
-                            <h1 id="focoSubjectName" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 2.3rem; text-transform: uppercase; color: var(--text-primary); margin: 4px 0 0 0; letter-spacing: 0.5px; line-height: 1.2;">Legislação de Trânsito</h1>
+                            <h1 id="focoSubjectName" style="font-family: 'Inter', sans-serif; font-weight: 800; font-size: 2.3rem; text-transform: uppercase; color: var(--text-primary); margin: 4px 0 0 0; letter-spacing: 0.5px; line-height: 1.2;">Legislação de Trânsito</h1>
                         </div>
 
                         <div style="position: relative; width: 310px; height: 310px; border-radius: 50%; background: var(--bg-card); border: 2px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
                             <div style="position: absolute; inset: -3px; border-radius: 50%; border: 2px solid var(--accent-green-light); opacity: 0.2; filter: blur(4px); pointer-events: none;"></div>
                             
-                            <span id="focoWheelBadge" style="font-family:'Barlow Condensed', sans-serif; font-weight:800; font-size:0.8rem; color:#fff; background:var(--accent-green); padding:3px 10px; border-radius:2px; text-transform:uppercase; margin-bottom:8px; display:none; letter-spacing: 0.5px; position: relative; z-index: 2;">Revisão</span>
+                            <span id="focoWheelBadge" style="font-family:'Inter', sans-serif; font-weight:800; font-size:0.8rem; color:#fff; background:var(--accent-green); padding:3px 10px; border-radius:2px; text-transform:uppercase; margin-bottom:8px; display:none; letter-spacing: 0.5px; position: relative; z-index: 2;">Revisão</span>
                             
-                            <span id="focoWheelTimer" style="font-family:'Barlow Condensed', sans-serif; font-weight:800; font-size:3.8rem; color:var(--text-primary); letter-spacing:1px; margin-bottom: 5px; position: relative; z-index: 2;">02:00:00</span>
+                            <span id="focoWheelTimer" style="font-family:'Inter', sans-serif; font-weight:800; font-size:3.8rem; color:var(--text-primary); letter-spacing:1px; margin-bottom: 5px; position: relative; z-index: 2;">02:00:00</span>
                             
-                            <button class="btn-iniciar" id="btnIniciarTimerFoco" style="position: relative; z-index: 10; margin-top: 12px; padding: 10px 24px; font-size: 0.95rem; border-radius: 0; background: var(--accent-green); color: #fff; font-weight: 700; border: none; cursor: pointer; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: var(--shadow);">
+                            <button class="btn-iniciar" id="btnIniciarTimerFoco" style="position: relative; z-index: 10; margin-top: 12px; padding: 10px 24px; font-size: 0.95rem; border-radius: 0; background: var(--accent-green); color: #fff; font-weight: 700; border: none; cursor: pointer; text-transform: uppercase; font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: var(--shadow);">
                                 <i class="bi bi-play-fill"></i> Iniciar
                             </button>
                         </div>
@@ -674,7 +674,7 @@
                     <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 22px; box-sizing: border-box; min-height: 290px; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
-                                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary);">Intervalo de Foco</span>
+                                <span style="font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary);">Intervalo de Foco</span>
                                 <label style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 700;">
                                     <input type="checkbox" id="focoPomodoroToggle" style="accent-color: var(--accent-green-light);"> Habilitar
                                 </label>
@@ -683,7 +683,7 @@
                             <div id="focoPomodoroContent" style="display: none;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                     <span style="font-size: 0.8rem; color: var(--text-secondary);">Descanso Tático:</span>
-                                    <span id="focoPomodoroBreakMinutesText" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; color: var(--accent-green-light);">5 minutos</span>
+                                    <span id="focoPomodoroBreakMinutesText" style="font-family: 'Inter', sans-serif; font-weight: 700; color: var(--accent-green-light);">5 minutos</span>
                                 </div>
                                 <input type="range" class="division-slider" id="focoPomodoroSlider" min="5" max="10" value="5" step="1" style="width: 100%; margin-bottom: 12px;">
                                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
@@ -701,8 +701,8 @@
                 </div>
 
                 <!-- Footer: Decorative operational mark -->
-                <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; opacity: 0.5;">
-                    Planeja Concurso • Divisão de Operações de Estudo de Elite
+                <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); font-family: 'Inter', sans-serif; letter-spacing: 2px; text-transform: uppercase; opacity: 0.5;">
+                    Planeja Concurso • Plataforma de Alta Performance em Estudos
                 </div>
 
             </div>
@@ -1022,7 +1022,7 @@
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:20px;">
-                        <label class="meta-label">Mensagem de Honra / Lema</label>
+                        <label class="meta-label">Sua Frase de Motivação</label>
                         <input type="text" class="input-mentor" id="configMottoInput" placeholder="Sua frase de foco" style="width:100%;">
                     </div>
                     <div class="config-info-row">
@@ -1162,7 +1162,7 @@
                 <div style="font-size: 3rem; color: var(--accent-yellow); margin-bottom: 12px;">
                     <i class="bi bi-patch-check-fill"></i>
                 </div>
-                <h3 style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <h3 style="font-family: 'Inter', sans-serif; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                     MISSÃO CUMPRIDA! 🎖️
                 </h3>
                 <p style="font-size: 1rem; color: var(--text-secondary); line-height: 1.5; margin: 12px 0;">
@@ -1171,10 +1171,10 @@
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-                <button class="btn-save" id="btnConfirmSyllabusSync" style="background: var(--accent-yellow); color: #000; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; letter-spacing: 1.5px; border: none; padding: 12px; font-size: 1rem; text-transform: uppercase; cursor: pointer; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                <button class="btn-save" id="btnConfirmSyllabusSync" style="background: var(--accent-yellow); color: #000; font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: 1.5px; border: none; padding: 12px; font-size: 1rem; text-transform: uppercase; cursor: pointer; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
                     <i class="bi bi-check-lg"></i> Sim, ir para o edital
                 </button>
-                <button class="btn-cancel" id="btnCancelSyllabusSync" style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 1px; padding: 10px; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; border-radius: 0;">
+                <button class="btn-cancel" id="btnCancelSyllabusSync" style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-muted); font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: 1px; padding: 10px; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; border-radius: 0;">
                     Agora não, continuar ciclo
                 </button>
             </div>
@@ -1185,7 +1185,7 @@
     <div class="modal-overlay" id="soldierOnboardingModal">
         <div class="modal-mentor" style="max-width: 460px; border: 2px solid var(--accent-green-light); box-shadow: 0 0 25px rgba(107,122,42,0.3); border-radius: 0;">
             <div style="text-align: center; margin-bottom: 20px;">
-                <h3 style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary); margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <h3 style="font-family: 'Inter', sans-serif; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary); margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                     ALISTAMENTO MILITAR
                 </h3>
                 <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4; margin: 10px 0;">
@@ -1196,19 +1196,19 @@
             <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
                 <!-- Soldier Name -->
                 <div class="form-group">
-                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Nome do Combatente</label>
+                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Seu Nome</label>
                     <input type="text" class="input-mentor" id="onboardSoldierName" placeholder="Como quer ser chamado(a) no Rank" style="width: 100%; border-radius: 0;">
                 </div>
                 
                 <!-- Gender Choice -->
                 <div class="form-group">
-                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Gênero do Combatente</label>
+                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Seu Gênero</label>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <label id="onboardGenderM" style="display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid var(--accent-green-light); background: rgba(107,122,42,0.08); padding: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem; transition: all 0.2s;">
+                        <label id="onboardGenderM" style="display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid var(--accent-green-light); background: rgba(107,122,42,0.08); padding: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.9rem; transition: all 0.2s;">
                             <input type="radio" name="onboardGender" value="M" checked style="display: none;">
                             <i class="bi bi-gender-male"></i>Soldado
                         </label>
-                        <label id="onboardGenderF" style="display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border-color); padding: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem; transition: all 0.2s;">
+                        <label id="onboardGenderF" style="display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border-color); padding: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.9rem; transition: all 0.2s;">
                             <input type="radio" name="onboardGender" value="F" style="display: none;">
                             <i class="bi bi-gender-female"></i>Soldada
                         </label>
@@ -1217,12 +1217,12 @@
                 
                 <!-- Honor Motto -->
                 <div class="form-group">
-                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Sua Mensagem de Honra / Lema</label>
+                    <label class="meta-label" style="display: block; margin-bottom: 6px; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: 0.5px; font-size: 0.85rem;">Sua Sua Frase de Motivação</label>
                     <textarea class="input-mentor" id="onboardSoldierMotto" placeholder="Ex: A disciplina é meu escudo tático mais forte contra a procrastinação!" style="width: 100%; height: 75px; resize: none; border-radius: 0; padding: 10px; font-size: 0.85rem; line-height: 1.4;"></textarea>
                 </div>
             </div>
             
-            <button class="btn-save" id="btnOnboardSave" style="width:100%; background: var(--accent-green); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; letter-spacing: 1.5px; border: none; padding: 14px; font-size: 1rem; text-transform: uppercase; cursor: pointer; border-radius: 0; box-shadow: var(--shadow);">
+            <button class="btn-save" id="btnOnboardSave" style="width:100%; background: var(--accent-green); color: #fff; font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: 1.5px; border: none; padding: 14px; font-size: 1rem; text-transform: uppercase; cursor: pointer; border-radius: 0; box-shadow: var(--shadow);">
                 <i class="bi bi-check-lg"></i> Salvar e Entrar em Combate
             </button>
         </div>
@@ -1239,16 +1239,16 @@
                 <i class="bi bi-shield-shaded"></i>
             </div>
             
-            <h2 id="detailCombatantName" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; text-transform: uppercase; margin: 5px 0 0 0; color: var(--text-primary);">NOME</h2>
-            <span id="detailPatentName" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-green-light);">PATENTE</span>
+            <h2 id="detailCombatantName" style="font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; text-transform: uppercase; margin: 5px 0 0 0; color: var(--text-primary);">NOME</h2>
+            <span id="detailPatentName" style="font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-green-light);">NÍVEL</span>
             
             <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 12px; margin: 20px 0 15px 0;">
-                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary); display: block; letter-spacing: 0.5px; margin-bottom: 4px;">TEMPO DE ESTUDO ACUMULADO</span>
-                <strong id="detailStudyHours" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.8rem; color: var(--text-primary);">0.0 horas</strong>
+                <span style="font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary); display: block; letter-spacing: 0.5px; margin-bottom: 4px;">TEMPO DE ESTUDO ACUMULADO</span>
+                <strong id="detailStudyHours" style="font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.8rem; color: var(--text-primary);">0.0 horas</strong>
             </div>
             
             <div style="padding: 10px; border-left: 3px solid var(--accent-green-light); background: rgba(107,122,42,0.04); text-align: left; margin-bottom: 10px;">
-                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 0.8rem; color: var(--accent-green-light); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 4px;">Mensagem de Honra / Lema</span>
+                <span style="font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.8rem; color: var(--accent-green-light); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 4px;">Sua Frase de Motivação</span>
                 <p id="detailHonorMessage" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; font-style: italic; margin: 0; font-family: 'Inter', sans-serif;">
                     "Frase inspiradora."
                 </p>
