@@ -17,13 +17,10 @@ const googleProvider = new firebase.auth.GoogleAuthProvider();
 let currentUserUID = null;
 
 // Enable offline persistence
-try {
-    firestore.settings({
-        localCache: firebase.firestore.persistentLocalCache({tabManager: firebase.firestore.persistentMultipleTabManager()})
+firestore.enablePersistence({ synchronizeTabs: true })
+    .catch((err) => {
+        console.warn('Firestore offline persistence warning:', err);
     });
-} catch (err) {
-    console.warn('Firestore offline persistence warning:', err);
-}
 
 // ===== Debounced Firestore write queue (PRO — minimiza writes) =====
 const _writeQueue = {};
