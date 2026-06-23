@@ -96,6 +96,12 @@
                         <span>Meus simulados</span>
                     </a>
                 </li>
+                <li class="nav-item" data-page="metas">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-bullseye"></i>
+                        <span>Metas de Notas</span>
+                    </a>
+                </li>
                 <li class="nav-item" data-page="edital">
                     <a href="#" class="nav-link-custom">
                         <i class="bi bi-file-earmark-text"></i>
@@ -765,6 +771,13 @@
                         <label class="meta-label">Nome do simulado</label>
                         <input type="text" class="input-mentor" id="simuladoNomeInput" placeholder="Ex: Simulado #1" style="width:100%;">
                     </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label class="meta-label">Tipo de simulado</label>
+                        <select class="input-mentor" id="simuladoTipoSelect" style="width:100%;padding:12px;">
+                            <option value="tradicional">Tradicional (Múltipla Escolha)</option>
+                            <option value="certo_errado">Certo e Errado (Estilo Cebraspe / Uma errada anula uma certa)</option>
+                        </select>
+                    </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div class="form-group">
                             <label class="meta-label">Data</label>
@@ -810,7 +823,7 @@
 
                     <!-- Resultado Geral -->
                     <h3 class="section-title" style="margin-bottom:12px;">Resultado geral</h3>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
+                    <div id="resultFieldsGrid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:16px;margin-bottom:24px;">
                         <div class="form-group">
                             <label class="meta-label">Total questões</label>
                             <input type="number" class="input-mentor" id="resultTotalQ" min="0" style="width:100%;">
@@ -819,8 +832,16 @@
                             <label class="meta-label">Acertos</label>
                             <input type="number" class="input-mentor" id="resultAcertos" min="0" style="width:100%;">
                         </div>
+                        <div class="form-group" id="resultErrosContainer" style="display:none;">
+                            <label class="meta-label">Erros</label>
+                            <input type="number" class="input-mentor" id="resultErros" min="0" style="width:100%;">
+                        </div>
+                        <div class="form-group" id="resultNotaLiquidaContainer" style="display:none;">
+                            <label class="meta-label">Nota Líquida</label>
+                            <div class="stat-value" id="resultNotaLiquida" style="font-size:1.5rem;color:var(--accent-yellow);padding-top:10px;">0</div>
+                        </div>
                         <div class="form-group">
-                            <label class="meta-label">Nota / Média</label>
+                            <label class="meta-label" id="resultMediaLabel">Nota / Média</label>
                             <div class="stat-value" id="resultMedia" style="font-size:1.5rem;color:var(--accent);padding-top:10px;">0%</div>
                         </div>
                     </div>
@@ -845,6 +866,165 @@
                 </div>
             </div>
 
+        </section>
+        
+        <!-- ========== PAGE: METAS DE NOTAS ========== -->
+        <section class="page-content" id="page-metas">
+            <!-- VIEW 1: Empty State (Sem metas cadastradas) -->
+            <div id="metas-empty-view">
+                <div class="page-header-custom">
+                    <div>
+                        <a href="#" class="back-link" id="backToHomeFromMetasEmpty"><i class="bi bi-arrow-left"></i> Voltar para home</a>
+                        <h1 class="page-title">Metas de Notas</h1>
+                    </div>
+                </div>
+                <div class="empty-state" style="padding: 60px 20px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); border-left: 3px solid var(--accent-green); text-align: center;">
+                    <i class="bi bi-bullseye" style="font-size: 3.5rem; color: var(--accent-green-light); margin-bottom: 16px;"></i>
+                    <h3 class="section-title" style="font-size: 1.4rem; margin-bottom: 8px; font-weight: 800;">Ainda não definiu sua meta de evolução?</h3>
+                    <p class="section-text" style="max-width: 600px; margin: 0 auto 24px; line-height: 1.5; color: var(--text-secondary);">
+                        Cadastre sua nota da última prova, a nota máxima que deseja atingir e a data da prova. 
+                        O Planeja Concurso calculará uma rampa linear de evolução semanal para você acompanhar seu progresso nos simulados!
+                    </p>
+                    <button class="btn-executar" id="btnCriarPrimeiraMeta" style="max-width: 280px; margin: 0 auto;"><i class="bi bi-plus-lg"></i> Criar Planejamento de Metas</button>
+                </div>
+            </div>
+
+            <!-- VIEW 2: Criar/Editar Meta Form -->
+            <div id="metas-create-view" class="d-none">
+                <a href="#" class="back-link" id="backToMetasDashboardFromCreate"><i class="bi bi-arrow-left"></i> Voltar</a>
+                <h1 class="page-title" id="metaFormTitle">Novo planejamento de metas</h1>
+
+                <div class="card-mentor" style="padding: 24px; margin: 20px 0; max-width: 800px;">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="meta-label">Concurso Vinculado</label>
+                        <select class="input-mentor" id="metaConcursoSelect" style="width: 100%; padding: 12px;">
+                            <option value="">Selecione o concurso</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label class="meta-label">Total de questões da Prova</label>
+                            <input type="number" class="input-mentor" id="metaTotalQuestoes" placeholder="Ex: 120" min="1" style="width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label">Tipo de Prova (Correção)</label>
+                            <select class="input-mentor" id="metaTipoCorrecao" style="width: 100%; padding: 10px;">
+                                <option value="tradicional">Tradicional (Múltipla Escolha)</option>
+                                <option value="certo_errado">Certo e Errado (Estilo Cebraspe - 1 errada anula 1 certa)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label">Periodicidade das Metas</label>
+                            <select class="input-mentor" id="metaPeriodicidade" style="width: 100%; padding: 10px;">
+                                <option value="semanal">Semanal</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="trimestral">Trimestral</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label class="meta-label" id="lblNotaUltimaProva">Nota da última prova (acertos)</label>
+                            <input type="number" class="input-mentor" id="metaNotaUltima" placeholder="Ex: 50" min="0" style="width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label" id="lblMetaAcertosFinal">Meta final (acertos desejados)</label>
+                            <input type="number" class="input-mentor" id="metaAcertosFinal" placeholder="Ex: 95" min="1" style="width: 100%;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                        <div class="form-group">
+                            <label class="meta-label">Data da prova</label>
+                            <input type="date" class="input-mentor" id="metaDataProva" style="width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label class="meta-label" id="lblMetaSemanasInput">Ou informe o número de semanas</label>
+                            <input type="number" class="input-mentor" id="metaSemanasInput" placeholder="Calculado automaticamente a partir da data" min="2" max="52" style="width: 100%;">
+                        </div>
+                    </div>
+
+                    <div style="text-align: right; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button class="btn-remove" id="btnCancelarMeta" style="border: 1px solid var(--border-color); background: transparent; padding: 10px 20px;"><i class="bi bi-x-lg"></i> Cancelar</button>
+                        <button class="btn-executar" id="btnSalvarMeta" style="max-width: 250px;"><i class="bi bi-check-lg"></i> Gerar Metas Semanais</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: Dashboard de Progresso de Metas -->
+            <div id="metas-dashboard-view" class="d-none">
+                <div class="page-header-custom" style="margin-bottom: 16px;">
+                    <div>
+                        <a href="#" class="back-link" id="backToHomeFromMetasDashboard"><i class="bi bi-arrow-left"></i> Voltar para home</a>
+                        <h1 class="page-title">Metas de Notas</h1>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-nova-rotina" id="btnEditarMetaAtiva"><i class="bi bi-pencil"></i> Editar Meta</button>
+                        <button class="btn-remove" id="btnExcluirMetaAtiva"><i class="bi bi-trash3"></i> Resetar Planejamento</button>
+                    </div>
+                </div>
+
+                <!-- Tactical status bar -->
+                <div class="tactical-banner" style="border-left-color: var(--accent-yellow); margin-bottom: 24px;">
+                    <div class="tactical-banner-left">
+                        <div class="tactical-badge" style="background: rgba(201, 184, 78, 0.15); border-color: var(--accent-yellow); color: var(--accent-yellow);">CRONOGRAMA TÁTICO</div>
+                        <div class="tactical-time-info">
+                            <span class="tactical-date" id="metaDashboardTitle">CONCURSO PRF</span>
+                            <span class="tactical-hours">
+                                <i class="bi bi-calendar-event"></i> PROVA EM: <strong id="metaDashboardDataProva">-</strong> | FALTAM: <strong id="metaDashboardSemanasRestantes">- semanas</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="tactical-banner-right">
+                        <div class="tactical-status" id="metaDashboardStatus">
+                            <span class="status-dot green"></span>
+                            <span class="status-text" style="color: var(--accent-green-light);">EM EVOLUÇÃO</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Metrics Grid -->
+                <div class="stats-grid" style="margin-bottom: 24px;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="metaStatUltima" style="color: var(--text-secondary);">0</div>
+                        <div class="stat-label">Nota Inicial</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="metaStatAtual" style="color: var(--accent-yellow);">0</div>
+                        <div class="stat-label">Melhor Nota Atual</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="metaStatFinal" style="color: var(--accent-green-light);">0</div>
+                        <div class="stat-label">Meta Final</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="metaStatProgresso" style="color: var(--accent-blue);">0%</div>
+                        <div class="stat-label">Evolução Geral</div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Evolução -->
+                <div class="card-mentor" style="margin-bottom: 24px; padding: 20px;">
+                    <h3 class="section-title" style="margin-bottom: 16px;"><i class="bi bi-graph-up"></i> Curva de Evolução Esperada vs Desempenho Real</h3>
+                    <div style="width: 100%; height: 260px; position: relative;" id="metaChartWrapper">
+                        <svg id="metaEvolutionChart" viewBox="0 0 800 220" width="100%" height="100%" style="overflow: visible;">
+                            <!-- Chart path and points generated by Javascript -->
+                        </svg>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 24px; font-size: 0.85rem; margin-top: 12px; font-family: var(--font-heading); text-transform: uppercase; font-weight: 700;">
+                        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 3px; background: #555; display: inline-block;"></span> Meta de Evolução</span>
+                        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 3px; background: var(--accent-yellow); display: inline-block;"></span> Desempenho Real</span>
+                    </div>
+                </div>
+
+                <!-- Lista de Metas Semanais -->
+                <h2 class="section-title" style="margin-bottom: 16px;"><i class="bi bi-list-check"></i> Cronograma de Metas Semanais</h2>
+                <div id="metaSemanasGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 40px;">
+                    <!-- Milestone cards dynamically generated here -->
+                </div>
+            </div>
         </section>
 
         <!-- ========== PAGE: TUTORIAL ========== -->
@@ -1280,6 +1460,8 @@
         <i class="bi bi-check-circle-fill"></i>
         <span id="toastMessage">Ação realizada com sucesso!</span>
     </div>
+    
+    <div id="chartTooltip" style="position: absolute; display: none; background: rgba(16, 16, 16, 0.95); border: 1px solid var(--accent-yellow); padding: 8px 12px; border-radius: 4px; font-size: 0.8rem; pointer-events: none; z-index: 10000; box-shadow: var(--shadow-lg); font-family: var(--font-body); color: #fff; min-width: 140px; border-left: 3px solid var(--accent-green-light);"></div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -1294,6 +1476,7 @@
     <script src="app-core.js"></script>
     <script src="app-ciclos.js"></script>
     <script src="app-simulados.js"></script>
+    <script src="app-metas.js"></script>
     <script src="app-edital.js"></script>
     <!-- Service Worker Registration (PWA) -->
     <script>

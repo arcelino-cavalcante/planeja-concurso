@@ -23,7 +23,19 @@ function renderSimuladosList() {
     const sorted = [...simulados].sort((a, b) => new Date(b.data) - new Date(a.data));
     sorted.forEach(s => {
         const hasResult = s.resultado && s.resultado.totalQ > 0;
-        const media = hasResult ? Math.round((s.resultado.acertos / s.resultado.totalQ) * 100) : 0;
+        let media = 0;
+        let scoreText = '';
+        if (hasResult) {
+            if (s.tipo === 'certo_errado') {
+                const erros = s.resultado.erros || 0;
+                const notaLiquida = s.resultado.acertos - erros;
+                media = Math.round((notaLiquida / s.resultado.totalQ) * 100);
+                scoreText = `${s.resultado.acertos} C | ${erros} E | Líquido: ${notaLiquida}`;
+            } else {
+                media = Math.round((s.resultado.acertos / s.resultado.totalQ) * 100);
+                scoreText = `${s.resultado.acertos}/${s.resultado.totalQ} acertos`;
+            }
+        }
         const mediaClass = media >= 70 ? 'good' : media >= 50 ? 'average' : 'bad';
         const statusClass = hasResult ? 'concluido' : 'pendente';
         const statusText = hasResult ? 'Concluído' : 'Pendente';
@@ -38,12 +50,12 @@ function renderSimuladosList() {
                     <span><i class="bi bi-calendar3"></i> ${dataFmt}</span>
                     <span><i class="bi bi-clock"></i> ${s.hora || '-'}</span>
                     <span><i class="bi bi-trophy"></i> ${s.concursoNome || '-'}</span>
-                    <span>${s.totalQuestoes || 0} questões</span>
+                    <span>${s.totalQuestoes || 0} questões (${s.tipo === 'certo_errado' ? 'Certo/Errado' : 'Múltipla'})</span>
                 </div>
                 ${hasResult ? `<div style="margin-top:8px;display:flex;align-items:center;gap:12px;">
                     <span class="media-badge ${mediaClass}">${media}%</span>
-                    <span style="color:var(--text-secondary);font-size:0.85rem;">${s.resultado.acertos}/${s.resultado.totalQ} acertos</span>
-                    <div class="progress-bar-wrapper" style="flex:1;"><div class="progress-bar-fill" style="width:${media}%;"></div></div>
+                    <span style="color:var(--text-secondary);font-size:0.85rem;">${scoreText}</span>
+                    <div class="progress-bar-wrapper" style="flex:1;"><div class="progress-bar-fill" style="width:${Math.max(0, media)}%;"></div></div>
                 </div>` : ''}
             </div>
             <span class="simulado-status ${statusClass}">${statusText}</span>
@@ -78,6 +90,7 @@ function openNewSimulado() {
     document.getElementById('simuladoHoraInput').value = '14:00';
     document.getElementById('simuladoDuracaoInput').value = '5';
     document.getElementById('simuladoQuestoesInput').value = '120';
+    document.getElementById('simuladoTipoSelect').value = 'tradicional';
     // Populate concursos dropdown
     const sel = document.getElementById('simuladoConcursoSelect');
     sel.innerHTML = '<option value="">Selecione o concurso</option>';
@@ -98,12 +111,13 @@ document.getElementById('btnSalvarSimulado').addEventListener('click', () => {
         nome,
         concursoId: concId,
         concursoNome: conc.nome,
+        tipo: document.getElementById('simuladoTipoSelect').value || 'tradicional',
         data: document.getElementById('simuladoDataInput').value,
         hora: document.getElementById('simuladoHoraInput').value,
         duracao: parseInt(document.getElementById('simuladoDuracaoInput').value) || 5,
         totalQuestoes: parseInt(document.getElementById('simuladoQuestoesInput').value) || 120,
         resultado: null,
-        disciplinas: conc.disciplinas.map(d => ({ nome: d.nome, questoes: 0, acertos: 0 }))
+        disciplinas: conc.disciplinas.map(d => ({ nome: d.nome, questoes: 0, acertos: 0, erros: 0 }))
     };
 
     if (editingSimuladoId) {
@@ -128,10 +142,16 @@ function openResultView(simId) {
     document.getElementById('resultSimuladoData').textContent = sim.data ? new Date(sim.data + 'T12:00').toLocaleDateString('pt-BR') : '-';
     document.getElementById('resultSimuladoConcurso').textContent = sim.concursoNome || '-';
 
+    const isCebraspe = sim.tipo === 'certo_errado';
+    document.getElementById('resultErrosContainer').style.display = isCebraspe ? 'block' : 'none';
+    document.getElementById('resultNotaLiquidaContainer').style.display = isCebraspe ? 'block' : 'none';
+    document.getElementById('resultMediaLabel').textContent = isCebraspe ? 'Aproveitamento' : 'Nota / Média';
+
     // Fill general result
-    const res = sim.resultado || { totalQ: sim.totalQuestoes || 120, acertos: 0 };
+    const res = sim.resultado || { totalQ: sim.totalQuestoes || 120, acertos: 0, erros: 0 };
     document.getElementById('resultTotalQ').value = res.totalQ;
     document.getElementById('resultAcertos').value = res.acertos;
+    document.getElementById('resultErros').value = res.erros || 0;
     updateResultMedia();
 
     // Fill per-subject
@@ -144,28 +164,68 @@ function openResultView(simId) {
 
 function renderResultMaterias(sim) {
     const tbody = document.getElementById('resultMateriasBody');
+    const thead = document.querySelector('#resultMateriasTable thead tr');
+    if (!tbody || !thead) return;
+
+    const isCebraspe = sim.tipo === 'certo_errado';
+    if (isCebraspe) {
+        thead.innerHTML = `<th>Matéria</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>N. Líquida</th><th>Média</th>`;
+    } else {
+        thead.innerHTML = `<th>Matéria</th><th>Questões</th><th>Acertos</th><th>Média</th>`;
+    }
+
     tbody.innerHTML = '';
     if (!sim.disciplinas || !sim.disciplinas.length) return;
     sim.disciplinas.forEach((d, i) => {
-        const media = d.questoes > 0 ? Math.round((d.acertos / d.questoes) * 100) : 0;
+        const q = d.questoes || 0;
+        const a = d.acertos || 0;
+        const e = d.erros || 0;
+        let media = 0;
+        let trHtml = '';
+
+        if (isCebraspe) {
+            const nl = a - e;
+            media = q > 0 ? Math.round((nl / q) * 100) : 0;
+            trHtml = `<td>${d.nome}</td>
+                <td><input type="number" class="input-mentor result-mat-q" data-idx="${i}" value="${q}" min="0" style="width:70px;"></td>
+                <td><input type="number" class="input-mentor result-mat-a" data-idx="${i}" value="${a}" min="0" style="width:70px;"></td>
+                <td><input type="number" class="input-mentor result-mat-e" data-idx="${i}" value="${e}" min="0" style="width:70px;"></td>
+                <td><span class="nota-liquida-badge" style="font-weight:700;color:var(--accent-yellow);">${nl}</span></td>
+                <td><span class="media-badge ${media >= 70 ? 'good' : media >= 50 ? 'average' : 'bad'}">${media}%</span></td>`;
+        } else {
+            media = q > 0 ? Math.round((a / q) * 100) : 0;
+            trHtml = `<td>${d.nome}</td>
+                <td><input type="number" class="input-mentor result-mat-q" data-idx="${i}" value="${q}" min="0" style="width:70px;"></td>
+                <td><input type="number" class="input-mentor result-mat-a" data-idx="${i}" value="${a}" min="0" style="width:70px;"></td>
+                <td><span class="media-badge ${media >= 70 ? 'good' : media >= 50 ? 'average' : 'bad'}">${media}%</span></td>`;
+        }
+
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${d.nome}</td>
-            <td><input type="number" class="input-mentor result-mat-q" data-idx="${i}" value="${d.questoes}" min="0" style="width:70px;"></td>
-            <td><input type="number" class="input-mentor result-mat-a" data-idx="${i}" value="${d.acertos}" min="0" style="width:70px;"></td>
-            <td><span class="media-badge ${media >= 70 ? 'good' : media >= 50 ? 'average' : 'bad'}">${media}%</span></td>`;
+        tr.innerHTML = trHtml;
         tbody.appendChild(tr);
     });
+
     // Live update per-materia
-    tbody.querySelectorAll('.result-mat-q, .result-mat-a').forEach(inp => {
+    tbody.querySelectorAll('.result-mat-q, .result-mat-a, .result-mat-e').forEach(inp => {
         inp.addEventListener('input', () => {
             const idx = parseInt(inp.dataset.idx);
             const sim = simulados.find(s => s.id === resultSimuladoId);
             if (!sim) return;
+
             if (inp.classList.contains('result-mat-q')) sim.disciplinas[idx].questoes = parseInt(inp.value) || 0;
-            else sim.disciplinas[idx].acertos = parseInt(inp.value) || 0;
+            else if (inp.classList.contains('result-mat-a')) sim.disciplinas[idx].acertos = parseInt(inp.value) || 0;
+            else if (inp.classList.contains('result-mat-e')) sim.disciplinas[idx].erros = parseInt(inp.value) || 0;
+
             // Update media badge
-            const q = sim.disciplinas[idx].questoes, a = sim.disciplinas[idx].acertos;
-            const m = q > 0 ? Math.round((a / q) * 100) : 0;
+            const q = sim.disciplinas[idx].questoes || 0, a = sim.disciplinas[idx].acertos || 0, e = sim.disciplinas[idx].erros || 0;
+            let m = 0;
+            if (isCebraspe) {
+                const nl = a - e;
+                m = q > 0 ? Math.round((nl / q) * 100) : 0;
+                inp.closest('tr').querySelector('.nota-liquida-badge').textContent = nl;
+            } else {
+                m = q > 0 ? Math.round((a / q) * 100) : 0;
+            }
             const badge = inp.closest('tr').querySelector('.media-badge');
             badge.textContent = m + '%';
             badge.className = `media-badge ${m >= 70 ? 'good' : m >= 50 ? 'average' : 'bad'}`;
@@ -174,15 +234,28 @@ function renderResultMaterias(sim) {
 }
 
 function updateResultMedia() {
+    const sim = simulados.find(s => s.id === resultSimuladoId);
+    const isCebraspe = sim && sim.tipo === 'certo_errado';
+
     const total = parseInt(document.getElementById('resultTotalQ').value) || 0;
     const acertos = parseInt(document.getElementById('resultAcertos').value) || 0;
-    const pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
+    const erros = isCebraspe ? (parseInt(document.getElementById('resultErros').value) || 0) : 0;
+
+    let pct = 0;
+    if (isCebraspe) {
+        const nl = acertos - erros;
+        document.getElementById('resultNotaLiquida').textContent = nl;
+        pct = total > 0 ? Math.round((nl / total) * 100) : 0;
+    } else {
+        pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
+    }
     document.getElementById('resultMedia').textContent = pct + '%';
     document.getElementById('resultMedia').style.color = pct >= 70 ? 'var(--accent-green-light)' : pct >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)';
 }
 
 document.getElementById('resultTotalQ').addEventListener('input', updateResultMedia);
 document.getElementById('resultAcertos').addEventListener('input', updateResultMedia);
+document.getElementById('resultErros').addEventListener('input', updateResultMedia);
 document.getElementById('resultPorMateriaToggle').addEventListener('change', function() {
     document.getElementById('resultPorMateriaContent').style.display = this.checked ? 'block' : 'none';
 });
@@ -191,17 +264,24 @@ document.getElementById('resultPorMateriaToggle').addEventListener('change', fun
 document.getElementById('btnSalvarResultado').addEventListener('click', () => {
     const sim = simulados.find(s => s.id === resultSimuladoId);
     if (!sim) return;
+    const isCebraspe = sim.tipo === 'certo_errado';
+
     sim.resultado = {
         totalQ: parseInt(document.getElementById('resultTotalQ').value) || 0,
         acertos: parseInt(document.getElementById('resultAcertos').value) || 0,
+        erros: isCebraspe ? (parseInt(document.getElementById('resultErros').value) || 0) : 0,
         dataRegistro: new Date().toISOString()
     };
     // Save per-materia
     if (document.getElementById('resultPorMateriaToggle').checked && sim.disciplinas) {
         document.querySelectorAll('.result-mat-q').forEach(inp => { sim.disciplinas[parseInt(inp.dataset.idx)].questoes = parseInt(inp.value) || 0; });
         document.querySelectorAll('.result-mat-a').forEach(inp => { sim.disciplinas[parseInt(inp.dataset.idx)].acertos = parseInt(inp.value) || 0; });
+        if (isCebraspe) {
+            document.querySelectorAll('.result-mat-e').forEach(inp => { sim.disciplinas[parseInt(inp.dataset.idx)].erros = parseInt(inp.value) || 0; });
+        }
     }
     DB.save('simulados', simulados);
+    if (typeof updateMetasDashboard === 'function') updateMetasDashboard();
     renderSimuladosList(); showSimuladosView('simulados-list-view');
     showToast('Resultado salvo com sucesso!');
 });
@@ -212,7 +292,18 @@ function renderStats() {
     const totalSim = withResult.length;
     const totalQ = withResult.reduce((s, sim) => s + sim.resultado.totalQ, 0);
     const totalA = withResult.reduce((s, sim) => s + sim.resultado.acertos, 0);
-    const mediaGeral = totalQ > 0 ? Math.round((totalA / totalQ) * 100) : 0;
+    
+    // Weighted liquid score for media geral
+    let totalPontosLiquidos = 0;
+    withResult.forEach(sim => {
+        if (sim.tipo === 'certo_errado') {
+            totalPontosLiquidos += (sim.resultado.acertos - (sim.resultado.erros || 0));
+        } else {
+            totalPontosLiquidos += sim.resultado.acertos;
+        }
+    });
+    
+    const mediaGeral = totalQ > 0 ? Math.round((totalPontosLiquidos / totalQ) * 100) : 0;
 
     document.getElementById('statTotalSimulados').textContent = totalSim;
     document.getElementById('statMediaGeral').textContent = mediaGeral + '%';
@@ -223,27 +314,39 @@ function renderStats() {
     const materiaMap = {};
     withResult.forEach(sim => {
         if (!sim.disciplinas) return;
+        const isCebraspe = sim.tipo === 'certo_errado';
         sim.disciplinas.forEach(d => {
             if (d.questoes <= 0) return;
-            if (!materiaMap[d.nome]) materiaMap[d.nome] = { questoes: 0, acertos: 0, simulados: [] };
+            if (!materiaMap[d.nome]) materiaMap[d.nome] = { questoes: 0, acertos: 0, erros: 0, pontos: 0, simulados: [] };
+            
             materiaMap[d.nome].questoes += d.questoes;
             materiaMap[d.nome].acertos += d.acertos;
-            materiaMap[d.nome].simulados.push({ q: d.questoes, a: d.acertos });
+            
+            const e = d.erros || 0;
+            materiaMap[d.nome].erros += e;
+            const pts = isCebraspe ? (d.acertos - e) : d.acertos;
+            materiaMap[d.nome].pontos += pts;
+            
+            materiaMap[d.nome].simulados.push({ q: d.questoes, a: d.acertos, e: e, tipo: sim.tipo });
         });
     });
 
     const tbody = document.getElementById('statsMateriasBody'); tbody.innerHTML = '';
     Object.keys(materiaMap).sort().forEach(nome => {
         const m = materiaMap[nome];
-        const media = Math.round((m.acertos / m.questoes) * 100);
+        const media = Math.round((m.pontos / m.questoes) * 100);
         const mediaClass = media >= 70 ? 'good' : media >= 50 ? 'average' : 'bad';
         // Evolution: compare last 2 simulados
         let evolHtml = '<span style="color:var(--text-muted);">-</span>';
         if (m.simulados.length >= 2) {
             const last = m.simulados[m.simulados.length - 1];
             const prev = m.simulados[m.simulados.length - 2];
-            const lastPct = Math.round((last.a / last.q) * 100);
-            const prevPct = Math.round((prev.a / prev.q) * 100);
+            
+            const lastPts = last.tipo === 'certo_errado' ? (last.a - last.e) : last.a;
+            const prevPts = prev.tipo === 'certo_errado' ? (prev.a - prev.e) : prev.a;
+            
+            const lastPct = Math.round((lastPts / last.q) * 100);
+            const prevPct = Math.round((prevPts / prev.q) * 100);
             const diff = lastPct - prevPct;
             if (diff > 0) evolHtml = `<span style="color:var(--accent-green-light);">▲ +${diff}%</span>`;
             else if (diff < 0) evolHtml = `<span style="color:var(--accent-red);">▼ ${diff}%</span>`;
@@ -252,7 +355,7 @@ function renderStats() {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${nome}</td><td>${m.questoes}</td><td>${m.acertos}</td>
             <td><span class="media-badge ${mediaClass}">${media}%</span>
-            <div class="progress-bar-wrapper"><div class="progress-bar-fill" style="width:${media}%;"></div></div></td>
+            <div class="progress-bar-wrapper"><div class="progress-bar-fill" style="width:${Math.max(0, media)}%;"></div></div></td>
             <td>${evolHtml}</td>`;
         tbody.appendChild(tr);
     });

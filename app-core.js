@@ -6,6 +6,7 @@ let concursos = [];
 let ciclos = [];
 let simulados = [];
 let historicoEstudos = [];
+let metas = [];
 let userProfile = { nome: 'Aluno' };
 let currentActivities = [];
 let editingActivityIndex = -1;
@@ -18,6 +19,7 @@ function saveAll() {
     DB.save('concursos', concursos); 
     DB.save('ciclos', ciclos); 
     DB.save('historicoEstudos', historicoEstudos);
+    DB.save('metas', metas);
     if (typeof updateDashboard === 'function') updateDashboard(); 
 }
 function getActiveRotina() { return rotinas && rotinas.length > 0 ? rotinas[0] : null; }
@@ -351,6 +353,7 @@ function navigateToPage(page) {
             }
         }
         if (page === 'simulados') { showSimuladosView('simulados-list-view'); renderSimuladosList(); }
+        if (page === 'metas') { if (typeof renderMetas === 'function') renderMetas(); }
         if (page === 'edital') { showEditalView('edital-list-view'); }
         if (page === 'qg') { if (typeof updateQgView === 'function') updateQgView(); }
         if (page === 'bisus') { showBisusView('bisus-list-view'); }

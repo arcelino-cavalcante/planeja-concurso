@@ -105,7 +105,7 @@ const DB = {
 
     clearAll() {
         if (!currentUserUID) return;
-        const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'activeTimerState'];
+        const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'activeTimerState', 'metas'];
         keys.forEach(key => {
             localStorage.removeItem(`mentor_${currentUserUID}_${key}`);
             localStorage.removeItem(`mentor_${currentUserUID}_${key}_ts`);
@@ -151,7 +151,7 @@ async function syncFromFirestore() {
 // ===== PUSH localStorage → Firestore (batch — 1 write total) =====
 async function pushLocalToFirestore() {
     if (!currentUserUID) return;
-    const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'activeTimerState'];
+    const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'activeTimerState', 'metas'];
     const batch = firestore.batch();
     const now = new Date().toISOString();
     let hasOps = false;
@@ -196,6 +196,7 @@ function refreshAllData() {
     if (typeof ciclos !== 'undefined') ciclos = DB.load('ciclos', []);
     if (typeof simulados !== 'undefined') simulados = DB.load('simulados', []);
     if (typeof historicoEstudos !== 'undefined') historicoEstudos = DB.load('historicoEstudos', []);
+    if (typeof metas !== 'undefined') metas = DB.load('metas', []);
     if (typeof userProfile !== 'undefined') {
         userProfile = DB.load('userProfile', { nome: auth.currentUser?.displayName || 'Aluno' });
     }
@@ -205,6 +206,7 @@ function refreshAllData() {
     if (typeof renderConcursosList === 'function') renderConcursosList();
     if (typeof renderCiclosList === 'function') renderCiclosList();
     if (typeof renderSimuladosList === 'function') renderSimuladosList();
+    if (typeof renderMetas === 'function') renderMetas();
     if (typeof updateUserProfileDisplay === 'function') updateUserProfileDisplay();
     
     // Load dashboard extras
