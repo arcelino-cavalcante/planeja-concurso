@@ -78,8 +78,11 @@ function renderSimuladosList() {
     if (simulados.some(s => s.resultado && s.resultado.totalQ > 0)) {
         statsOverview.style.display = 'block';
         renderStats();
+        drawBlankQuestionsChart();
     } else {
         statsOverview.style.display = 'none';
+        const chartCard = document.getElementById('blankQuestionsEvolutionCard');
+        if (chartCard) chartCard.style.display = 'none';
     }
 }
 
@@ -392,6 +395,203 @@ document.getElementById('btnStartSimulado').addEventListener('click', openNewSim
 document.getElementById('btnNovoSimulado').addEventListener('click', openNewSimulado);
 document.getElementById('backToSimuladosList').addEventListener('click', (e) => { e.preventDefault(); showSimuladosView('simulados-list-view'); });
 document.getElementById('backToSimuladosFromResult').addEventListener('click', (e) => { e.preventDefault(); showSimuladosView('simulados-list-view'); });
+
+// Draw Blank Questions Evolution Chart (Cebraspe only)
+function drawBlankQuestionsChart() {
+    const card = document.getElementById('blankQuestionsEvolutionCard');
+    const svg = document.getElementById('blankQuestionsChart');
+    if (!card || !svg) return;
+
+    // Filter Cebraspe mock exams with results
+    const cebraspeSimulados = simulados.filter(s => s.tipo === 'certo_errado' && s.resultado && s.resultado.totalQ > 0);
+    
+    if (cebraspeSimulados.length === 0) {
+        card.style.display = 'none';
+        return;
+    }
+
+    card.style.display = 'block';
+    svg.innerHTML = '';
+
+    // Sort chronologically
+    const sorted = [...cebraspeSimulados].sort((a, b) => new Date(a.data) - new Date(b.data));
+
+    const width = 800;
+    const height = 180;
+    const paddingLeft = 45;
+    const paddingRight = 20;
+    const paddingTop = 25;
+    const paddingBottom = 35;
+
+    const graphWidth = width - paddingLeft - paddingRight;
+    const graphHeight = height - paddingTop - paddingBottom;
+
+    // Get max blank questions (minimum 10)
+    const maxBranco = Math.max(...sorted.map(s => s.resultado.branco || 0), 10);
+    const yMax = Math.ceil(maxBranco / 5) * 5; // rounded up to multiple of 5
+
+    // Helpers to project coordinates
+    const getX = (index) => {
+        if (sorted.length <= 1) return paddingLeft + graphWidth / 2;
+        return paddingLeft + (index / (sorted.length - 1)) * graphWidth;
+    };
+
+    const getY = (val) => {
+        const clamped = Math.max(0, Math.min(yMax, val));
+        return paddingTop + graphHeight - (clamped / yMax) * graphHeight;
+    };
+
+    // 1. Draw horizontal grid lines and Y ticks
+    const yTicks = 4;
+    for (let i = 0; i <= yTicks; i++) {
+        const val = Math.round((yMax / yTicks) * i);
+        const y = getY(val);
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', paddingLeft);
+        line.setAttribute('y1', y);
+        line.setAttribute('x2', width - paddingRight);
+        line.setAttribute('y2', y);
+        line.setAttribute('stroke', '#222');
+        line.setAttribute('stroke-width', '1');
+        if (i > 0 && i < yTicks) line.setAttribute('stroke-dasharray', '4 4');
+        svg.appendChild(line);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', paddingLeft - 8);
+        text.setAttribute('y', y + 4);
+        text.setAttribute('text-anchor', 'end');
+        text.setAttribute('fill', 'var(--text-muted)');
+        text.setAttribute('font-size', '10px');
+        text.setAttribute('font-family', 'var(--font-body)');
+        text.textContent = val;
+        svg.appendChild(text);
+    }
+
+    // 2. Draw X axis labels (Simulado names)
+    sorted.forEach((s, i) => {
+        const x = getX(i);
+        const y = paddingTop + graphHeight;
+
+        // Tick mark
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', x);
+        tick.setAttribute('y1', y);
+        tick.setAttribute('x2', x);
+        tick.setAttribute('y2', y + 5);
+        tick.setAttribute('stroke', '#333');
+        tick.setAttribute('stroke-width', '1');
+        svg.appendChild(tick);
+
+        // Label
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', x);
+        label.setAttribute('y', y + 18);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('fill', 'var(--text-secondary)');
+        label.setAttribute('font-size', '9px');
+        label.setAttribute('font-family', 'var(--font-heading)');
+        label.setAttribute('font-weight', '700');
+        
+        // Truncate name if too long
+        let sName = s.nome;
+        if (sName.length > 10) sName = sName.substring(0, 9) + '…';
+        label.textContent = sName.toUpperCase();
+        svg.appendChild(label);
+        
+        // Also show short date beneath name
+        if (s.data) {
+            const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            dateText.setAttribute('x', x);
+            dateText.setAttribute('y', y + 28);
+            dateText.setAttribute('text-anchor', 'middle');
+            dateText.setAttribute('fill', 'var(--text-muted)');
+            dateText.setAttribute('font-size', '8px');
+            dateText.setAttribute('font-family', 'var(--font-body)');
+            const parts = s.data.split('-');
+            if (parts.length === 3) dateText.textContent = `${parts[2]}/${parts[1]}`;
+            svg.appendChild(dateText);
+        }
+    });
+
+    // 3. Draw Line Path
+    let pathPoints = '';
+    sorted.forEach((s, i) => {
+        const val = s.resultado.branco || 0;
+        const prefix = i === 0 ? 'M' : 'L';
+        pathPoints += `${prefix}${getX(i)},${getY(val)}`;
+    });
+
+    if (sorted.length > 0) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathPoints);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'var(--accent)');
+        path.setAttribute('stroke-width', '3');
+        svg.appendChild(path);
+    }
+
+    // Tooltip elements
+    const tooltipEl = document.getElementById('chartTooltip');
+
+    // 4. Draw Dots & Hover listeners
+    sorted.forEach((s, i) => {
+        const val = s.resultado.branco || 0;
+        const x = getX(i);
+        const y = getY(val);
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r', '5');
+        circle.setAttribute('fill', '#262626');
+        circle.setAttribute('stroke', 'var(--accent)');
+        circle.setAttribute('stroke-width', '2');
+        circle.style.cursor = 'pointer';
+        circle.style.transition = 'all 0.15s ease';
+
+        circle.addEventListener('mouseenter', function(e) {
+            circle.setAttribute('r', '7');
+            circle.setAttribute('fill', 'var(--accent-yellow)');
+
+            if (tooltipEl) {
+                const total = s.resultado.totalQ || 120;
+                const pct = Math.round((val / total) * 100);
+                tooltipEl.style.display = 'block';
+                tooltipEl.innerHTML = `
+                    <div style="font-weight:700; color:var(--accent); margin-bottom:4px;">${s.nome}</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:2px;">Em Branco: <strong>${val} qst.</strong> (${pct}%)</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Data: ${s.data ? new Date(s.data + 'T12:00').toLocaleDateString('pt-BR') : '-'}</div>
+                `;
+                
+                // Position tooltip
+                const rect = svg.getBoundingClientRect();
+                const containerRect = svg.parentElement.getBoundingClientRect();
+                const tooltipWidth = tooltipEl.offsetWidth;
+                const tooltipHeight = tooltipEl.offsetHeight;
+                
+                // Calculate position relative to document
+                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                const clientX = rect.left + (x / width) * rect.width + scrollLeft;
+                const clientY = rect.top + (y / height) * rect.height + scrollTop - tooltipHeight - 12;
+                
+                tooltipEl.style.left = `${clientX - tooltipWidth / 2}px`;
+                tooltipEl.style.top = `${clientY}px`;
+                tooltipEl.style.borderLeftColor = 'var(--accent)';
+            }
+        });
+
+        circle.addEventListener('mouseleave', function() {
+            circle.setAttribute('r', '5');
+            circle.setAttribute('fill', '#262626');
+            if (tooltipEl) tooltipEl.style.display = 'none';
+        });
+
+        svg.appendChild(circle);
+    });
+}
 
 // Init
 renderSimuladosList();
