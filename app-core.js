@@ -643,6 +643,24 @@ document.getElementById('btnSalvarRotina').addEventListener('click', () => {
 renderRotinas();
 buildScheduleGrid();
 
+// ===== ZERAR ROTINA =====
+document.getElementById('btnZerarRotina').addEventListener('click', () => {
+    if (!confirm('⚠️ Tem certeza que deseja ZERAR toda a rotina?\n\nTodas as atividades serão apagadas e você começará do zero.')) return;
+    currentActivities = [];
+    if (editingRoutineId) {
+        const idx = rotinas.findIndex(r => r.id === editingRoutineId);
+        if (idx >= 0) {
+            rotinas[idx].atividades = [];
+        }
+    }
+    renderActivities();
+    saveAll();
+    if (typeof recalcActiveCycleHoras === 'function') {
+        recalcActiveCycleHoras();
+    }
+    showToast('Rotina zerada! Comece do zero.');
+});
+
 
 
 // ===== INIT STUDY HISTORY CONTROLS =====
