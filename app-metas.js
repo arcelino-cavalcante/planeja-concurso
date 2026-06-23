@@ -339,7 +339,7 @@ function autoAssociateSimulados(meta) {
             if (s.concursoId === meta.concursoId && s.resultado && s.resultado.totalQ > 0) {
                 const sDate = new Date(s.data + 'T12:00:00');
                 if (sDate >= periodStart && sDate < periodEnd) {
-                    const score = isCebraspe ? (s.resultado.acertos - (s.resultado.erros || 0)) : s.resultado.acertos;
+                    const score = isCebraspe ? (s.resultado.acertos - (s.resultado.erros || 0) + (s.resultado.anuladas || 0)) : s.resultado.acertos;
                     if (score > bestMockScore) {
                         bestMockScore = score;
                         bestMock = s;
@@ -408,7 +408,7 @@ function renderMilestoneCards(meta, pLabelHeader, pLabelSingular) {
         let mockOptions = '<option value="">— Sem simulado —</option>';
         const relevantMocks = simulados.filter(s => s.concursoId === meta.concursoId && s.resultado && s.resultado.totalQ > 0);
         relevantMocks.forEach(s => {
-            const score = isCebraspe ? (s.resultado.acertos - (s.resultado.erros || 0)) : s.resultado.acertos;
+            const score = isCebraspe ? (s.resultado.acertos - (s.resultado.erros || 0) + (s.resultado.anuladas || 0)) : s.resultado.acertos;
             mockOptions += `<option value="${s.id}" ${w.simuladoId === s.id ? 'selected' : ''}>${s.nome} (${score} pts)</option>`;
         });
         
@@ -464,7 +464,7 @@ function renderMilestoneCards(meta, pLabelHeader, pLabelSingular) {
                 const s = simulados.find(x => x.id === sId);
                 if (s) {
                     w.simuladoId = sId;
-                    w.notaRegistrada = isCebraspe ? (s.resultado.acertos - (s.resultado.erros || 0)) : s.resultado.acertos;
+                    w.notaRegistrada = isCebraspe ? (s.resultado.acertos - (s.resultado.erros || 0) + (s.resultado.anuladas || 0)) : s.resultado.acertos;
                     w.overrideManual = true;
                 }
             }

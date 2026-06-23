@@ -28,9 +28,11 @@ function renderSimuladosList() {
         if (hasResult) {
             if (s.tipo === 'certo_errado') {
                 const erros = s.resultado.erros || 0;
-                const notaLiquida = s.resultado.acertos - erros;
+                const branco = s.resultado.branco || 0;
+                const anuladas = s.resultado.anuladas || 0;
+                const notaLiquida = s.resultado.acertos - erros + anuladas;
                 media = Math.round((notaLiquida / s.resultado.totalQ) * 100);
-                scoreText = `${s.resultado.acertos} C | ${erros} E | Líquido: ${notaLiquida}`;
+                scoreText = `${s.resultado.acertos} C | ${erros} E | ${branco} B | ${anuladas} Anul. | Líquido: ${notaLiquida}`;
             } else {
                 media = Math.round((s.resultado.acertos / s.resultado.totalQ) * 100);
                 scoreText = `${s.resultado.acertos}/${s.resultado.totalQ} acertos`;
@@ -117,7 +119,7 @@ document.getElementById('btnSalvarSimulado').addEventListener('click', () => {
         duracao: parseInt(document.getElementById('simuladoDuracaoInput').value) || 5,
         totalQuestoes: parseInt(document.getElementById('simuladoQuestoesInput').value) || 120,
         resultado: null,
-        disciplinas: conc.disciplinas.map(d => ({ nome: d.nome, questoes: 0, acertos: 0, erros: 0 }))
+        disciplinas: conc.disciplinas.map(d => ({ nome: d.nome, questoes: 0, acertos: 0, erros: 0, branco: 0, anuladas: 0 }))
     };
 
     if (editingSimuladoId) {
@@ -144,14 +146,18 @@ function openResultView(simId) {
 
     const isCebraspe = sim.tipo === 'certo_errado';
     document.getElementById('resultErrosContainer').style.display = isCebraspe ? 'block' : 'none';
+    document.getElementById('resultBrancoContainer').style.display = isCebraspe ? 'block' : 'none';
+    document.getElementById('resultAnuladasContainer').style.display = isCebraspe ? 'block' : 'none';
     document.getElementById('resultNotaLiquidaContainer').style.display = isCebraspe ? 'block' : 'none';
     document.getElementById('resultMediaLabel').textContent = isCebraspe ? 'Aproveitamento' : 'Nota / Média';
 
     // Fill general result
-    const res = sim.resultado || { totalQ: sim.totalQuestoes || 120, acertos: 0, erros: 0 };
+    const res = sim.resultado || { totalQ: sim.totalQuestoes || 120, acertos: 0, erros: 0, branco: 0, anuladas: 0 };
     document.getElementById('resultTotalQ').value = res.totalQ;
     document.getElementById('resultAcertos').value = res.acertos;
     document.getElementById('resultErros').value = res.erros || 0;
+    document.getElementById('resultBranco').value = res.branco || 0;
+    document.getElementById('resultAnuladas').value = res.anuladas || 0;
     updateResultMedia();
 
     // Fill per-subject
@@ -169,7 +175,7 @@ function renderResultMaterias(sim) {
 
     const isCebraspe = sim.tipo === 'certo_errado';
     if (isCebraspe) {
-        thead.innerHTML = `<th>Matéria</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>N. Líquida</th><th>Média</th>`;
+        thead.innerHTML = `<th>Matéria</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Em Branco</th><th>Anuladas</th><th>N. Líquida</th><th>Média</th>`;
     } else {
         thead.innerHTML = `<th>Matéria</th><th>Questões</th><th>Acertos</th><th>Média</th>`;
     }
@@ -180,16 +186,20 @@ function renderResultMaterias(sim) {
         const q = d.questoes || 0;
         const a = d.acertos || 0;
         const e = d.erros || 0;
+        const b = d.branco || 0;
+        const an = d.anuladas || 0;
         let media = 0;
         let trHtml = '';
 
         if (isCebraspe) {
-            const nl = a - e;
+            const nl = a - e + an;
             media = q > 0 ? Math.round((nl / q) * 100) : 0;
             trHtml = `<td>${d.nome}</td>
-                <td><input type="number" class="input-mentor result-mat-q" data-idx="${i}" value="${q}" min="0" style="width:70px;"></td>
-                <td><input type="number" class="input-mentor result-mat-a" data-idx="${i}" value="${a}" min="0" style="width:70px;"></td>
-                <td><input type="number" class="input-mentor result-mat-e" data-idx="${i}" value="${e}" min="0" style="width:70px;"></td>
+                <td><input type="number" class="input-mentor result-mat-q" data-idx="${i}" value="${q}" min="0" style="width:60px;"></td>
+                <td><input type="number" class="input-mentor result-mat-a" data-idx="${i}" value="${a}" min="0" style="width:60px;"></td>
+                <td><input type="number" class="input-mentor result-mat-e" data-idx="${i}" value="${e}" min="0" style="width:60px;"></td>
+                <td><input type="number" class="input-mentor result-mat-b" data-idx="${i}" value="${b}" min="0" style="width:60px;"></td>
+                <td><input type="number" class="input-mentor result-mat-an" data-idx="${i}" value="${an}" min="0" style="width:60px;"></td>
                 <td><span class="nota-liquida-badge" style="font-weight:700;color:var(--accent-yellow);">${nl}</span></td>
                 <td><span class="media-badge ${media >= 70 ? 'good' : media >= 50 ? 'average' : 'bad'}">${media}%</span></td>`;
         } else {
@@ -206,7 +216,7 @@ function renderResultMaterias(sim) {
     });
 
     // Live update per-materia
-    tbody.querySelectorAll('.result-mat-q, .result-mat-a, .result-mat-e').forEach(inp => {
+    tbody.querySelectorAll('.result-mat-q, .result-mat-a, .result-mat-e, .result-mat-b, .result-mat-an').forEach(inp => {
         inp.addEventListener('input', () => {
             const idx = parseInt(inp.dataset.idx);
             const sim = simulados.find(s => s.id === resultSimuladoId);
@@ -215,12 +225,14 @@ function renderResultMaterias(sim) {
             if (inp.classList.contains('result-mat-q')) sim.disciplinas[idx].questoes = parseInt(inp.value) || 0;
             else if (inp.classList.contains('result-mat-a')) sim.disciplinas[idx].acertos = parseInt(inp.value) || 0;
             else if (inp.classList.contains('result-mat-e')) sim.disciplinas[idx].erros = parseInt(inp.value) || 0;
+            else if (inp.classList.contains('result-mat-b')) sim.disciplinas[idx].branco = parseInt(inp.value) || 0;
+            else if (inp.classList.contains('result-mat-an')) sim.disciplinas[idx].anuladas = parseInt(inp.value) || 0;
 
             // Update media badge
-            const q = sim.disciplinas[idx].questoes || 0, a = sim.disciplinas[idx].acertos || 0, e = sim.disciplinas[idx].erros || 0;
+            const q = sim.disciplinas[idx].questoes || 0, a = sim.disciplinas[idx].acertos || 0, e = sim.disciplinas[idx].erros || 0, b = sim.disciplinas[idx].branco || 0, an = sim.disciplinas[idx].anuladas || 0;
             let m = 0;
             if (isCebraspe) {
-                const nl = a - e;
+                const nl = a - e + an;
                 m = q > 0 ? Math.round((nl / q) * 100) : 0;
                 inp.closest('tr').querySelector('.nota-liquida-badge').textContent = nl;
             } else {
@@ -240,10 +252,12 @@ function updateResultMedia() {
     const total = parseInt(document.getElementById('resultTotalQ').value) || 0;
     const acertos = parseInt(document.getElementById('resultAcertos').value) || 0;
     const erros = isCebraspe ? (parseInt(document.getElementById('resultErros').value) || 0) : 0;
+    const branco = isCebraspe ? (parseInt(document.getElementById('resultBranco').value) || 0) : 0;
+    const anuladas = isCebraspe ? (parseInt(document.getElementById('resultAnuladas').value) || 0) : 0;
 
     let pct = 0;
     if (isCebraspe) {
-        const nl = acertos - erros;
+        const nl = acertos - erros + anuladas;
         document.getElementById('resultNotaLiquida').textContent = nl;
         pct = total > 0 ? Math.round((nl / total) * 100) : 0;
     } else {
@@ -256,6 +270,8 @@ function updateResultMedia() {
 document.getElementById('resultTotalQ').addEventListener('input', updateResultMedia);
 document.getElementById('resultAcertos').addEventListener('input', updateResultMedia);
 document.getElementById('resultErros').addEventListener('input', updateResultMedia);
+document.getElementById('resultBranco').addEventListener('input', updateResultMedia);
+document.getElementById('resultAnuladas').addEventListener('input', updateResultMedia);
 document.getElementById('resultPorMateriaToggle').addEventListener('change', function() {
     document.getElementById('resultPorMateriaContent').style.display = this.checked ? 'block' : 'none';
 });
@@ -270,6 +286,8 @@ document.getElementById('btnSalvarResultado').addEventListener('click', () => {
         totalQ: parseInt(document.getElementById('resultTotalQ').value) || 0,
         acertos: parseInt(document.getElementById('resultAcertos').value) || 0,
         erros: isCebraspe ? (parseInt(document.getElementById('resultErros').value) || 0) : 0,
+        branco: isCebraspe ? (parseInt(document.getElementById('resultBranco').value) || 0) : 0,
+        anuladas: isCebraspe ? (parseInt(document.getElementById('resultAnuladas').value) || 0) : 0,
         dataRegistro: new Date().toISOString()
     };
     // Save per-materia
@@ -278,6 +296,8 @@ document.getElementById('btnSalvarResultado').addEventListener('click', () => {
         document.querySelectorAll('.result-mat-a').forEach(inp => { sim.disciplinas[parseInt(inp.dataset.idx)].acertos = parseInt(inp.value) || 0; });
         if (isCebraspe) {
             document.querySelectorAll('.result-mat-e').forEach(inp => { sim.disciplinas[parseInt(inp.dataset.idx)].erros = parseInt(inp.value) || 0; });
+            document.querySelectorAll('.result-mat-b').forEach(inp => { sim.disciplinas[parseInt(inp.dataset.idx)].branco = parseInt(inp.value) || 0; });
+            document.querySelectorAll('.result-mat-an').forEach(inp => { sim.disciplinas[parseInt(inp.dataset.idx)].anuladas = parseInt(inp.value) || 0; });
         }
     }
     DB.save('simulados', simulados);
@@ -297,7 +317,7 @@ function renderStats() {
     let totalPontosLiquidos = 0;
     withResult.forEach(sim => {
         if (sim.tipo === 'certo_errado') {
-            totalPontosLiquidos += (sim.resultado.acertos - (sim.resultado.erros || 0));
+            totalPontosLiquidos += (sim.resultado.acertos - (sim.resultado.erros || 0) + (sim.resultado.anuladas || 0));
         } else {
             totalPontosLiquidos += sim.resultado.acertos;
         }
@@ -323,11 +343,17 @@ function renderStats() {
             materiaMap[d.nome].acertos += d.acertos;
             
             const e = d.erros || 0;
+            const b = d.branco || 0;
+            const an = d.anuladas || 0;
             materiaMap[d.nome].erros += e;
-            const pts = isCebraspe ? (d.acertos - e) : d.acertos;
+            if (!materiaMap[d.nome].hasOwnProperty('branco')) materiaMap[d.nome].branco = 0;
+            if (!materiaMap[d.nome].hasOwnProperty('anuladas')) materiaMap[d.nome].anuladas = 0;
+            materiaMap[d.nome].branco += b;
+            materiaMap[d.nome].anuladas += an;
+            const pts = isCebraspe ? (d.acertos - e + an) : d.acertos;
             materiaMap[d.nome].pontos += pts;
             
-            materiaMap[d.nome].simulados.push({ q: d.questoes, a: d.acertos, e: e, tipo: sim.tipo });
+            materiaMap[d.nome].simulados.push({ q: d.questoes, a: d.acertos, e: e, b: b, an: an, tipo: sim.tipo });
         });
     });
 
@@ -342,8 +368,8 @@ function renderStats() {
             const last = m.simulados[m.simulados.length - 1];
             const prev = m.simulados[m.simulados.length - 2];
             
-            const lastPts = last.tipo === 'certo_errado' ? (last.a - last.e) : last.a;
-            const prevPts = prev.tipo === 'certo_errado' ? (prev.a - prev.e) : prev.a;
+            const lastPts = last.tipo === 'certo_errado' ? (last.a - last.e + (last.an || 0)) : last.a;
+            const prevPts = prev.tipo === 'certo_errado' ? (prev.a - prev.e + (prev.an || 0)) : prev.a;
             
             const lastPct = Math.round((lastPts / last.q) * 100);
             const prevPct = Math.round((prevPts / prev.q) * 100);
