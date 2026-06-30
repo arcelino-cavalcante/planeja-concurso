@@ -25,16 +25,17 @@ let editingCellDay = -1;
 let contextMenuRotina = null;
 let editingRoutineId = null;
 
-function saveAll() { 
-    DB.save('rotinas', rotinas); 
-    DB.save('concursos', concursos); 
-    DB.save('ciclos', ciclos); 
-    DB.save('simulados', simulados);
-    DB.save('historicoEstudos', historicoEstudos);
-    DB.save('metas', metas);
-    DB.save('tafConfig', tafConfig);
-    DB.save('tafMetas', tafMetas);
-    DB.save('tafHistorico', tafHistorico);
+function saveAll(instant = false) { 
+    const debounce = instant ? 0 : undefined;
+    DB.save('rotinas', rotinas, debounce); 
+    DB.save('concursos', concursos, debounce); 
+    DB.save('ciclos', ciclos, debounce); 
+    DB.save('simulados', simulados, debounce);
+    DB.save('historicoEstudos', historicoEstudos, debounce);
+    DB.save('metas', metas, debounce);
+    DB.save('tafConfig', tafConfig, debounce);
+    DB.save('tafMetas', tafMetas, debounce);
+    DB.save('tafHistorico', tafHistorico, debounce);
     if (typeof updateDashboard === 'function') updateDashboard(); 
 }
 function getActiveRotina() { return rotinas && rotinas.length > 0 ? rotinas[0] : null; }
@@ -401,7 +402,17 @@ function navigateToPage(page) {
         if (page === 'concursos') { showConcursosView('concursos-list-view'); renderConcursosList(); }
         if (page === 'ciclos') { 
             if (ciclos && ciclos.length > 0) {
-                if (typeof openExecView === 'function') openExecView(ciclos[0]);
+                let cicloToOpen = ciclos[0];
+                if (typeof currentExecCiclo !== 'undefined' && currentExecCiclo) {
+                    cicloToOpen = currentExecCiclo;
+                } else {
+                    const activeId = localStorage.getItem('activeCicloId');
+                    if (activeId) {
+                        const found = ciclos.find(c => c.id === parseInt(activeId));
+                        if (found) cicloToOpen = found;
+                    }
+                }
+                if (typeof openExecView === 'function') openExecView(cicloToOpen);
             } else {
                 if (typeof openCicloWizard === 'function') openCicloWizard(); 
             }

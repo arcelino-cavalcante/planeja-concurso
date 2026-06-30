@@ -98,7 +98,7 @@ let elapsedSessionSeconds = 0;
 let selectedConcursoForCiclo = null;
 let editingCicloId = null;
 
-function saveStudyProgress() {
+function saveStudyProgress(instant = false) {
     if (currentPhase === 'break') {
         elapsedSessionSeconds = 0;
         return;
@@ -164,7 +164,7 @@ function saveStudyProgress() {
     currentExecCiclo.savedPhase = currentPhase;
     currentExecCiclo.savedDivisionEnabled = divisionEnabled;
 
-    saveAll();
+    saveAll(instant);
     renderExecSubjects(currentExecCiclo.sequence || []);
     
     elapsedSessionSeconds = 0;
@@ -1207,7 +1207,7 @@ function persistActiveTimerState(instant = false) {
 }
 
 window.addEventListener('beforeunload', () => {
-    saveStudyProgress();
+    saveStudyProgress(true);
     persistActiveTimerState(true);
 });
 
