@@ -1021,8 +1021,13 @@ function renderExecSubjects(sequence) {
         const remMin = s.tempoRestanteMin !== undefined ? s.tempoRestanteMin : (s.duracao || s.totalMin || 120);
         const remFmt = formatMin(remMin);
         
-        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions" style="display:flex;gap:4px;"><button data-idx="${i}" title="Selecionar matéria"><i class="bi bi-play-fill"></i></button><button onclick="forceCompleteSubject(${i})" title="Marcar como concluído" style="background:var(--accent-green); color:#000;"><i class="bi bi-check-lg"></i></button></div>`;
-        row.querySelector(`button[data-idx="${i}"]`).addEventListener('click', () => selectSubject(i));
+        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions"><label class="division-check" title="Marcar como concluído" style="margin:0; cursor:pointer;"><input type="checkbox" onchange="if(this.checked){ this.checked=false; forceCompleteSubject(${i}); }" style="accent-color: var(--accent-green); cursor:pointer;"></label></div>`;
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', (e) => {
+            if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+                selectSubject(i);
+            }
+        });
         container.appendChild(row);
     });
 }
