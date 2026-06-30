@@ -746,7 +746,12 @@ function drawInnerRing(svg, cx, cy, oR, iR, revPct) {
 }
 
 function selectSubject(idx) {
-    if (timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('btnIniciarTimer').innerHTML = '<i class="bi bi-play-fill"></i> Iniciar'; }
+    if (timerRunning) {
+        if (typeof showToast === 'function') {
+            showToast('Pause o cronômetro antes de trocar de matéria.');
+        }
+        return;
+    }
     
     // Save progress of the previous subject before switching!
     if (currentSubjectIndex >= 0) {
