@@ -102,7 +102,11 @@ const DB = {
 
     clearAll() {
         if (!currentUserUID) return;
-        const keys = ['rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 'activeTimerState', 'metas'];
+        const keys = [
+            'rotinas', 'concursos', 'ciclos', 'simulados', 'userProfile', 
+            'historicoEstudos', 'editais', 'pomodoroEnabled', 'pomodoroBreakMin', 
+            'activeTimerState', 'metas', 'tafConfig', 'tafMetas', 'tafHistorico'
+        ];
         keys.forEach(key => {
             localStorage.removeItem(`mentor_${currentUserUID}_${key}`);
             localStorage.removeItem(`mentor_${currentUserUID}_${key}_ts`);
@@ -194,6 +198,16 @@ function refreshAllData() {
     if (typeof simulados !== 'undefined') simulados = DB.load('simulados', []);
     if (typeof historicoEstudos !== 'undefined') historicoEstudos = DB.load('historicoEstudos', []);
     if (typeof metas !== 'undefined') metas = DB.load('metas', []);
+    if (typeof editais !== 'undefined') editais = DB.load('editais', []);
+    if (typeof tafConfig !== 'undefined') tafConfig = DB.load('tafConfig', { genero: 'masculino' });
+    if (typeof tafMetas !== 'undefined') tafMetas = DB.load('tafMetas', {
+        barra: { atual: 0, meta: 3 },
+        shuttle: { atual: 15.0, meta: 14.0 },
+        salto: { atual: 1.80, meta: 2.01 },
+        abdominal: { atual: 25, meta: 35 },
+        corrida: { atual: 2000, meta: 2301 }
+    });
+    if (typeof tafHistorico !== 'undefined') tafHistorico = DB.load('tafHistorico', []);
     if (typeof userProfile !== 'undefined') {
         userProfile = DB.load('userProfile', { nome: auth.currentUser?.displayName || 'Aluno' });
     }

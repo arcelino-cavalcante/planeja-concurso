@@ -189,28 +189,31 @@ function calcHorasPorMateria(disciplinas, totalHoras, niveis) {
 
 // Generate cycle sequence with optimal spacing
 // Heavy subjects are spread apart, light subjects fill the gaps
-function generateCycleSequence(materias) {
+function generateCycleSequence(materias, sessaoTipo) {
     const activeMaterias = materias.filter(m => m.ativo !== false && m.totalMin > 0);
     if (activeMaterias.length === 0) return [];
 
     const minPeso = Math.min(...activeMaterias.map(m => m.peso));
     
+    // Determine the session block size
+    let blockMinutes = 120; // default/intelligent
+    const isFixo = sessaoTipo && sessaoTipo !== 'inteligente';
+    if (isFixo) {
+        blockMinutes = parseInt(sessaoTipo);
+    }
+    
     // Step 1: Create sessions for each subject
     const sessionsBySubject = {};
-    const MAX_BLOCK_MINUTES = 120; // Max 2 horas per block
     
     activeMaterias.forEach((m, i) => {
         sessionsBySubject[i] = [];
         let remaining = m.totalMin;
         
-        // Prioriza sempre blocos de 2 horas (120 min)
-        // O tempo que sobrar formará blocos menores (ex: 90 min, 60 min)
         while (remaining > 0) {
-            let dur = Math.min(remaining, MAX_BLOCK_MINUTES);
+            let dur = Math.min(remaining, blockMinutes);
             
-            // Regra especial: se sobraram exatamente 2h30 (150 min), 
-            // dividimos em 1h30 (90 min) e 1h (60 min) ao invés de 2h e 30 min.
-            if (remaining === 150) {
+            // Special rule for intelligent mode only
+            if (!isFixo && remaining === 150) {
                 dur = 90;
             }
             
@@ -310,6 +313,9 @@ function openCicloConfigFromConcurso(conc) {
     const horasDisplay = document.getElementById('configHorasDisplay');
     if (horasDisplay) horasDisplay.textContent = horas + 'h';
     
+    const sessaoSelect = document.getElementById('configSessaoTipo');
+    if (sessaoSelect) sessaoSelect.value = 'inteligente';
+    
     currentCicloMaterias = conc.disciplinas.map(d => ({ nome: d.nome, peso: d.peso, nivel: 0, ativo: true }));
     // Auto-adjust star levels based on simulado results
     autoAdjustNiveis(currentCicloMaterias);
@@ -330,6 +336,9 @@ function openCicloConfigForEdit(ciclo) {
     
     const horasDisplay = document.getElementById('configHorasDisplay');
     if (horasDisplay) horasDisplay.textContent = horas + 'h';
+    
+    const sessaoSelect = document.getElementById('configSessaoTipo');
+    if (sessaoSelect) sessaoSelect.value = ciclo.sessaoTipo || 'inteligente';
     
     // Load subjects with their saved ativo state
     currentCicloMaterias = (ciclo.subjects || []).map(s => ({
@@ -432,7 +441,9 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
     
     const nome = document.getElementById('configCicloNome').value || 'Novo Ciclo';
     const totalH = parseInt(document.getElementById('configHorasInput').value) || 20;
-    const sequence = generateCycleSequence(currentCicloMaterias);
+    const sessaoTipo = document.getElementById('configSessaoTipo').value || 'inteligente';
+    
+    const sequence = generateCycleSequence(currentCicloMaterias, sessaoTipo);
     sequence.forEach(item => {
         item.tempoRestanteMin = item.duracao;
     });
@@ -451,7 +462,8 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
                 ...ciclos[idx],
                 nome, subjects, sequence, 
                 duracao: formatMin(totalSeqMin),
-                duracaoMin: totalSeqMin
+                duracaoMin: totalSeqMin,
+                sessaoTipo
             };
         }
         editingCicloId = null;
@@ -464,7 +476,8 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
             duracao: formatMin(totalSeqMin), avanco: '0:00h', 
             duracaoMin: totalSeqMin,
             horasEstudadasMin: 0,
-            ciclosRealizados: 0, subjects, sequence 
+            ciclosRealizados: 0, subjects, sequence,
+            sessaoTipo
         };
         ciclos.push(newCiclo);
         showToast('Ciclo gerado com sucesso!');
@@ -476,8 +489,8 @@ document.getElementById('btnGerarCiclo').addEventListener('click', () => {
 // Delete Single Cycle Handler
 const btnDeleteCiclo = document.getElementById('btnDeleteCiclo');
 if (btnDeleteCiclo) {
-    btnDeleteCiclo.addEventListener('click', () => {
-        if (confirm('Tem certeza que deseja apagar o seu ciclo atual? Isso limpará seu progresso de estudo desse concurso!')) {
+    btnDeleteCiclo.addEventListener('click', async () => {
+        if (await showConfirm('Tem certeza que deseja apagar o seu ciclo atual? Isso limpará seu progresso de estudo desse concurso!')) {
             ciclos = [];
             saveAll();
             showToast('Ciclo excluído. Você pode criar um novo.');

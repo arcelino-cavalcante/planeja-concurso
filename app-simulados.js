@@ -1,6 +1,7 @@
 // ===== MEUS SIMULADOS =====
 // let simulados = DB.load('simulados', []); // Já declarado no app-core.js
 let editingSimuladoId = null;
+let origemNavegacao = null;
 let resultSimuladoId = null;
 
 function showSimuladosView(viewId) {
@@ -62,13 +63,15 @@ function renderSimuladosList() {
             </div>
             <span class="simulado-status ${statusClass}">${statusText}</span>
             <div class="simulado-actions">
-                <button class="btn-exec-ciclo btn-result-sim" data-id="${s.id}" title="Registrar resultado"><i class="bi bi-pencil-square"></i></button>
+                <button class="btn-exec-ciclo btn-result-sim" data-id="${s.id}" title="Registrar resultado"><i class="bi bi-clipboard-check"></i></button>
+                <button class="btn-actions btn-edit-sim" data-id="${s.id}" title="Editar Simulado"><i class="bi bi-pencil"></i></button>
                 <button class="btn-actions btn-del-sim" data-id="${s.id}" title="Excluir"><i class="bi bi-trash3"></i></button>
             </div>`;
         container.appendChild(card);
     });
 
     container.querySelectorAll('.btn-result-sim').forEach(btn => btn.addEventListener('click', () => openResultView(parseInt(btn.dataset.id))));
+    container.querySelectorAll('.btn-edit-sim').forEach(btn => btn.addEventListener('click', () => openEditSimuladoView(parseInt(btn.dataset.id))));
     container.querySelectorAll('.btn-del-sim').forEach(btn => btn.addEventListener('click', () => {
         simulados = simulados.filter(s => s.id !== parseInt(btn.dataset.id));
         DB.save('simulados', simulados); renderSimuladosList(); showToast('Simulado excluído!');
@@ -103,6 +106,30 @@ function openNewSimulado() {
     showSimuladosView('simulados-edit-view');
 }
 
+// Open edit simulado form
+function openEditSimuladoView(simId) {
+    const sim = simulados.find(s => s.id === simId);
+    if (!sim) return;
+    editingSimuladoId = simId;
+    
+    document.getElementById('simuladoEditTitle').textContent = 'Editar simulado';
+    document.getElementById('simuladoNomeInput').value = sim.nome;
+    document.getElementById('simuladoDataInput').value = sim.data || '';
+    document.getElementById('simuladoHoraInput').value = sim.hora || '';
+    document.getElementById('simuladoDuracaoInput').value = sim.duracao || 5;
+    document.getElementById('simuladoQuestoesInput').value = sim.totalQuestoes || 120;
+    document.getElementById('simuladoTipoSelect').value = sim.tipo || 'tradicional';
+    
+    // Populate concursos dropdown
+    const sel = document.getElementById('simuladoConcursoSelect');
+    sel.innerHTML = '<option value="">Selecione o concurso</option>';
+    concursos.forEach(c => { 
+        sel.innerHTML += `<option value="${c.id}" ${c.id === sim.concursoId ? 'selected' : ''}>${c.nome}</option>`; 
+    });
+    
+    showSimuladosView('simulados-edit-view');
+}
+
 // Save simulado
 document.getElementById('btnSalvarSimulado').addEventListener('click', () => {
     const concId = parseInt(document.getElementById('simuladoConcursoSelect').value);
@@ -127,13 +154,27 @@ document.getElementById('btnSalvarSimulado').addEventListener('click', () => {
 
     if (editingSimuladoId) {
         const idx = simulados.findIndex(s => s.id === editingSimuladoId);
-        if (idx >= 0) { sim.resultado = simulados[idx].resultado; simulados[idx] = sim; }
+        if (idx >= 0) { 
+            sim.resultado = simulados[idx].resultado; 
+            sim.disciplinas = simulados[idx].disciplinas;
+            simulados[idx] = sim; 
+        }
     } else {
         simulados.push(sim);
     }
 
     DB.save('simulados', simulados);
-    renderSimuladosList(); showSimuladosView('simulados-list-view');
+    if (typeof updateMetasDashboard === 'function') updateMetasDashboard();
+    
+    if (typeof origemNavegacao !== 'undefined' && origemNavegacao === 'metas') {
+        origemNavegacao = null;
+        if (typeof navigateToPage === 'function') {
+            navigateToPage('metas');
+        }
+    } else {
+        renderSimuladosList(); 
+        showSimuladosView('simulados-list-view');
+    }
     showToast('Simulado salvo!');
 });
 
@@ -305,8 +346,16 @@ document.getElementById('btnSalvarResultado').addEventListener('click', () => {
     }
     DB.save('simulados', simulados);
     if (typeof updateMetasDashboard === 'function') updateMetasDashboard();
-    renderSimuladosList(); showSimuladosView('simulados-list-view');
     showToast('Resultado salvo com sucesso!');
+    if (typeof origemNavegacao !== 'undefined' && origemNavegacao === 'metas') {
+        origemNavegacao = null;
+        if (typeof navigateToPage === 'function') {
+            navigateToPage('metas');
+        }
+    } else {
+        renderSimuladosList(); 
+        showSimuladosView('simulados-list-view');
+    }
 });
 
 // Stats
@@ -393,8 +442,28 @@ function renderStats() {
 // Nav events
 document.getElementById('btnStartSimulado').addEventListener('click', openNewSimulado);
 document.getElementById('btnNovoSimulado').addEventListener('click', openNewSimulado);
-document.getElementById('backToSimuladosList').addEventListener('click', (e) => { e.preventDefault(); showSimuladosView('simulados-list-view'); });
-document.getElementById('backToSimuladosFromResult').addEventListener('click', (e) => { e.preventDefault(); showSimuladosView('simulados-list-view'); });
+document.getElementById('backToSimuladosList').addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    if (typeof origemNavegacao !== 'undefined' && origemNavegacao === 'metas') {
+        origemNavegacao = null;
+        if (typeof navigateToPage === 'function') {
+            navigateToPage('metas');
+        }
+    } else {
+        showSimuladosView('simulados-list-view'); 
+    }
+});
+document.getElementById('backToSimuladosFromResult').addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    if (typeof origemNavegacao !== 'undefined' && origemNavegacao === 'metas') {
+        origemNavegacao = null;
+        if (typeof navigateToPage === 'function') {
+            navigateToPage('metas');
+        }
+    } else {
+        showSimuladosView('simulados-list-view'); 
+    }
+});
 
 // Draw Blank Questions Evolution Chart (Cebraspe only)
 function drawBlankQuestionsChart() {

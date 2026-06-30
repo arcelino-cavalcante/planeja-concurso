@@ -8,6 +8,17 @@ let simulados = [];
 let historicoEstudos = [];
 let metas = [];
 let userProfile = { nome: 'Aluno' };
+
+// TAF Global Variables
+let tafConfig = DB.load('tafConfig', { genero: 'masculino' });
+let tafMetas = DB.load('tafMetas', {
+    barra: { atual: 0, meta: 3 },
+    shuttle: { atual: 15.0, meta: 14.0 },
+    salto: { atual: 1.80, meta: 2.01 },
+    abdominal: { atual: 25, meta: 35 },
+    corrida: { atual: 2000, meta: 2301 }
+});
+let tafHistorico = DB.load('tafHistorico', []);
 let currentActivities = [];
 let editingActivityIndex = -1;
 let editingCellDay = -1;
@@ -18,8 +29,12 @@ function saveAll() {
     DB.save('rotinas', rotinas); 
     DB.save('concursos', concursos); 
     DB.save('ciclos', ciclos); 
+    DB.save('simulados', simulados);
     DB.save('historicoEstudos', historicoEstudos);
     DB.save('metas', metas);
+    DB.save('tafConfig', tafConfig);
+    DB.save('tafMetas', tafMetas);
+    DB.save('tafHistorico', tafHistorico);
     if (typeof updateDashboard === 'function') updateDashboard(); 
 }
 function getActiveRotina() { return rotinas && rotinas.length > 0 ? rotinas[0] : null; }
@@ -319,6 +334,42 @@ function showToast(msg) { toastMsg.textContent = msg; toastEl.classList.add('act
 function closeSidebar() { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('active'); }
 
 // ===== NAVIGATION =====
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal-view');
+        const msgEl = document.getElementById('confirm-modal-message');
+        const btnCancel = document.getElementById('btnConfirmCancel');
+        const btnYes = document.getElementById('btnConfirmYes');
+        
+        if (!modal || !msgEl || !btnCancel || !btnYes) {
+            resolve(confirm(message));
+            return;
+        }
+        
+        msgEl.textContent = message;
+        modal.classList.remove('d-none');
+        
+        const cleanUp = () => {
+            modal.classList.add('d-none');
+            btnCancel.removeEventListener('click', onCancel);
+            btnYes.removeEventListener('click', onConfirm);
+        };
+        
+        const onCancel = () => {
+            cleanUp();
+            resolve(false);
+        };
+        
+        const onConfirm = () => {
+            cleanUp();
+            resolve(true);
+        };
+        
+        btnCancel.addEventListener('click', onCancel);
+        btnYes.addEventListener('click', onConfirm);
+    });
+}
+
 function navigateToPage(page) {
     const item = Array.from(navItems).find(n => n.dataset.page === page);
     if (item) {
@@ -331,7 +382,10 @@ function navigateToPage(page) {
         navItems.forEach(n => n.classList.remove('active'));
         item.classList.add('active');
         pages.forEach(p => p.classList.remove('active'));
-        document.getElementById('page-' + page).classList.add('active');
+        const pageContainer = document.getElementById('page-' + page);
+        if (pageContainer) {
+            pageContainer.classList.add('active');
+        }
         if (page === 'rotinas') { 
             if (!rotinas || rotinas.length === 0) {
                 rotinas = [{ id: Date.now(), nome: 'Minha Rotina', status: 'ativa', atividades: [] }];
@@ -354,9 +408,9 @@ function navigateToPage(page) {
         }
         if (page === 'simulados') { showSimuladosView('simulados-list-view'); renderSimuladosList(); }
         if (page === 'metas') { if (typeof renderMetas === 'function') renderMetas(); }
-        if (page === 'edital') { showEditalView('edital-list-view'); }
+        if (page === 'taf') { if (typeof renderTaf === 'function') renderTaf(); }
+        if (page === 'edital') { showEditalView('edital-list-view'); if (typeof loadEditais === 'function') loadEditais(); }
         if (page === 'qg') { if (typeof updateQgView === 'function') updateQgView(); }
-        if (page === 'bisus') { showBisusView('bisus-list-view'); }
         if (page === 'configuracoes') { refreshConfigPage(); }
         closeSidebar();
         
@@ -452,9 +506,9 @@ document.getElementById('btnSalvarNome').addEventListener('click', () => {
     }
 });
 
-document.getElementById('btnResetarSistema').addEventListener('click', () => {
-    if (confirm('⚠️ TEM CERTEZA ABSOLUTA?\n\nIsso apagará TODOS os seus concursos, simulados, ciclos e rotinas. Essa ação não tem volta.')) {
-        if (confirm('Último aviso: Deseja realmente APAGAR TUDO?')) {
+document.getElementById('btnResetarSistema').addEventListener('click', async () => {
+    if (await showConfirm('⚠️ TEM CERTEZA ABSOLUTA?\n\nIsso apagará TODOS os seus concursos, simulados, ciclos e rotinas. Essa ação não tem volta.')) {
+        if (await showConfirm('Último aviso: Deseja realmente APAGAR TUDO?')) {
             DB.clearAll();
             alert('Sistema resetado. A página será recarregada.');
             window.location.reload();
@@ -644,8 +698,8 @@ renderRotinas();
 buildScheduleGrid();
 
 // ===== ZERAR ROTINA =====
-document.getElementById('btnZerarRotina').addEventListener('click', () => {
-    if (!confirm('⚠️ Tem certeza que deseja ZERAR toda a rotina?\n\nTodas as atividades serão apagadas e você começará do zero.')) return;
+document.getElementById('btnZerarRotina').addEventListener('click', async () => {
+    if (!await showConfirm('⚠️ Tem certeza que deseja ZERAR toda a rotina?\n\nTodas as atividades serão apagadas e você começará do zero.')) return;
     currentActivities = [];
     if (editingRoutineId) {
         const idx = rotinas.findIndex(r => r.id === editingRoutineId);
@@ -665,8 +719,8 @@ document.getElementById('btnZerarRotina').addEventListener('click', () => {
 
 // ===== INIT STUDY HISTORY CONTROLS =====
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btnLimparHistorico')?.addEventListener('click', () => {
-        if (confirm('⚠️ Deseja realmente apagar todo o seu histórico de combate?')) {
+    document.getElementById('btnLimparHistorico')?.addEventListener('click', async () => {
+        if (await showConfirm('⚠️ Deseja realmente apagar todo o seu histórico de combate?')) {
             historicoEstudos = [];
             saveAll();
             showToast('Histórico limpo!');

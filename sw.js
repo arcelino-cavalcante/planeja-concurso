@@ -1,6 +1,6 @@
 // ===== PLANEJA CONCURSO - Service Worker (PWA) =====
 // ALWAYS bump this version on deploy to trigger updates
-const SW_VERSION = '1.5.10';
+const SW_VERSION = '1.5.11';
 const CACHE_NAME = 'planeja-concurso-v3-' + SW_VERSION;
 const ASSETS = [
     './',
@@ -13,6 +13,7 @@ const ASSETS = [
     './app-metas.js',
     './app-edital.js',
     './app-qg.js',
+    './app-taf.js',
     './manifest.json',
     './icon-192.png',
     './icon-512.png'

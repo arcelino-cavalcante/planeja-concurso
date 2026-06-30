@@ -103,6 +103,12 @@
                         <span>Metas de Notas</span>
                     </a>
                 </li>
+                <li class="nav-item" data-page="taf">
+                    <a href="#" class="nav-link-custom">
+                        <i class="bi bi-heart-pulse"></i>
+                        <span>Metas do TAF</span>
+                    </a>
+                </li>
                 <li class="nav-item" data-page="edital">
                     <a href="#" class="nav-link-custom">
                         <i class="bi bi-file-earmark-text"></i>
@@ -476,6 +482,18 @@
                             <div class="ciclo-meta">
                                 <div><span class="meta-label">Concurso:</span><br><strong id="configConcursoNome">-</strong></div>
                                 <div><span class="meta-label">Horas do ciclo (Ativas)</span><br><strong id="configHorasDisplay">0h</strong><input type="hidden" id="configHorasInput" value="20"></div>
+                                <div>
+                                    <span class="meta-label">Duração das Sessões</span><br>
+                                    <select class="input-mentor" id="configSessaoTipo" style="padding: 4px 8px; font-size: 0.85rem; margin-top: 4px; background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary); border-radius: 4px; cursor: pointer; min-width: 180px; height: 32px; box-sizing: border-box;">
+                                        <option value="inteligente">Automático / Inteligente</option>
+                                        <option value="30">Fixa: 30 minutos</option>
+                                        <option value="60">Fixa: 1 hora (60 min)</option>
+                                        <option value="90">Fixa: 1.5 horas (90 min)</option>
+                                        <option value="120">Fixa: 2 horas (120 min)</option>
+                                        <option value="150">Fixa: 2.5 horas (150 min)</option>
+                                        <option value="180">Fixa: 3 horas (180 min)</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -946,6 +964,7 @@
                                 <option value="semanal">Semanal</option>
                                 <option value="mensal">Mensal</option>
                                 <option value="trimestral">Trimestral</option>
+                                <option value="simulado">Por Simulado Realizado (Sem data)</option>
                             </select>
                         </div>
                     </div>
@@ -974,7 +993,7 @@
 
                     <div style="text-align: right; display: flex; justify-content: flex-end; gap: 12px;">
                         <button class="btn-remove" id="btnCancelarMeta" style="border: 1px solid var(--border-color); background: transparent; padding: 10px 20px;"><i class="bi bi-x-lg"></i> Cancelar</button>
-                        <button class="btn-executar" id="btnSalvarMeta" style="max-width: 250px;"><i class="bi bi-check-lg"></i> Gerar Metas Semanais</button>
+                        <button class="btn-executar" id="btnSalvarMeta" style="max-width: 250px;"><i class="bi bi-check-lg"></i> Gerar Planejamento de Metas</button>
                     </div>
                 </div>
             </div>
@@ -1053,6 +1072,139 @@
             </div>
         </section>
 
+            <!-- ========== PAGE: METAS DO TAF ========== -->
+            <div id="page-taf" class="page-content">
+                <div class="page-header-custom" style="margin-bottom: 16px;">
+                    <div>
+                        <a href="#" class="back-link" id="backToHomeFromTaf"><i class="bi bi-arrow-left"></i> Voltar para home</a>
+                        <h1 class="page-title">Metas do TAF (PRF)</h1>
+                    </div>
+                </div>
+
+                <!-- Gênero e Info Táctico (Unificado) -->
+                <div class="card-mentor" style="padding: 20px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <div>
+                            <h3 class="section-title" style="margin: 0 0 4px 0;"><i class="bi bi-person-gear"></i> Perfil do Candidato</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Selecione seu gênero e configure os parâmetros do TAF.</p>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button class="btn-nova-rotina" id="btnTafGeneroM" style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); min-width: 120px;">
+                                <i class="bi bi-gender-male"></i> Masculino
+                            </button>
+                            <button class="btn-nova-rotina" id="btnTafGeneroF" style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); min-width: 120px;">
+                                <i class="bi bi-gender-female"></i> Feminino
+                            </button>
+                            <button class="btn-nova-rotina" id="btnToggleTafSettings" style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
+                                <i class="bi bi-gear"></i> Configurar TAF
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="tafSettingsContent" class="d-none" style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+                            <div class="form-group" style="max-width: 320px; margin: 0; flex: 1;">
+                                <label class="meta-label">Modelo de TAF (Concurso)</label>
+                                <select class="input-mentor" id="tafModeloSelect" style="width: 100%; padding: 8px; cursor: pointer; background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
+                                    <option value="prf">Polícia Rodoviária Federal (PRF)</option>
+                                    <option value="pf">Polícia Federal (PF)</option>
+                                    <option value="custom">Personalizado (Outro Concurso)</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn-nova-rotina" id="btnAdicionarExercicioTaf" style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
+                                <i class="bi bi-plus-lg"></i> Adicionar Exercício
+                            </button>
+                        </div>
+                        
+                        <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; margin-bottom: 12px; color: var(--accent-yellow);">Editar Índices do Exercício</h4>
+                        <div id="tafRulesEditorGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                            <!-- Gerado dinamicamente via JS -->
+                        </div>
+                        <div style="text-align: right;">
+                            <button class="btn-executar" id="btnSalvarTafSettings" style="max-width: 200px;"><i class="bi bi-check-lg"></i> Salvar Índices</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Painel Geral de Aprovação -->
+                <div class="tactical-banner" id="tafStatusBanner" style="border-left-color: var(--accent-red); margin-bottom: 24px;">
+                    <div class="tactical-banner-left">
+                        <div class="tactical-badge" id="tafStatusBadge" style="background:rgba(231, 76, 60, 0.15); border-color:var(--accent-red); color:var(--accent-red);">TAF</div>
+                        <div class="tactical-info">
+                            <h3 class="tactical-title" id="tafStatusTitle">REPROVADO NO TAF ATUAL</h3>
+                            <p class="tactical-desc" id="tafStatusDesc">Verifique os índices abaixo para ajustar seus treinos.</p>
+                        </div>
+                    </div>
+                    <div class="tactical-banner-right">
+                        <span class="status-dot red" id="tafStatusDot"></span>
+                        <span class="status-text" id="tafStatusText" style="color:var(--accent-red);">INAPTO</span>
+                    </div>
+                </div>
+
+                <!-- Grid de Exercícios -->
+                <div id="tafExercisesGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <!-- Exercícios do TAF -->
+                </div>
+
+                <!-- Gráfico de Evolução do TAF -->
+                <div class="card-mentor" style="padding: 20px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h3 class="section-title" style="margin: 0 0 4px 0;"><i class="bi bi-graph-up-arrow"></i> Gráfico de Evolução</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Selecione um exercício para visualizar seu progresso ao longo dos simulados.</p>
+                        </div>
+                        <div style="min-width: 220px;">
+                            <select class="input-mentor" id="tafChartExerciseSelect" style="width: 100%; padding: 8px; cursor: pointer; background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary); border-radius: 4px;">
+                                <!-- Preenchido dinamicamente via JS -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="position: relative; width: 100%; overflow-x: auto;">
+                        <svg id="tafEvolutionChart" viewBox="0 0 800 220" width="100%" height="220" style="display: block; min-width: 600px;"></svg>
+                    </div>
+                </div>
+
+                <!-- Histórico de Simulados do TAF -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                    <h2 class="section-title" style="margin: 0;"><i class="bi bi-clock-history"></i> Histórico de Combates (TAF)</h2>
+                    <button class="btn-nova-rotina" id="btnNovoSimuladoTaf"><i class="bi bi-plus-lg"></i> Registrar Simulado TAF</button>
+                </div>
+                <p class="section-text" style="margin-bottom: 16px;">Acompanhe sua evolução e marcas registradas em cada simulado físico.</p>
+                <div class="materias-table-wrapper" style="margin-top: 12px;">
+                    <table class="materias-table">
+                        <thead id="tafHistoryHeader">
+                            <!-- Gerado dinamicamente via JS -->
+                        </thead>
+                        <tbody id="tafHistoryBody">
+                            <!-- Histórico de combates TAF -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Modal / Form de Registro de Simulado TAF (inicialmente oculto) -->
+                <div id="taf-modal-view" class="d-none" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+                    <div class="card-mentor" style="width: 90%; max-width: 500px; padding: 24px; max-height: 90vh; overflow-y: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 class="section-title" id="tafModalTitle" style="margin: 0;"><i class="bi bi-clipboard-pulse"></i> Registrar Simulado TAF</h3>
+                            <button type="button" class="btn-close" id="btnFecharModalTaf" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="modal-body" style="padding: 20px;">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="meta-label">Data do Simulado</label>
+                            <input type="date" class="input-mentor" id="tafRegData" style="width: 100%;">
+                        </div>
+                        <div id="tafRegDynamicInputs">
+                            <!-- Gerado dinamicamente via JS -->
+                        </div>
+                        <div style="text-align: right; display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+                            <button class="btn-remove" id="btnCancelarModalTaf" style="border: 1px solid var(--border-color); background: transparent; padding: 8px 16px;"><i class="bi bi-x-lg"></i> Cancelar</button>
+                            <button class="btn-executar" id="btnSalvarModalTaf" style="padding: 8px 16px;"><i class="bi bi-check-lg"></i> Salvar Registro</button>
+                        </div>
+                        </div> <!-- /modal-body -->
+                    </div> <!-- /card-mentor -->
+                </div> <!-- /taf-modal-view -->
+            </div> <!-- /page-taf -->
         <!-- ========== PAGE: TUTORIAL ========== -->
         <section class="page-content" id="page-tutorial">
             <div class="page-header-custom">
@@ -1060,72 +1212,271 @@
                     <a href="#" class="back-link" id="backToHomeFromTutorial">
                         <i class="bi bi-arrow-left"></i> Voltar para home
                     </a>
-                    <h1 class="page-title">Tutorial</h1>
-            <p style="color:var(--text-secondary);margin-top:4px;">Siga este passo a passo para configurar e aproveitar a plataforma ao máximo.</p>
+                    <h1 class="page-title"><i class="bi bi-book"></i> Manual de Operações</h1>
+                    <p style="color:var(--text-secondary);margin-top:4px;">Seu briefing completo. Siga cada etapa na ordem e domine toda a plataforma.</p>
                 </div>
             </div>
 
-            <div class="tutorial-container" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; padding-bottom: 40px;">
-                <!-- Passo 1: Rotina -->
-                <div class="card-mentor" style="border-left: 4px solid var(--accent-blue);">
-                    <div style="display: flex; gap: 16px; align-items: flex-start;">
-                        <div style="background: rgba(43, 110, 243, 0.1); color: var(--accent-blue); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
-                            <b>1</b>
-                        </div>
-                        <div>
-                            <h3 style="margin-bottom: 8px; font-weight: 600;"><i class="bi bi-calendar-week"></i> Minha Rotina de Estudos</h3>
-                            <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
-                                O primeiro passo é dizer ao Mentor <b>quantas horas</b> você tem disponíveis por dia da semana para estudar. Isso define a base matemática que o sistema usará para gerar seus ciclos automaticamente. Vá no menu <b>"Minha Rotina"</b> e distribua suas horas de domingo a sábado.
-                            </p>
+            <div class="tutorial-container" style="max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; padding-bottom: 60px;">
+
+                <!-- Intro Banner -->
+                <div class="tactical-banner" style="border-left-color: var(--accent-yellow); margin-bottom: 0;">
+                    <div class="tactical-banner-left">
+                        <div class="tactical-badge" style="background:rgba(230,172,0,0.15); border-color:var(--accent-yellow); color:var(--accent-yellow);"><i class="bi bi-shield-check"></i></div>
+                        <div class="tactical-info">
+                            <h3 class="tactical-title">BEM-VINDO AO PLANEJA CONCURSO</h3>
+                            <p class="tactical-desc">Este manual cobre <strong>todos os módulos</strong> da plataforma. Siga a ordem recomendada abaixo para montar sua estrutura de estudos do zero até a aprovação.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Passo 2: Concurso -->
-                <div class="card-mentor" style="border-left: 4px solid var(--accent-yellow);">
+                <!-- ====== PASSO 1: ROTINA ====== -->
+                <div class="card-mentor" style="border-left: 4px solid var(--accent-blue); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 12px; right: 16px; background: rgba(43,110,243,0.1); color: var(--accent-blue); padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Etapa 1</div>
                     <div style="display: flex; gap: 16px; align-items: flex-start;">
-                        <div style="background: rgba(230, 172, 0, 0.1); color: var(--accent-yellow); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
-                            <b>2</b>
+                        <div style="background: rgba(43, 110, 243, 0.12); color: var(--accent-blue); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; border: 2px solid rgba(43,110,243,0.3);">
+                            <i class="bi bi-calendar-week"></i>
                         </div>
-                        <div>
-                            <h3 style="margin-bottom: 8px; font-weight: 600;"><i class="bi bi-award"></i> Meus Concursos</h3>
-                            <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
-                                Com a rotina pronta, você deve cadastrar qual é a sua guerra! Acesse <b>"Meus Concursos"</b>, clique em cadastrar e crie o seu concurso alvo. Você poderá inclusive adicionar as disciplinas específicas que vêm cobradas no edital para ele.
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.1rem; color: var(--accent-blue);"><i class="bi bi-calendar-week"></i> Minha Rotina de Estudos</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px;">
+                                O primeiro passo é informar ao Mentor <b>quantas horas</b> você tem disponíveis por dia da semana para estudar. Essa é a base matemática que o sistema usará para gerar seus ciclos automaticamente.
                             </p>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 14px; margin-bottom: 12px;">
+                                <h4 style="font-size: 0.8rem; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;"><i class="bi bi-gear"></i> O que você pode fazer</h4>
+                                <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; padding-left: 18px; margin: 0;">
+                                    <li>Definir horas de estudo para <b>cada dia da semana</b> (Domingo a Sábado)</li>
+                                    <li>Visualizar o <b>total de horas semanais</b> calculado automaticamente</li>
+                                    <li>Ajustar a rotina a qualquer momento — o sistema recalcula os ciclos</li>
+                                    <li>Usar o calendário visual para enxergar sua distribuição semanal</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(43,110,243,0.05); border-left: 3px solid var(--accent-blue); padding: 10px 14px; border-radius: 0 4px 4px 0;">
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><i class="bi bi-lightbulb" style="color: var(--accent-yellow);"></i> <b>Dica:</b> Seja honesto com seu tempo. É melhor estudar 2 horas com foco total do que colocar 6 horas e não cumprir.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Passo 3: Ciclos -->
-                <div class="card-mentor" style="border-left: 4px solid var(--accent-green);">
+                <!-- ====== PASSO 2: CONCURSOS ====== -->
+                <div class="card-mentor" style="border-left: 4px solid var(--accent-yellow); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 12px; right: 16px; background: rgba(230,172,0,0.1); color: var(--accent-yellow); padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Etapa 2</div>
                     <div style="display: flex; gap: 16px; align-items: flex-start;">
-                        <div style="background: rgba(46, 204, 113, 0.1); color: var(--accent-green); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
-                            <b>3</b>
+                        <div style="background: rgba(230, 172, 0, 0.12); color: var(--accent-yellow); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; border: 2px solid rgba(230,172,0,0.3);">
+                            <i class="bi bi-award"></i>
                         </div>
-                        <div>
-                            <h3 style="margin-bottom: 8px; font-weight: 600;"><i class="bi bi-arrow-repeat"></i> Ciclos de Estudo</h3>
-                            <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
-                                Agora sim a magia acontece. Em <b>"Ciclos de Estudo"</b> você vai selecionar seu concurso e clicar para criar o ciclo. O Mentor pegará suas matérias e o tempo total da sua <b>Rotina</b>, e fará a divisão milimétrica do seu cronômetro de estudos. Aqui é o lugar que você passa a maior parte do tempo, dando o play e controlando seus blocos diários de foco.
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.1rem; color: var(--accent-yellow);"><i class="bi bi-award"></i> Meus Concursos</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px;">
+                                Cadastre o concurso que é seu alvo. Você pode criar quantos quiser e adicionar as <b>disciplinas específicas do edital</b>. Isso alimenta todo o sistema: ciclos, simulados, metas e edital verticalizado.
                             </p>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 14px; margin-bottom: 12px;">
+                                <h4 style="font-size: 0.8rem; color: var(--accent-yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;"><i class="bi bi-gear"></i> O que você pode fazer</h4>
+                                <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; padding-left: 18px; margin: 0;">
+                                    <li>Cadastrar concursos com <b>nome, data da prova e órgão</b></li>
+                                    <li>Adicionar <b>disciplinas</b> (matérias do edital) com pesos e questões</li>
+                                    <li>Importar <b>concursos oficiais pré-configurados</b> (PRF, PF, PMDF, etc.)</li>
+                                    <li>Editar ou excluir concursos e disciplinas a qualquer momento</li>
+                                    <li>Visualizar o <b>countdown</b> — dias restantes até a prova</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(230,172,0,0.05); border-left: 3px solid var(--accent-yellow); padding: 10px 14px; border-radius: 0 4px 4px 0;">
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><i class="bi bi-lightbulb" style="color: var(--accent-yellow);"></i> <b>Dica:</b> Adicione TODAS as disciplinas que caem no edital. Quanto mais completo, mais preciso será o ciclo gerado.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Passo 4: Simulados e Edital -->
-                <div class="card-mentor" style="border-left: 4px solid var(--accent-red);">
+                <!-- ====== PASSO 3: CICLOS ====== -->
+                <div class="card-mentor" style="border-left: 4px solid var(--accent-green); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 12px; right: 16px; background: rgba(139,154,58,0.1); color: var(--accent-green-light); padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Etapa 3 — Coração do Sistema</div>
                     <div style="display: flex; gap: 16px; align-items: flex-start;">
-                        <div style="background: rgba(231, 76, 60, 0.1); color: var(--accent-red); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
-                            <b>4</b>
+                        <div style="background: rgba(139, 154, 58, 0.12); color: var(--accent-green-light); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; border: 2px solid rgba(139,154,58,0.3);">
+                            <i class="bi bi-arrow-repeat"></i>
                         </div>
-                        <div>
-                            <h3 style="margin-bottom: 8px; font-weight: 600;"><i class="bi bi-file-earmark-bar-graph"></i> Simulados e Edital</h3>
-                            <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
-                                Como um concurseiro de elite, o progresso real vem da medição. <br><br>
-                                • Em <b>"Meus Simulados"</b>, após cada prova você anota sua nota, seus acertos e mapeia suas lacunas de aprendizado.<br>
-                                • Em <b>"Edital Verticalizado"</b>, você vai marcando aula por aula, assunto por assunto que já venceu, rumo aos 100% do edital (para acessar, cadastre e abra os itens do seu concurso).
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.1rem; color: var(--accent-green-light);"><i class="bi bi-arrow-repeat"></i> Ciclos de Estudo</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px;">
+                                Aqui é onde a magia acontece. O Mentor combina suas <b>disciplinas</b> com o <b>tempo da sua rotina</b> e gera uma sequência inteligente de blocos de estudo. Você dá o play e o cronômetro faz o resto. É a tela que você mais vai usar no dia a dia.
                             </p>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 14px; margin-bottom: 12px;">
+                                <h4 style="font-size: 0.8rem; color: var(--accent-green-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;"><i class="bi bi-gear"></i> O que você pode fazer</h4>
+                                <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; padding-left: 18px; margin: 0;">
+                                    <li>Criar ciclos automáticos vinculados a um concurso</li>
+                                    <li>Escolher <b>duração fixa das sessões</b> (30min, 1h, 1.5h, 2h, 2.5h, 3h) ou deixar o sistema dividir de forma inteligente</li>
+                                    <li>Executar seus blocos com o <b>cronômetro embutido</b></li>
+                                    <li>Visualizar a <b>sequência completa</b> de matérias e horários</li>
+                                    <li>Pausar, pular ou avançar blocos conforme sua necessidade</li>
+                                    <li>Ao finalizar um bloco, vincular automaticamente ao <b>Edital Verticalizado</b></li>
+                                    <li>Acompanhar suas <b>horas estudadas</b> por matéria</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(139,154,58,0.05); border-left: 3px solid var(--accent-green); padding: 10px 14px; border-radius: 0 4px 4px 0;">
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><i class="bi bi-lightbulb" style="color: var(--accent-yellow);"></i> <b>Dica:</b> Não tente mudar a sequência dos blocos. O método de ciclos funciona justamente porque respeita a rotação das matérias de forma equilibrada.</p>
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- ====== PASSO 4: SIMULADOS ====== -->
+                <div class="card-mentor" style="border-left: 4px solid var(--accent-red); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 12px; right: 16px; background: rgba(231,76,60,0.1); color: var(--accent-red); padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Etapa 4</div>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(231, 76, 60, 0.12); color: var(--accent-red); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; border: 2px solid rgba(231,76,60,0.3);">
+                            <i class="bi bi-clipboard-data"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.1rem; color: var(--accent-red);"><i class="bi bi-clipboard-data"></i> Meus Simulados</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px;">
+                                Após cada prova simulada que você fizer (seja online, em PDF ou presencial), registre aqui os seus resultados. O Mentor transforma isso em dados de inteligência que alimentam suas metas e gráficos de evolução.
+                            </p>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 14px; margin-bottom: 12px;">
+                                <h4 style="font-size: 0.8rem; color: var(--accent-red); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;"><i class="bi bi-gear"></i> O que você pode fazer</h4>
+                                <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; padding-left: 18px; margin: 0;">
+                                    <li>Registrar simulados com <b>data, total de questões, acertos e nota</b></li>
+                                    <li>Vincular o simulado a um <b>concurso cadastrado</b></li>
+                                    <li>Acompanhar seu <b>histórico completo</b> de provas</li>
+                                    <li>Editar ou excluir simulados antigos</li>
+                                    <li>Preencher notas diretamente nas <b>metas criadas</b></li>
+                                    <li>Visualizar a evolução na tabela e no gráfico de desempenho</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(231,76,60,0.05); border-left: 3px solid var(--accent-red); padding: 10px 14px; border-radius: 0 4px 4px 0;">
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><i class="bi bi-lightbulb" style="color: var(--accent-yellow);"></i> <b>Dica:</b> Faça pelo menos 1 simulado por semana. A regularidade nos simulados é o que separa quem estuda de quem passa.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====== PASSO 5: METAS DE NOTAS ====== -->
+                <div class="card-mentor" style="border-left: 4px solid #9b59b6; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 12px; right: 16px; background: rgba(155,89,182,0.1); color: #bb77d6; padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Etapa 5</div>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(155, 89, 182, 0.12); color: #bb77d6; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; border: 2px solid rgba(155,89,182,0.3);">
+                            <i class="bi bi-bullseye"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.1rem; color: #bb77d6;"><i class="bi bi-bullseye"></i> Metas de Notas</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px;">
+                                Defina onde você está e onde quer chegar. As metas traçam uma <b>rampa de evolução</b> que sobe progressivamente, semana a semana, até a nota de aprovação. Você pode escolher metas por <b>data</b> ou <b>por simulado realizado</b>.
+                            </p>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 14px; margin-bottom: 12px;">
+                                <h4 style="font-size: 0.8rem; color: #bb77d6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;"><i class="bi bi-gear"></i> O que você pode fazer</h4>
+                                <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; padding-left: 18px; margin: 0;">
+                                    <li>Criar metas vinculadas a um concurso específico</li>
+                                    <li>Definir <b>nota atual</b>, <b>nota alvo</b> e <b>total de questões</b></li>
+                                    <li>Escolher evolução por <b>semana, mês ou trimestre</b></li>
+                                    <li>Ou escolher evolução <b>por simulado</b> — sem datas fixas</li>
+                                    <li>Visualizar o <b>gráfico SVG de evolução</b> com tooltip interativo</li>
+                                    <li>Registrar notas em cada período diretamente na tabela</li>
+                                    <li>Acompanhar status: acima da meta, dentro da meta ou abaixo</li>
+                                    <li>Desfazer registros de simulados dentro da meta</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(155,89,182,0.05); border-left: 3px solid #9b59b6; padding: 10px 14px; border-radius: 0 4px 4px 0;">
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><i class="bi bi-lightbulb" style="color: var(--accent-yellow);"></i> <b>Dica:</b> Se está começando do zero, coloque uma nota inicial honesta (mesmo que seja 30%). A curva vai crescer naturalmente com constância.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====== PASSO 6: TAF ====== -->
+                <div class="card-mentor" style="border-left: 4px solid #e67e22; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 12px; right: 16px; background: rgba(230,126,34,0.1); color: #f0a050; padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Etapa 6</div>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(230, 126, 34, 0.12); color: #f0a050; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; border: 2px solid rgba(230,126,34,0.3);">
+                            <i class="bi bi-heart-pulse"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.1rem; color: #f0a050;"><i class="bi bi-heart-pulse"></i> Metas do TAF</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px;">
+                                O TAF (Teste de Aptidão Física) reprova mais do que a prova escrita em muitos concursos policiais. Aqui você monitora cada exercício físico, configura os índices do seu concurso e acompanha sua evolução com gráficos.
+                            </p>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 14px; margin-bottom: 12px;">
+                                <h4 style="font-size: 0.8rem; color: #f0a050; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;"><i class="bi bi-gear"></i> O que você pode fazer</h4>
+                                <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; padding-left: 18px; margin: 0;">
+                                    <li>Escolher seu <b>gênero</b> (Masculino/Feminino) com índices diferentes</li>
+                                    <li>Selecionar um <b>modelo de TAF</b> pré-configurado (PRF, PF) ou personalizar</li>
+                                    <li><b>Adicionar novos exercícios</b> ou <b>excluir</b> os existentes</li>
+                                    <li>Configurar <b>nome, unidade, índice mínimo/máximo</b> e tipo de avaliação de cada exercício</li>
+                                    <li>Registrar <b>simulados físicos</b> com marcas de cada exercício</li>
+                                    <li>Monitorar o <b>progresso individual</b> de cada exercício com barras de progresso</li>
+                                    <li>Visualizar o <b>gráfico de evolução</b> com tooltip interativo por exercício</li>
+                                    <li>Linhas de referência no gráfico: <span style="color:var(--accent-red);">Mínimo do Edital</span> e <span style="color:var(--accent-blue);">Sua Meta</span></li>
+                                    <li>Atualização <b>automática do recorde pessoal</b> ao registrar simulado</li>
+                                    <li>Tabela de histórico <b>dinâmica</b> que se adapta aos exercícios ativos</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(230,126,34,0.05); border-left: 3px solid #e67e22; padding: 10px 14px; border-radius: 0 4px 4px 0;">
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><i class="bi bi-lightbulb" style="color: var(--accent-yellow);"></i> <b>Dica:</b> Comece a treinar o TAF desde o primeiro dia de preparação. O corpo precisa de tempo para se adaptar. Registre seus treinos semanalmente para ver a evolução.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====== PASSO 7: EDITAL VERTICALIZADO ====== -->
+                <div class="card-mentor" style="border-left: 4px solid #1abc9c; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 12px; right: 16px; background: rgba(26,188,156,0.1); color: #2dd4a8; padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Etapa 7</div>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(26, 188, 156, 0.12); color: #2dd4a8; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; border: 2px solid rgba(26,188,156,0.3);">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.1rem; color: #2dd4a8;"><i class="bi bi-file-earmark-text"></i> Edital Verticalizado</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px;">
+                                O edital verticalizado é sua checklist de guerra. Cada tópico que você estudou é marcado, e o progresso caminha rumo aos <b>100%</b>. Quando tudo estiver verde, o edital foi conquistado.
+                            </p>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 14px; margin-bottom: 12px;">
+                                <h4 style="font-size: 0.8rem; color: #2dd4a8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;"><i class="bi bi-gear"></i> O que você pode fazer</h4>
+                                <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; padding-left: 18px; margin: 0;">
+                                    <li>Criar editais <b>manualmente</b> com matérias e tópicos</li>
+                                    <li>Ou <b>importar automaticamente</b> as matérias de um concurso cadastrado</li>
+                                    <li>Marcar <b>tópico a tópico</b> conforme vai estudando (checkbox)</li>
+                                    <li>Acompanhar o <b>percentual de conclusão</b> geral e por matéria</li>
+                                    <li>Arrastar e reorganizar tópicos</li>
+                                    <li>O ciclo de estudos pode <b>sincronizar automaticamente</b> — ao concluir um bloco, ele sugere ir ao edital para marcar os tópicos estudados</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(26,188,156,0.05); border-left: 3px solid #1abc9c; padding: 10px 14px; border-radius: 0 4px 4px 0;">
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><i class="bi bi-lightbulb" style="color: var(--accent-yellow);"></i> <b>Dica:</b> Use tópicos granulares (ex: "Direito Constitucional > Direitos Fundamentais > Art. 5°, I ao X"). Quanto mais detalhado, maior o controle.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====== PASSO 8: CONFIGURAÇÕES ====== -->
+                <div class="card-mentor" style="border-left: 4px solid var(--text-muted); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 12px; right: 16px; background: rgba(255,255,255,0.05); color: var(--text-muted); padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Configurações</div>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="background: rgba(255,255,255,0.05); color: var(--text-muted); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.1);">
+                            <i class="bi bi-sliders"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.1rem;"><i class="bi bi-sliders"></i> Configurações</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px;">
+                                Personalize seu perfil, visualize seus dados e gerencie sua conta.
+                            </p>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 14px;">
+                                <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; padding-left: 18px; margin: 0;">
+                                    <li>Alterar <b>nome de exibição</b> e <b>gênero</b></li>
+                                    <li>Definir sua <b>mensagem de honra / lema motivacional</b></li>
+                                    <li>Alternar entre <b>tema escuro e claro</b></li>
+                                    <li>Visualizar estatísticas: quantidade de rotinas, concursos, ciclos e simulados</li>
+                                    <li>Resetar dados ou gerenciar backup</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====== CLOSING MOTIVATIONAL BANNER ====== -->
+                <div style="text-align: center; padding: 30px 20px; background: linear-gradient(135deg, rgba(139,154,58,0.08), rgba(230,172,0,0.06)); border: 1px solid var(--border-color); border-radius: 4px;">
+                    <div style="font-size: 2.5rem; margin-bottom: 12px;">⚔️</div>
+                    <h3 style="font-family: var(--font-heading); font-weight: 800; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; color: var(--accent-yellow);">A BATALHA É SUA. A VITÓRIA TAMBÉM.</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; max-width: 600px; margin: 0 auto 16px;">
+                        Cada hora de estudo, cada simulado feito, cada tópico riscado do edital é um passo rumo à farda. Constância vence talento. Disciplina vence motivação. <b>Avante, soldado.</b>
+                    </p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">"Não existe vento favorável para quem não sabe onde quer chegar." — Sêneca</p>
                 </div>
 
             </div>
@@ -1504,11 +1855,12 @@
     <script src="app-simulados.js"></script>
     <script src="app-metas.js"></script>
     <script src="app-edital.js"></script>
+    <script src="app-taf.js"></script>
     <!-- Service Worker Registration (PWA) -->
     <script>
         if ('serviceWorker' in navigator) {
             // ⚠️ MUST match SW_VERSION in sw.js — bump both together on every deploy
-            const APP_VERSION = '1.5.10';
+            const APP_VERSION = '1.5.11';
             let refreshing = false;
             let newWorkerWaiting = null;
 
@@ -1703,6 +2055,22 @@
             });
         }
     </script>
+    
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal-view" class="d-none" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+        <div class="card-mentor" style="width: 90%; max-width: 420px; padding: 24px; text-align: center; border-left: 3px solid var(--accent-yellow); box-shadow: 0 15px 30px rgba(0,0,0,0.5);">
+            <div style="font-size: 2.5rem; color: var(--accent-yellow); margin-bottom: 16px;">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Confirmação</h3>
+            <p id="confirm-modal-message" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px; white-space: pre-line; text-align: left;"></p>
+            <div style="display: flex; justify-content: center; gap: 12px;">
+                <button class="btn-remove" id="btnConfirmCancel" style="border: 1px solid var(--border-color); background: transparent; padding: 10px 20px; flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;"><i class="bi bi-x-lg"></i> Cancelar</button>
+                <button class="btn-executar" id="btnConfirmYes" style="padding: 10px 20px; flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;"><i class="bi bi-check-lg"></i> Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <style>
         @keyframes slideUp {
             from { transform: translateX(-50%) translateY(100px); opacity: 0; }

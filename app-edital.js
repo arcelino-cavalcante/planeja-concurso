@@ -61,9 +61,9 @@ function renderEditaisList() {
     });
 
     container.querySelectorAll('.btn-del-edital').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (confirm('Excluir este edital?')) {
+            if (await showConfirm('Excluir este edital?')) {
                 editais = editais.filter(e => e.id !== parseInt(btn.dataset.id));
                 DB.save('editais', editais);
                 renderEditaisList();

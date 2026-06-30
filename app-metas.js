@@ -44,16 +44,26 @@ function updatePeriodicityLabels() {
         input.placeholder = 'Quantidade de meses';
         input.min = 2;
         input.max = 12;
+        document.getElementById('metaDataProva').disabled = false;
     } else if (periodicity === 'trimestral') {
         label.textContent = 'Ou informe o número de trimestres';
         input.placeholder = 'Quantidade de trimestres';
         input.min = 2;
         input.max = 4;
+        document.getElementById('metaDataProva').disabled = false;
+    } else if (periodicity === 'simulado') {
+        label.textContent = 'Quantidade de simulados';
+        input.placeholder = 'Ex: 5';
+        input.min = 2;
+        input.max = 30;
+        document.getElementById('metaDataProva').disabled = true;
+        document.getElementById('metaDataProva').value = '';
     } else {
         label.textContent = 'Ou informe o número de semanas';
         input.placeholder = 'Quantidade de semanas';
         input.min = 2;
         input.max = 52;
+        document.getElementById('metaDataProva').disabled = false;
     }
 }
 
@@ -160,16 +170,77 @@ document.getElementById('btnSalvarMeta')?.addEventListener('click', () => {
     const progressSemanas = [];
     const step = (metaAcertosFinal - notaUltima) / semanas;
     
+    // Find old meta if editing to reuse/update existing mock exams
+    const oldMeta = editingMetaId ? metas.find(m => m.id === editingMetaId) : null;
+    
     for (let w = 1; w <= semanas; w++) {
         const target = Math.round(notaUltima + step * w);
         const finalTarget = w === semanas ? metaAcertosFinal : target;
+        
+        let simId = null;
+        let existingSim = null;
+        
+        if (oldMeta) {
+            const oldW = oldMeta.semanasProgresso.find(ow => ow.semana === w);
+            if (oldW && oldW.simuladoId) {
+                existingSim = simulados.find(s => s.id === oldW.simuladoId);
+                if (existingSim) {
+                    simId = existingSim.id;
+                    // Update existing mock exam metadata
+                    existingSim.totalQuestoes = totalQ;
+                    existingSim.tipo = tipoCorrecao;
+                    if (periodicidade === 'simulado') {
+                        existingSim.nome = `[Meta] Simulado ${w} - ${conc.nome}`;
+                    } else {
+                        existingSim.nome = `[Meta] ${periodicidade === 'mensal' ? 'Mês' : periodicidade === 'trimestral' ? 'Trimestre' : 'Semana'} ${w} - ${conc.nome}`;
+                    }
+                    existingSim.concursoId = concId;
+                    existingSim.concursoNome = conc.nome;
+                }
+            }
+        }
+        
+        // If not found or not editing, create a new mock exam
+        if (!simId) {
+            simId = Date.now() + w;
+            let dataSimuladoStr = '';
+            if (periodicidade === 'simulado') {
+                dataSimuladoStr = '';
+            } else {
+                const dateObj = new Date();
+                if (periodicidade === 'mensal') {
+                    dateObj.setDate(dateObj.getDate() + w * 30);
+                } else if (periodicidade === 'trimestral') {
+                    dateObj.setDate(dateObj.getDate() + w * 90);
+                } else {
+                    dateObj.setDate(dateObj.getDate() + w * 7);
+                }
+                dataSimuladoStr = dateObj.toISOString().split('T')[0];
+            }
+            
+            const novoSimulado = {
+                id: simId,
+                nome: periodicidade === 'simulado' ? `[Meta] Simulado ${w} - ${conc.nome}` : `[Meta] ${periodicidade === 'mensal' ? 'Mês' : periodicidade === 'trimestral' ? 'Trimestre' : 'Semana'} ${w} - ${conc.nome}`,
+                concursoId: concId,
+                concursoNome: conc.nome,
+                tipo: tipoCorrecao,
+                data: dataSimuladoStr,
+                hora: '',
+                duracao: 5,
+                totalQuestoes: totalQ,
+                resultado: null,
+                disciplinas: conc.disciplinas.map(d => ({ nome: d.nome, questoes: 0, acertos: 0, erros: 0, branco: 0, anuladas: 0 }))
+            };
+            simulados.push(novoSimulado);
+        }
+        
         progressSemanas.push({
-            semana: w, // period index
+            semana: w,
             targetScore: finalTarget,
             targetPercent: Math.round((finalTarget / totalQ) * 100),
-            notaRegistrada: null,
-            simuladoId: null,
-            overrideManual: false,
+            notaRegistrada: existingSim && existingSim.resultado ? (tipoCorrecao === 'certo_errado' ? (existingSim.resultado.acertos - (existingSim.resultado.erros || 0) + (existingSim.resultado.anuladas || 0)) : existingSim.resultado.acertos) : null,
+            simuladoId: simId,
+            overrideManual: true,
             status: 'Pendente'
         });
     }
@@ -184,7 +255,7 @@ document.getElementById('btnSalvarMeta')?.addEventListener('click', () => {
         notaUltima,
         metaAcertosFinal,
         dataProva,
-        semanas, // quantity of periods
+        semanas,
         startDate,
         semanasProgresso: progressSemanas
     };
@@ -192,25 +263,16 @@ document.getElementById('btnSalvarMeta')?.addEventListener('click', () => {
     if (editingMetaId) {
         const idx = metas.findIndex(m => m.id === editingMetaId);
         if (idx !== -1) {
-            const oldMeta = metas[idx];
-            metaObj.semanasProgresso.forEach(newW => {
-                const oldW = oldMeta.semanasProgresso.find(ow => ow.semana === newW.semana);
-                if (oldW) {
-                    newW.notaRegistrada = oldW.notaRegistrada;
-                    newW.simuladoId = oldW.simuladoId;
-                    newW.overrideManual = oldW.overrideManual;
-                    newW.status = oldW.status;
-                }
-            });
             metas[idx] = metaObj;
         }
     } else {
         metas = [metaObj];
     }
     
+    DB.save('simulados', simulados);
     saveAll();
     renderMetas();
-    showToast('Planejamento de metas gerado!');
+    showToast('Planejamento de metas gerado com simulados!');
 });
 
 // Edit active meta
@@ -240,8 +302,25 @@ document.getElementById('btnEditarMetaAtiva')?.addEventListener('click', () => {
 });
 
 // Delete active meta
-document.getElementById('btnExcluirMetaAtiva')?.addEventListener('click', () => {
-    if (confirm('Tem certeza que deseja apagar todo o planejamento de metas atual?')) {
+document.getElementById('btnExcluirMetaAtiva')?.addEventListener('click', async () => {
+    if (await showConfirm('Tem certeza que deseja apagar todo o planejamento de metas atual?')) {
+        const activeMeta = metas[0];
+        if (activeMeta && activeMeta.semanasProgresso) {
+            const deleteSimulados = await showConfirm('Deseja também apagar os simulados pendentes gerados por este planejamento de metas?');
+            if (deleteSimulados) {
+                const simIdsToDelete = activeMeta.semanasProgresso
+                    .filter(w => w.simuladoId)
+                    .map(w => w.simuladoId);
+                
+                // Keep only simulados that are NOT in the delete list OR already have results
+                simulados = simulados.filter(s => {
+                    const shouldDelete = simIdsToDelete.includes(s.id);
+                    const hasResult = s.resultado && s.resultado.totalQ > 0;
+                    return !(shouldDelete && !hasResult);
+                });
+                DB.save('simulados', simulados);
+            }
+        }
         metas = [];
         saveAll();
         renderMetas();
@@ -258,9 +337,9 @@ function updateMetasDashboard() {
     document.getElementById('metaDashboardTitle').textContent = activeMeta.concursoNome;
     
     // Period text formatter
-    const pLabelSingular = activeMeta.periodicidade === 'mensal' ? 'mês' : activeMeta.periodicidade === 'trimestral' ? 'trimestre' : 'semana';
-    const pLabelPlural = activeMeta.periodicidade === 'mensal' ? 'meses' : activeMeta.periodicidade === 'trimestral' ? 'trimestres' : 'semanas';
-    const pLabelHeader = activeMeta.periodicidade === 'mensal' ? 'Mês' : activeMeta.periodicidade === 'trimestral' ? 'Trimestre' : 'Semana';
+    const pLabelSingular = activeMeta.periodicidade === 'mensal' ? 'mês' : activeMeta.periodicidade === 'trimestral' ? 'trimestre' : activeMeta.periodicidade === 'simulado' ? 'simulado' : 'semana';
+    const pLabelPlural = activeMeta.periodicidade === 'mensal' ? 'meses' : activeMeta.periodicidade === 'trimestral' ? 'trimestres' : activeMeta.periodicidade === 'simulado' ? 'simulados' : 'semanas';
+    const pLabelHeader = activeMeta.periodicidade === 'mensal' ? 'Mês' : activeMeta.periodicidade === 'trimestral' ? 'Trimestre' : activeMeta.periodicidade === 'simulado' ? 'Simulado' : 'Semana';
     
     // Exam date format
     let dataFmt = '-';
@@ -282,11 +361,20 @@ function updateMetasDashboard() {
             periodosRestantes = Math.max(0, Math.ceil(diffDays / 7));
         }
     } else {
-        periodosRestantes = activeMeta.semanas;
+        if (activeMeta.periodicidade === 'simulado') {
+            const pendingCount = activeMeta.semanasProgresso.filter(w => w.notaRegistrada === null).length;
+            periodosRestantes = pendingCount;
+        } else {
+            periodosRestantes = activeMeta.semanas;
+        }
     }
     
-    document.getElementById('metaDashboardDataProva').textContent = dataFmt;
-    document.getElementById('metaDashboardSemanasRestantes').textContent = periodosRestantes + ' ' + (periodosRestantes === 1 ? pLabelSingular : pLabelPlural);
+    const examDateWrapper = document.getElementById('metaDashboardDataProva').parentElement;
+    if (activeMeta.periodicidade === 'simulado') {
+        examDateWrapper.innerHTML = `<i class="bi bi-clipboard-data"></i> EVOLUÇÃO POR SIMULADO (SEM DATA DEFINIDA) | RESTAM: <strong id="metaDashboardSemanasRestantes">${periodosRestantes} ${periodosRestantes === 1 ? 'simulado' : 'simulados'}</strong>`;
+    } else {
+        examDateWrapper.innerHTML = `<i class="bi bi-calendar-event"></i> PROVA EM: <strong id="metaDashboardDataProva">${dataFmt}</strong> | FALTAM: <strong id="metaDashboardSemanasRestantes">${periodosRestantes} ${periodosRestantes === 1 ? pLabelSingular : pLabelPlural}</strong>`;
+    }
     
     // Calculate weeks progress automatically by dates
     autoAssociateSimulados(activeMeta);
@@ -326,7 +414,18 @@ function autoAssociateSimulados(meta) {
     const periodDays = meta.periodicidade === 'mensal' ? 30 : meta.periodicidade === 'trimestral' ? 90 : 7;
     
     meta.semanasProgresso.forEach(w => {
-        if (w.overrideManual) return;
+        if (w.overrideManual) {
+            if (w.simuladoId) {
+                const s = simulados.find(x => x.id === w.simuladoId);
+                if (s && s.resultado && s.resultado.totalQ > 0) {
+                    w.notaRegistrada = isCebraspe ? (s.resultado.acertos - (s.resultado.erros || 0) + (s.resultado.anuladas || 0)) : s.resultado.acertos;
+                } else {
+                    w.notaRegistrada = null;
+                }
+                updateWeekStatus(w, meta);
+            }
+            return;
+        }
         
         // Date range of this period
         const periodStart = new Date(start.getTime() + (w.semana - 1) * periodDays * 24 * 60 * 60 * 1000);
@@ -374,7 +473,7 @@ function updateWeekStatus(w, meta) {
             w.status = 'Não Batida';
         }
     } else {
-        if (periodEnd < today) {
+        if (meta.periodicidade !== 'simulado' && periodEnd < today) {
             w.status = 'Não Batida';
         } else {
             w.status = 'Pendente';
@@ -393,9 +492,25 @@ function renderMilestoneCards(meta, pLabelHeader, pLabelSingular) {
     const periodDays = meta.periodicidade === 'mensal' ? 30 : meta.periodicidade === 'trimestral' ? 90 : 7;
     
     meta.semanasProgresso.forEach((w, idx) => {
-        const periodStart = new Date(start.getTime() + (w.semana - 1) * periodDays * 24 * 60 * 60 * 1000);
-        const periodEnd = new Date(start.getTime() + w.semana * periodDays * 24 * 60 * 60 * 1000);
-        const dateFmt = `${periodStart.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})} a ${periodEnd.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}`;
+        let periodDateText = '';
+        if (meta.periodicidade === 'simulado') {
+            if (w.simuladoId) {
+                const s = simulados.find(x => x.id === w.simuladoId);
+                if (s && s.data) {
+                    const simDate = new Date(s.data + 'T12:00');
+                    periodDateText = `Realizado em: ${simDate.toLocaleDateString('pt-BR')}`;
+                } else {
+                    periodDateText = 'A realizar (sem data)';
+                }
+            } else {
+                periodDateText = 'A realizar (sem data)';
+            }
+        } else {
+            const periodStart = new Date(start.getTime() + (w.semana - 1) * periodDays * 24 * 60 * 60 * 1000);
+            const periodEnd = new Date(start.getTime() + w.semana * periodDays * 24 * 60 * 60 * 1000);
+            const dateFmt = `${periodStart.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})} a ${periodEnd.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}`;
+            periodDateText = `Período: ${dateFmt}`;
+        }
         
         let badgeClass = 'pendente';
         if (w.status === 'Batida') badgeClass = 'ativa';
@@ -411,13 +526,40 @@ function renderMilestoneCards(meta, pLabelHeader, pLabelSingular) {
             const score = isCebraspe ? (s.resultado.acertos - (s.resultado.erros || 0) + (s.resultado.anuladas || 0)) : s.resultado.acertos;
             mockOptions += `<option value="${s.id}" ${w.simuladoId === s.id ? 'selected' : ''}>${s.nome} (${score} pts)</option>`;
         });
+
+        // Check if there is a linked simulado
+        let linkedSimHtml = '';
+        if (w.simuladoId) {
+            const linkedSim = simulados.find(s => s.id === w.simuladoId);
+            if (linkedSim) {
+                linkedSimHtml = `
+                    <div style="margin-top: 8px; margin-bottom: 8px; padding: 10px; background: rgba(255, 255, 255, 0.03); border: 1px dashed var(--border-color); border-radius: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
+                            <span><i class="bi bi-clipboard2-check"></i> Simulado Vinculado:</span>
+                            <button type="button" class="btn-desvincular-sim-meta" data-idx="${idx}" style="background: none; border: none; color: var(--accent-red); cursor: pointer; padding: 0; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; font-weight: 700; transition: opacity 0.2s;" title="Desvincular Simulado">
+                                <i class="bi bi-x-circle"></i> Desvincular
+                            </button>
+                        </div>
+                        <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${linkedSim.nome}">${linkedSim.nome}</div>
+                        <div style="display: flex; gap: 6px; margin-top: 8px;">
+                            <button type="button" class="btn-lancar-nota-meta" data-sim-id="${w.simuladoId}" style="flex: 1; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; background: var(--accent-yellow); color: #000; border: none; border-radius: 4px; font-weight: 800; cursor: pointer; transition: opacity 0.2s;">
+                                <i class="bi bi-clipboard-check"></i> Preencher
+                            </button>
+                            <button type="button" class="btn-editar-sim-meta" data-sim-id="${w.simuladoId}" style="flex: 1; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; font-weight: 800; cursor: pointer; transition: opacity 0.2s;">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
         
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-family:var(--font-heading); font-size:1.1rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--text-primary);">${pLabelHeader} ${w.semana}</span>
                 <span class="status-badge ${badgeClass}">${w.status}</span>
             </div>
-            <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:12px;"><i class="bi bi-calendar3"></i> Período: ${dateFmt}</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:12px;"><i class="bi bi-calendar3"></i> ${periodDateText}</div>
             
             <div style="margin-bottom:14px; background:rgba(255,255,255,0.02); padding:8px 12px; border:1px solid var(--border-color); border-radius:2px;">
                 <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
@@ -432,12 +574,14 @@ function renderMilestoneCards(meta, pLabelHeader, pLabelSingular) {
                 </div>
             </div>
             
+            ${linkedSimHtml ? linkedSimHtml : `
             <div class="form-group" style="margin-bottom:8px;">
                 <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Vincular simulado:</label>
                 <select class="input-mentor select-meta-mock" data-idx="${idx}" style="font-size:0.8rem; padding:6px 10px;">
                     ${mockOptions}
                 </select>
             </div>
+            `}
             
             <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:8px;">
                 <span>Ou digite nota manual:</span>
@@ -448,6 +592,39 @@ function renderMilestoneCards(meta, pLabelHeader, pLabelSingular) {
         grid.appendChild(card);
     });
     
+    // Attach listener for launching score input
+    grid.querySelectorAll('.btn-lancar-nota-meta').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const simId = parseInt(this.dataset.simId);
+            abrirLancamentoNotaDaMeta(simId);
+        });
+    });
+
+    // Attach listener for editing mock exam
+    grid.querySelectorAll('.btn-editar-sim-meta').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const simId = parseInt(this.dataset.simId);
+            abrirEdicaoSimuladoDaMeta(simId);
+        });
+    });
+
+    // Attach listener for unlinking mock exam
+    grid.querySelectorAll('.btn-desvincular-sim-meta').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (await showConfirm('Deseja desvincular este simulado desta meta?')) {
+                const idx = parseInt(this.dataset.idx);
+                const w = meta.semanasProgresso[idx];
+                w.simuladoId = null;
+                w.notaRegistrada = null;
+                w.overrideManual = true;
+                updateWeekStatus(w, meta);
+                saveAll();
+                updateMetasDashboard();
+                showToast('Simulado desvinculado com sucesso!');
+            }
+        });
+    });
+
     // Attach listener for manual mock exam select
     grid.querySelectorAll('.select-meta-mock').forEach(sel => {
         sel.addEventListener('change', function() {
@@ -496,6 +673,30 @@ function renderMilestoneCards(meta, pLabelHeader, pLabelSingular) {
             updateMetasDashboard();
         });
     });
+}
+
+function abrirLancamentoNotaDaMeta(simId) {
+    origemNavegacao = 'metas';
+    if (typeof navigateToPage === 'function') {
+        navigateToPage('simulados');
+    }
+    if (typeof openResultView === 'function') {
+        openResultView(simId);
+    } else {
+        showToast('Erro ao abrir lançamento de nota.');
+    }
+}
+
+function abrirEdicaoSimuladoDaMeta(simId) {
+    origemNavegacao = 'metas';
+    if (typeof navigateToPage === 'function') {
+        navigateToPage('simulados');
+    }
+    if (typeof openEditSimuladoView === 'function') {
+        openEditSimuladoView(simId);
+    } else {
+        showToast('Erro ao abrir edição do simulado.');
+    }
 }
 
 // Draw SVG Progress Chart
@@ -554,7 +755,7 @@ function drawEvolutionChart(meta, pLabelHeader) {
     }
     
     // 2. Draw labels on X axis
-    const shortLabel = pLabelHeader === 'Trimestre' ? 'TRI' : pLabelHeader === 'Mês' ? 'MÊS' : 'SEM';
+    const shortLabel = pLabelHeader === 'Trimestre' ? 'TRI' : pLabelHeader === 'Mês' ? 'MÊS' : pLabelHeader === 'Simulado' ? 'SIM' : 'SEM';
     for (let i = 0; i <= meta.semanas; i++) {
         const x = getX(i);
         
