@@ -680,12 +680,12 @@ function renderWheel(items) {
         
         let fillColor = darkColors[i % darkColors.length];
         if (s.concluida) {
-            fillColor = '#2ecc71'; // Green for completed
+            fillColor = 'var(--accent-green)'; // Green for completed
         } else if (i === currentSubjectIndex) {
-            fillColor = '#f1c40f'; // Yellow for currently studying
+            fillColor = 'var(--accent-yellow)'; // Yellow for currently studying
         }
         
-        path.setAttribute('fill', fillColor);
+        path.style.fill = fillColor;
         path.setAttribute('stroke', '#1a1a1a');
         path.setAttribute('stroke-width', '2');
         path.style.cursor = 'pointer';
@@ -1465,6 +1465,25 @@ window.uncompleteSubject = function(idx) {
     const s = items[idx];
     if (!s) return;
     s.concluida = false;
+    
+    // Subtract from cycle progress
+    const totalMin = s.duracao || s.totalMin || 120;
+    if (currentExecCiclo && currentExecCiclo.horasEstudadasMin !== undefined) {
+        currentExecCiclo.horasEstudadasMin -= totalMin;
+        if (currentExecCiclo.horasEstudadasMin < 0) currentExecCiclo.horasEstudadasMin = 0;
+    }
+    
+    // Remove the most recent history entry for this subject/cycle
+    if (typeof historicoEstudos !== 'undefined' && currentExecCiclo) {
+        for (let i = historicoEstudos.length - 1; i >= 0; i--) {
+            const entry = historicoEstudos[i];
+            if (entry.cicloNome === currentExecCiclo.nome && entry.materiaNome === s.nome) {
+                historicoEstudos.splice(i, 1);
+                break;
+            }
+        }
+    }
+    
     saveAll();
     renderExecSubjects(items);
 };
@@ -1492,7 +1511,14 @@ window.forceCompleteSubject = function(idx) {
         }
     }
 
-    // Set as current so modal dismiss auto-advances from here
+    // Add remaining time to cycle progress to simulate full study
+    const remMin = s.tempoRestanteMin !== undefined ? s.tempoRestanteMin : (s.duracao || s.totalMin || 120);
+    if (currentExecCiclo && remMin > 0) {
+        if (currentExecCiclo.horasEstudadasMin === undefined) currentExecCiclo.horasEstudadasMin = 0;
+        currentExecCiclo.horasEstudadasMin += remMin;
+    }
+
+    // Set as current so auto-advance works from here
     currentSubjectIndex = idx;
     
     handleSubjectCycleCompletion(s, items);
