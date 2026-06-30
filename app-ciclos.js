@@ -1021,8 +1021,8 @@ function renderExecSubjects(sequence) {
         const remMin = s.tempoRestanteMin !== undefined ? s.tempoRestanteMin : (s.duracao || s.totalMin || 120);
         const remFmt = formatMin(remMin);
         
-        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions"><button data-idx="${i}"><i class="bi bi-play-fill"></i></button></div>`;
-        row.querySelector('button').addEventListener('click', () => selectSubject(i));
+        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions" style="display:flex;gap:4px;"><button data-idx="${i}" title="Selecionar matéria"><i class="bi bi-play-fill"></i></button><button onclick="forceCompleteSubject(${i})" title="Marcar como concluído" style="background:var(--accent-green); color:#000;"><i class="bi bi-check-lg"></i></button></div>`;
+        row.querySelector(`button[data-idx="${i}"]`).addEventListener('click', () => selectSubject(i));
         container.appendChild(row);
     });
 }
@@ -1434,6 +1434,36 @@ function handleSubjectCycleCompletion(s, items) {
         showSyllabusSyncModal(s.nome, currentExecCiclo ? currentExecCiclo.concurso : null);
     }
 }
+
+window.forceCompleteSubject = function(idx) {
+    if (timerRunning && idx !== currentSubjectIndex) {
+        if (typeof showToast === 'function') showToast('Pause o cronômetro atual antes de concluir outra matéria.');
+        return;
+    }
+
+    const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
+    const s = items[idx];
+    if (!s) return;
+
+    if (idx === currentSubjectIndex) {
+        if (timerRunning) {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            const btnStart = document.getElementById('btnIniciarTimer');
+            if (btnStart) btnStart.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
+        }
+        if (currentPhase !== 'break') {
+            saveStudyProgress();
+            elapsedSessionSeconds = 0;
+        }
+    }
+
+    // Set as current so modal dismiss auto-advances from here
+    currentSubjectIndex = idx;
+    
+    handleSubjectCycleCompletion(s, items);
+    renderExecSubjects(items);
+};
 
 function showSyllabusSyncModal(subjectName, contestName) {
     const modal = document.getElementById('syllabusSyncModal');
