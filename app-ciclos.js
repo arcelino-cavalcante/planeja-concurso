@@ -109,20 +109,23 @@ function saveStudyProgress() {
     const s = items[currentSubjectIndex];
     if (!s) return;
 
-    const elapsedMinutes = Math.floor(elapsedSessionSeconds / 60);
-    if (elapsedMinutes > 0) {
-        if (s.tempoRestanteMin === undefined) {
-            s.tempoRestanteMin = s.duracao || s.totalMin || 120;
-        }
+    if (s.tempoRestanteSegundos === undefined) {
+        s.tempoRestanteSegundos = (s.tempoRestanteMin !== undefined ? s.tempoRestanteMin : (s.duracao || s.totalMin || 120)) * 60;
+    }
+
+    if (elapsedSessionSeconds > 0) {
+        s.tempoRestanteSegundos = Math.max(0, s.tempoRestanteSegundos - elapsedSessionSeconds);
+        s.tempoRestanteMin = Math.ceil(s.tempoRestanteSegundos / 60);
         
-        s.tempoRestanteMin = Math.max(0, s.tempoRestanteMin - elapsedMinutes);
+        const elapsedMinutesFloat = elapsedSessionSeconds / 60;
         
         if (currentExecCiclo.horasEstudadasMin === undefined) {
             currentExecCiclo.horasEstudadasMin = 0;
         }
-        currentExecCiclo.horasEstudadasMin += elapsedMinutes;
+        currentExecCiclo.horasEstudadasMin += elapsedMinutesFloat;
         
-        if (typeof historicoEstudos !== 'undefined') {
+        const elapsedMinutes = Math.floor(elapsedSessionSeconds / 60);
+        if (elapsedMinutes > 0 && typeof historicoEstudos !== 'undefined') {
             const logEntry = {
                 id: Date.now(),
                 cicloNome: currentExecCiclo.nome,
@@ -133,7 +136,7 @@ function saveStudyProgress() {
             };
             historicoEstudos.push(logEntry);
         }
-        
+
         const proposedMin = currentExecCiclo.duracaoMin || 
             (currentExecCiclo.sequence ? currentExecCiclo.sequence.reduce((acc, curr) => acc + (curr.duracao || 0), 0) : 0);
         
@@ -142,15 +145,25 @@ function saveStudyProgress() {
             currentExecCiclo.horasEstudadasMin = 0;
             items.forEach(item => {
                 item.tempoRestanteMin = item.duracao || item.totalMin || 120;
+                item.tempoRestanteSegundos = item.tempoRestanteMin * 60;
+                item.tempoFaseSegundos = undefined;
+                item.faseAtual = undefined;
             });
             showToast('🎖️ PARABÉNS! Você concluiu uma rodada inteira do ciclo!');
         }
-        
-        saveAll();
-        renderExecSubjects(currentExecCiclo.sequence || []);
     }
+
+    s.tempoFaseSegundos = timerSeconds;
+    s.faseAtual = currentPhase;
+    if (divisionEnabled) {
+        s.revisionMinutes = revisionMinutes;
+        s.studyMinutes = studyMinutes;
+    }
+
+    saveAll();
+    renderExecSubjects(currentExecCiclo.sequence || []);
     
-    elapsedSessionSeconds = elapsedSessionSeconds % 60;
+    elapsedSessionSeconds = 0;
 }
 
 function showCiclosView(viewId) {
@@ -728,8 +741,11 @@ function selectSubject(idx) {
     if (timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('btnIniciarTimer').innerHTML = '<i class="bi bi-play-fill"></i> Iniciar'; }
     
     // Save progress of the previous subject before switching!
-    saveStudyProgress();
-    elapsedSessionSeconds = 0;
+    if (currentSubjectIndex >= 0) {
+        saveStudyProgress();
+    } else {
+        elapsedSessionSeconds = 0;
+    }
     
     currentSubjectIndex = idx;
     const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
@@ -739,18 +755,37 @@ function selectSubject(idx) {
     document.getElementById('wheelSubject').textContent = s.nome.length > 16 ? s.nome.substring(0, 16) + '...' : s.nome;
     document.getElementById('execSubjectName').textContent = s.nome;
 
-    // Reset division for new subject
-    currentPhase = divisionEnabled ? 'revision' : 'study';
-    revisionMinutes = Math.round(totalMin * 0.33);
-    studyMinutes = totalMin - revisionMinutes;
+    // Reset division for new subject if no previous state exists
+    revisionMinutes = s.revisionMinutes !== undefined ? s.revisionMinutes : Math.round(totalMin * 0.33);
+    studyMinutes = s.studyMinutes !== undefined ? s.studyMinutes : (totalMin - revisionMinutes);
     updateDivisionDisplay(totalMin);
 
-    if (divisionEnabled) {
-        timerSeconds = revisionMinutes * 60;
-        document.getElementById('wheelBadge').style.display = 'inline-block';
-        document.getElementById('wheelBadge').textContent = 'Revisão';
+    if (s.faseAtual) {
+        currentPhase = s.faseAtual;
     } else {
-        timerSeconds = totalMin * 60;
+        currentPhase = divisionEnabled ? 'revision' : 'study';
+    }
+
+    if (s.tempoFaseSegundos !== undefined) {
+        timerSeconds = s.tempoFaseSegundos;
+    } else {
+        if (divisionEnabled && currentPhase === 'revision') {
+            timerSeconds = revisionMinutes * 60;
+        } else {
+            timerSeconds = totalMin * 60;
+        }
+    }
+
+    if (divisionEnabled) {
+        document.getElementById('wheelBadge').style.display = 'inline-block';
+        if (currentPhase === 'revision') {
+            document.getElementById('wheelBadge').textContent = 'Revisão';
+            document.getElementById('wheelBadge').style.background = 'var(--accent-blue)';
+        } else {
+            document.getElementById('wheelBadge').textContent = 'Conteúdo novo';
+            document.getElementById('wheelBadge').style.background = 'var(--accent-green)';
+        }
+    } else {
         document.getElementById('wheelBadge').style.display = 'none';
     }
 
@@ -1333,11 +1368,8 @@ function handleSubjectCycleCompletion(s, items) {
     if (badge) badge.style.display = 'none';
 
     if (currentExecCiclo) {
-        if (currentExecCiclo.horasEstudadasMin === undefined) {
-            currentExecCiclo.horasEstudadasMin = 0;
-        }
+        // We do NOT double count horasEstudadasMin here since saveStudyProgress handles it incrementally.
         const totalMin = s.duracao || s.totalMin || 120;
-        currentExecCiclo.horasEstudadasMin += totalMin;
         
         // Add study log entry to history
         if (typeof historicoEstudos !== 'undefined') {
@@ -1355,13 +1387,22 @@ function handleSubjectCycleCompletion(s, items) {
         const proposedMin = currentExecCiclo.duracaoMin || 
             (currentExecCiclo.sequence ? currentExecCiclo.sequence.reduce((acc, curr) => acc + (curr.duracao || 0), 0) : 0);
         
+        // Reset subject time for next cycle rotation
+        s.tempoRestanteMin = totalMin;
+        s.tempoRestanteSegundos = totalMin * 60;
+        s.tempoFaseSegundos = undefined;
+        s.faseAtual = undefined;
+        
         if (currentExecCiclo.horasEstudadasMin >= proposedMin) {
             currentExecCiclo.ciclosRealizados++;
             currentExecCiclo.horasEstudadasMin = 0;
             items.forEach(item => {
                 item.tempoRestanteMin = item.duracao || item.totalMin || 120;
+                item.tempoRestanteSegundos = item.tempoRestanteMin * 60;
+                item.tempoFaseSegundos = undefined;
+                item.faseAtual = undefined;
             });
-            showToast('🎖️ PARABÉNS! Você concluído uma rodada inteira do ciclo!');
+            showToast('🎖️ PARABÉNS! Você concluiu uma rodada inteira do ciclo!');
         }
         saveAll();
     }
