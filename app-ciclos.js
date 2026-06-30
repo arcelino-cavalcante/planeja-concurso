@@ -292,7 +292,7 @@ function generateCycleSequence(materias, sessaoTipo) {
     return result;
 }
 
-function formatMin(min) { const h = Math.floor(min/60); const m = min % 60; return m > 0 ? `${h}:${String(m).padStart(2,'0')}h` : `${h}:00h`; }
+function formatMin(min) { const h = Math.floor(min/60); const m = Math.floor(min % 60); return m > 0 ? `${h}:${String(m).padStart(2,'0')}h` : `${h}:00h`; }
 
 // Open ciclo wizard (select concurso)
 function openCicloWizard() {
@@ -1014,14 +1014,16 @@ function renderExecSubjects(sequence) {
     const items = sequence.length ? sequence : currentExecCiclo.subjects;
     items.forEach((s, i) => {
         const row = document.createElement('div');
-        row.className = `exec-subject-row${i === currentSubjectIndex ? ' active-subject' : ''}`;
+        const isChecked = s.concluida ? 'checked' : '';
+        const isCompletedClass = s.concluida ? ' subject-completed' : '';
+        row.className = `exec-subject-row${i === currentSubjectIndex ? ' active-subject' : ''}${isCompletedClass}`;
         const dur = s.duracao ? formatMin(s.duracao) : s.sessao;
         
         // Dynamic remaining time calculation
         const remMin = s.tempoRestanteMin !== undefined ? s.tempoRestanteMin : (s.duracao || s.totalMin || 120);
         const remFmt = formatMin(remMin);
         
-        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions"><label class="division-check" title="Marcar como concluído" style="margin:0; cursor:pointer;"><input type="checkbox" onchange="if(this.checked){ this.checked=false; forceCompleteSubject(${i}); }" style="accent-color: var(--accent-green); cursor:pointer;"></label></div>`;
+        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions"><label class="division-check" title="Marcar como concluído" style="margin:0; cursor:pointer;"><input type="checkbox" onchange="if(this.checked){ forceCompleteSubject(${i}); }else{ uncompleteSubject(${i}); }" style="accent-color: var(--accent-green); cursor:pointer;" ${isChecked}></label></div>`;
         row.style.cursor = 'pointer';
         row.addEventListener('click', (e) => {
             if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
@@ -1410,6 +1412,7 @@ function handleSubjectCycleCompletion(s, items) {
         s.tempoRestanteSegundos = totalMin * 60;
         s.tempoFaseSegundos = undefined;
         s.faseAtual = undefined;
+        s.concluida = true;
         
         if (currentExecCiclo.horasEstudadasMin >= proposedMin) {
             currentExecCiclo.ciclosRealizados++;
@@ -1419,6 +1422,7 @@ function handleSubjectCycleCompletion(s, items) {
                 item.tempoRestanteSegundos = item.tempoRestanteMin * 60;
                 item.tempoFaseSegundos = undefined;
                 item.faseAtual = undefined;
+                item.concluida = false;
             });
             showToast('🎖️ PARABÉNS! Você concluiu uma rodada inteira do ciclo!');
         }
@@ -1435,10 +1439,27 @@ function handleSubjectCycleCompletion(s, items) {
     if (pomodoroEnabled) {
         startTacticalBreak(s.nome, currentExecCiclo ? currentExecCiclo.concurso : null);
     } else {
-        // Show the Syllabus Sync Modal directly!
-        showSyllabusSyncModal(s.nome, currentExecCiclo ? currentExecCiclo.concurso : null);
+        const sequenceItems = currentExecCiclo.sequence || currentExecCiclo.subjects;
+        if (currentSubjectIndex < sequenceItems.length - 1) {
+            selectSubject(currentSubjectIndex + 1);
+        } else {
+            selectSubject(0);
+        }
     }
 }
+
+window.uncompleteSubject = function(idx) {
+    if (timerRunning && idx !== currentSubjectIndex) {
+        if (typeof showToast === 'function') showToast('Pause o cronômetro atual antes de alterar outra matéria.');
+        return;
+    }
+    const items = currentExecCiclo.sequence || currentExecCiclo.subjects;
+    const s = items[idx];
+    if (!s) return;
+    s.concluida = false;
+    saveAll();
+    renderExecSubjects(items);
+};
 
 window.forceCompleteSubject = function(idx) {
     if (timerRunning && idx !== currentSubjectIndex) {
@@ -1587,8 +1608,13 @@ function endTacticalBreak() {
         document.getElementById('execSubjectName').textContent = s.nome;
     }
     
-    // Trigger syllabus sync modal
-    showSyllabusSyncModal(lastCompletedSubject, lastCompletedContest);
+    // Resume flow: advance to next subject
+    const sequenceItems = currentExecCiclo.sequence || currentExecCiclo.subjects;
+    if (currentSubjectIndex < sequenceItems.length - 1) {
+        selectSubject(currentSubjectIndex + 1);
+    } else {
+        selectSubject(0);
+    }
 }
 
 // ===== MODO FOCO INITIALIZATION & SYNC =====

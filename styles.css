@@ -2803,3 +2803,7 @@ body.focus-mode-active .main-content {
     height: 10px;
 }
 
+.subject-completed {
+    background: rgba(46, 204, 113, 0.1) !important;
+    border-left: 4px solid var(--accent-green) !important;
+}

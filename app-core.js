@@ -41,8 +41,13 @@ function saveAll(instant = false) {
 function getActiveRotina() { return rotinas && rotinas.length > 0 ? rotinas[0] : null; }
 
 function formatHours(minutes) {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
+    const totalSeconds = Math.floor(minutes * 60);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    if (s > 0 || (h === 0 && m === 0)) {
+        return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+    }
     return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
 }
 
@@ -81,9 +86,7 @@ function updateDashboard() {
     const execHoursEl = document.getElementById('execTodayHoursText');
     const execDotEl = document.getElementById('execDayMetaDot');
     
-    const formattedTodayHours = todayStudyMin > 0 ? 
-        `${Math.floor(todayStudyMin/60)}h ${todayStudyMin%60 > 0 ? (todayStudyMin%60) + 'm' : ''}` : 
-        '0h';
+    const formattedTodayHours = todayStudyMin > 0 ? formatHours(todayStudyMin) : '00h 00m 00s';
         
     if (hoursEl) {
         hoursEl.textContent = formattedTodayHours;
