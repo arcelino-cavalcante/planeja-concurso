@@ -677,7 +677,15 @@ function renderWheel(items) {
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', d);
-        path.setAttribute('fill', i === currentSubjectIndex ? greenActive : darkColors[i % darkColors.length]);
+        
+        let fillColor = darkColors[i % darkColors.length];
+        if (s.concluida) {
+            fillColor = '#2ecc71'; // Green for completed
+        } else if (i === currentSubjectIndex) {
+            fillColor = '#f1c40f'; // Yellow for currently studying
+        }
+        
+        path.setAttribute('fill', fillColor);
         path.setAttribute('stroke', '#1a1a1a');
         path.setAttribute('stroke-width', '2');
         path.style.cursor = 'pointer';
@@ -1023,7 +1031,7 @@ function renderExecSubjects(sequence) {
         const remMin = s.tempoRestanteMin !== undefined ? s.tempoRestanteMin : (s.duracao || s.totalMin || 120);
         const remFmt = formatMin(remMin);
         
-        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions"><label class="division-check" title="Marcar como concluído" style="margin:0; cursor:pointer;"><input type="checkbox" onchange="if(this.checked){ forceCompleteSubject(${i}); }else{ uncompleteSubject(${i}); }" style="accent-color: var(--accent-green); cursor:pointer;" ${isChecked}></label></div>`;
+        row.innerHTML = `<span class="materia-name">${s.nome}</span><span class="sessao-time">${dur}</span><span class="tempo-rest"><i class="bi bi-clock"></i> ${remFmt}</span><div class="exec-subject-actions"><label class="division-check" title="Marcar como concluído" style="margin:0; cursor:pointer;"><input type="checkbox" onchange="if(this.checked){ forceCompleteSubject(${i}); }else{ uncompleteSubject(${i}); }" style="accent-color: var(--accent-green); cursor:pointer;" ${isChecked}> Concluir</label></div>`;
         row.style.cursor = 'pointer';
         row.addEventListener('click', (e) => {
             if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
