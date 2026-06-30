@@ -160,6 +160,10 @@ function saveStudyProgress() {
         s.studyMinutes = studyMinutes;
     }
 
+    currentExecCiclo.savedSubjectIndex = currentSubjectIndex;
+    currentExecCiclo.savedPhase = currentPhase;
+    currentExecCiclo.savedDivisionEnabled = divisionEnabled;
+
     saveAll();
     renderExecSubjects(currentExecCiclo.sequence || []);
     
@@ -615,17 +619,21 @@ function openExecView(ciclo) {
             timerRunning = false;
         }
         
-        currentSubjectIndex = 0;
-        divisionEnabled = false;
-        currentPhase = 'study';
+        currentSubjectIndex = ciclo.savedSubjectIndex !== undefined ? ciclo.savedSubjectIndex : 0;
+        divisionEnabled = ciclo.savedDivisionEnabled || false;
+        currentPhase = ciclo.savedPhase || 'study';
         elapsedSessionSeconds = 0;
         
-        document.getElementById('divisionToggle').checked = false;
-        document.getElementById('divisionContent').style.display = 'none';
-        document.getElementById('wheelBadge').style.display = 'none';
+        document.getElementById('divisionToggle').checked = divisionEnabled;
+        document.getElementById('divisionContent').style.display = divisionEnabled ? 'block' : 'none';
+        document.getElementById('wheelBadge').style.display = divisionEnabled ? 'inline-block' : 'none';
+        if (divisionEnabled) {
+            document.getElementById('wheelBadge').textContent = currentPhase === 'revision' ? 'Revisão' : 'Conteúdo novo';
+            document.getElementById('wheelBadge').style.background = currentPhase === 'revision' ? 'var(--accent-blue)' : 'var(--accent-green)';
+        }
         
         renderWheel(ciclo.sequence || ciclo.subjects);
-        selectSubject(0);
+        selectSubject(currentSubjectIndex);
         renderExecSubjects(ciclo.sequence || []);
         
         document.getElementById('btnIniciarTimer').innerHTML = '<i class="bi bi-play-fill"></i> Iniciar';
